@@ -1,0 +1,169 @@
+/**
+ * @copyright Thomas Foster
+ *
+ * Root workspace config. Owns the repo-wide format/lint/staged passes (read
+ * statically by `vp fmt` / `vp lint` / `vp staged`) and the root `check` /
+ * `docgen` aggregates. Every package's own tasks (`check`, `test:unit`,
+ * `build`, `docgen`) live in that package's vite.config.ts; this file
+ * deliberately compiles nothing, so adding a package never means editing it.
+ *
+ * Copied from the effect-drizzle-ext library's root config (and through it
+ * the gardeneria application's): every comment that explains a load-bearing
+ * decision is part of the standard and travels with the config.
+ */
+
+import { defineConfig } from "vite-plus";
+import { recommended } from "@effect/tsgo/oxlint-presets";
+import effect from "@mpsuesser/oxlint-plugin-effect";
+
+export default defineConfig({
+  // Staged-file checks run by `vp staged` (pre-commit).
+  staged: {
+    "*.{js,ts,css,json,md}": "vp check --fix",
+  },
+  fmt: {
+    ignorePatterns: ["**/dist/**", "**/docs/**", "**/coverage/**"],
+    overrides: [
+      {
+        files: ["**/*.md"],
+        options: {
+          proseWrap: "never",
+        },
+      },
+    ],
+  },
+  lint: {
+    ignorePatterns: ["**/dist/**", "**/docs/**", "**/coverage/**", "**/node_modules/**"],
+    extends: [recommended, effect.configs.recommended],
+    categories: {
+      correctness: "error",
+    },
+    rules: {
+      "eslint/no-unused-vars": [
+        "warn",
+        {
+          argsIgnorePattern: "^_",
+          varsIgnorePattern: "^_",
+        },
+      ],
+      "eslint/prefer-const": "warn",
+      // The `Buffer` global is typed `any` wherever a consumer loads
+      // @cloudflare/workers-types next to @types/node (every application this
+      // family serves), so every call on it is unchecked there. Use
+      // Uint8Array / TextEncoder / DataView instead.
+      "eslint/no-restricted-globals": [
+        "error",
+        {
+          name: "Buffer",
+          message:
+            "The `Buffer` global is typed `any` wherever @cloudflare/workers-types is loaded. Use Uint8Array / TextEncoder / DataView.",
+        },
+      ],
+      // `casting-awareness` is an awareness prompt, not a defect rule — it
+      // fires on every `as`, including the narrowings the Fetch / Workers
+      // types structurally require. Stays visible as a warning.
+      "effect/casting-awareness": "warn",
+      // Hard-codes abbreviations (`Arr`, `P`, `R`, …) with no options, so it is
+      // unsatisfiable under the full-name convention (`import * as Option from
+      // "effect/Option"`) this family shares with its consumers.
+      "effect/prefer-namespace-imports": "off",
+
+      // ---- Effect preset: ported-code allowances ---------------------------
+      // The modules under packages/*/src are ports of behaviour the
+      // applications carry today, which predates the Effect oxlint preset. The
+      // rules below sit at `warn` so a port stays committable while each site
+      // stays reported; a new site is a defect, not headroom.
+      "effect/imperative-loops": "warn",
+      "effect/avoid-native-object-helpers": "warn",
+      "effect/avoid-non-null-assertion": "warn",
+      "effect/avoid-any": "warn",
+      "effect/avoid-untagged-errors": "warn",
+      "effect/avoid-direct-json": "warn",
+      "effect/prefer-arr-match": "warn",
+      "effect/no-length-comparison": "warn",
+      "effect/prefer-arr-sort": "warn",
+      "effect/avoid-try-catch": "warn",
+      "effect/yield-in-for-loop": "warn",
+      "effect/prefer-effect-is": "warn",
+      "effect/avoid-expect-in-if": "warn",
+      "effect/effect-run-in-body": "warn",
+      "effect/prefer-effect-fn": "warn",
+      "effect/avoid-direct-tag-checks": "warn",
+      "effect/avoid-option-getorthrow": "warn",
+      "effect/no-barrel-imports": "warn",
+      "effect/throw-in-effect-gen": "warn",
+      "typescript/no-explicit-any": "off",
+      "typescript/no-empty-object-type": "off",
+      "typescript/ban-ts-comment": "off",
+      "unicorn/no-empty-file": "off",
+      "vite-plus/prefer-vite-plus-imports": "error",
+    },
+    overrides: [
+      // Build/test configs are evaluated by Vite and Vitest in bare Node,
+      // before any Effect runtime exists — there is no `Config` provider to
+      // read from and no `FileSystem` service to call, so `process.env` and
+      // `node:*` are the only things that work there. The Effect preset's
+      // service rules have no satisfiable fix in these files.
+      {
+        files: ["**/vite.config.ts", "**/vitest.config.ts"],
+        rules: {
+          "effect/avoid-node-imports": "off",
+          "effect/avoid-sync-fs": "off",
+          "effect/avoid-process-env": "off",
+          "effect/use-console-service": "off",
+          "effect/use-filesystem-service": "off",
+          "effect/use-path-service": "off",
+          "effect/avoid-native-fetch": "off",
+          "effect/effect-promise-vs-trypromise": "off",
+          // `...(process.env.X ? { x } : {})` is how a vitest option is left
+          // unset under `exactOptionalPropertyTypes`.
+          "effect/no-conditional-empty-object-spread": "off",
+        },
+      },
+      // Type-level tests: the expect-error directives ARE the assertions
+      // (a statement that must fail to compile), and every binding exists to
+      // be asserted against, never to be read.
+      {
+        files: ["**/tests/**/*.types.ts"],
+        rules: {
+          "eslint/no-unused-vars": "off",
+          "effect/avoid-ts-ignore": "off",
+        },
+      },
+    ],
+    // Type-aware linting is intentionally disabled: type checking stays the
+    // `check` tasks' job (native tsc, Effect-patched).
+    options: {
+      typeAware: false,
+      typeCheck: false,
+    },
+    jsPlugins: [
+      {
+        name: "vite-plus",
+        specifier: "vite-plus/oxlint-plugin",
+      },
+    ],
+  },
+  run: {
+    tasks: {
+      // The CI typecheck gate, as one task: every package's `check` (`src`
+      // under tsconfig.json, the type-level tests under tsconfig.test.json).
+      // A pure graph node. The packages are named explicitly — a `from:
+      // "dependencies"` edge does not traverse the workspace root's own
+      // devDependencies — so a new package adds itself to BOTH lists here.
+      check: {
+        command: "echo 'check: every type gate green'",
+        dependsOn: ["@thomasfosterau/effect-web#check"],
+        cache: false,
+      },
+      // Every package's docgen: compiles AND RUNS each JSDoc `@example`
+      // against the built `dist/`, then writes the API reference under that
+      // package's (git-ignored) `docs/`. Same pure-graph-node shape.
+      docgen: {
+        command: "echo 'docgen: every example compiled and ran'",
+        dependsOn: ["@thomasfosterau/effect-web#docgen"],
+        cache: false,
+      },
+    },
+  },
+});

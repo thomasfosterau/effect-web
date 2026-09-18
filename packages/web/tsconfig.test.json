@@ -1,0 +1,16 @@
+{
+  "$schema": "https://raw.githubusercontent.com/Effect-TS/language-service/refs/heads/main/schema.json",
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "types": ["node"],
+    // Tests import the package by name, as a consumer would; the mapping
+    // resolves that name to `src/` so the type gate never needs `dist/`
+    // first. (The emitted declarations are exercised by docgen's examples,
+    // which resolve through `exports` to `dist/`.) Relative to this file;
+    // TypeScript 7 removed `baseUrl`.
+    "paths": {
+      "@thomasfosterau/effect-web": ["./src/index.ts"]
+    }
+  },
+  "include": ["src", "tests"]
+}
