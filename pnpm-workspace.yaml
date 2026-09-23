@@ -29,6 +29,15 @@ catalog:
   "@cloudflare/workers-types": ^5.20260823.1
   # Compiles AND RUNS every JSDoc `@example` (the `docgen` task); needs `tsx`
   # and a TypeScript JS API — the TS6 alias below satisfies its peer.
+  # The PostHog management-API SDK (Effect-native) the `./alchemy` entry of
+  # @thomasfosterau/effect-web-posthog derives its dashboard / feature-flag /
+  # survey CRUD from; an optional peer of that package. NOT preferenceflow's
+  # 1.0.0-rc.9: like alchemy beta.72, rc.9 still calls `Config.string` at
+  # module load (`lib/credentials.js`) and cannot be imported under effect
+  # rc.115; rc.12 is the first built for rc.115 (`peerDependencies.effect:
+  # ">=4.0.0-rc.115"`). Its operation names differ from rc.8's (website /
+  # gardeneria): `getDashboard`, not `dashboardsRetrieve`, etc.
+  "@distilled.cloud/posthog": 1.0.0-rc.12
   "@effect/docgen": ^0.5.2
   "@effect/language-service": ^0.87.2
   # An OPTIONAL peer of alchemy that its `Cloudflare/Workers/WorkerBridge`
@@ -71,6 +80,11 @@ catalog:
   effect: 4.0.0-rc.115
   effect-solutions: ^0.5.3
   fallow: 3.25.0
+  # The browser and server PostHog SDKs — optional peers of
+  # @thomasfosterau/effect-web-posthog's `./browser` and `./server` entries;
+  # here as devDependencies for the tests and the emitted declarations.
+  posthog-js: ^1.429.5
+  posthog-node: ^5.52.1
   # Runs docgen's compiled examples.
   tsx: ^4.23.13
   # TypeScript 6/7 side-by-side: TS7 (the native Go compiler) ships no JS API
@@ -100,6 +114,7 @@ catalog:
 catalogs:
   peers:
     "@cloudflare/workers-types": ">=5.20260823.1"
+    "@distilled.cloud/posthog": ">=1.0.0-rc.12"
     "@thomasfosterau/effect-jsonapi": ">=0.14.0"
     # Tight on purpose: the runtime scaffold mirrors `WorkerBridge` internals
     # of this exact beta. Widen only after re-reading those internals.
@@ -108,6 +123,8 @@ catalogs:
     # primitives); everything here is built and tested against rc.115, and
     # alchemy 2.0.0-beta.79 requires it too.
     effect: ">=4.0.0-rc.115"
+    posthog-js: ">=1.429.5"
+    posthog-node: ">=5.52.1"
 
 overrides:
   vite: "catalog:"
@@ -146,6 +163,8 @@ allowBuilds:
   # `sharp` arrives via alchemy's toolchain (image resizing in local dev);
   # its native build is never needed here.
   sharp: false
+  # posthog-js > core-js: its postinstall only prints a funding banner.
+  core-js: false
 peerDependencyRules:
   allowAny:
     - vite

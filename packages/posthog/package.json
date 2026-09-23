@@ -1,0 +1,92 @@
+{
+  "$schema": "https://www.schemastore.org/package",
+  "name": "@thomasfosterau/effect-web-posthog",
+  "version": "0.0.0",
+  "description": "PostHog for Effect web applications (prototype): the Alchemy providers for a PostHog project's dashboards, feature flags, surveys and environment tokens, the server-side PostHog service and per-request client factory, the lazily loaded browser client, the ingest reverse proxy, and the shared event scrubber.",
+  "keywords": [
+    "alchemy",
+    "analytics",
+    "cloudflare-workers",
+    "effect",
+    "posthog",
+    "typescript"
+  ],
+  "homepage": "https://github.com/thomasfosterau/effect-web#readme",
+  "bugs": {
+    "url": "https://github.com/thomasfosterau/effect-web/issues"
+  },
+  "license": "MIT",
+  "author": "Thomas Foster <me@thomasfoster.au>",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/thomasfosterau/effect-web.git",
+    "directory": "packages/posthog"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "CLAUDE.md",
+    "LICENSE"
+  ],
+  "type": "module",
+  "sideEffects": false,
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./alchemy": {
+      "types": "./dist/alchemy.d.ts",
+      "default": "./dist/alchemy.js"
+    },
+    "./server": {
+      "types": "./dist/server.d.ts",
+      "default": "./dist/server.js"
+    },
+    "./browser": {
+      "types": "./dist/browser.d.ts",
+      "default": "./dist/browser.js"
+    }
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "dependencies": {
+    "@thomasfosterau/effect-web": "workspace:^"
+  },
+  "devDependencies": {
+    "@distilled.cloud/posthog": "catalog:",
+    "@effect/language-service": "catalog:",
+    "@types/node": "catalog:",
+    "@vitest/coverage-istanbul": "catalog:",
+    "alchemy": "catalog:",
+    "effect": "catalog:",
+    "posthog-js": "catalog:",
+    "posthog-node": "catalog:"
+  },
+  "peerDependencies": {
+    "@distilled.cloud/posthog": "catalog:peers",
+    "alchemy": "catalog:peers",
+    "effect": "catalog:peers",
+    "posthog-js": "catalog:peers",
+    "posthog-node": "catalog:peers"
+  },
+  "peerDependenciesMeta": {
+    "@distilled.cloud/posthog": {
+      "optional": true
+    },
+    "alchemy": {
+      "optional": true
+    },
+    "posthog-js": {
+      "optional": true
+    },
+    "posthog-node": {
+      "optional": true
+    }
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}

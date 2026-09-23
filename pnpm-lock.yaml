@@ -15,6 +15,9 @@ catalogs:
     '@cloudflare/workers-types':
       specifier: ^5.20260823.1
       version: 5.20260922.1
+    '@distilled.cloud/posthog':
+      specifier: 1.0.0-rc.12
+      version: 1.0.0-rc.12
     '@effect/docgen':
       specifier: ^0.5.2
       version: 0.5.2
@@ -51,6 +54,12 @@ catalogs:
     fallow:
       specifier: 3.25.0
       version: 3.25.0
+    posthog-js:
+      specifier: ^1.429.5
+      version: 1.434.9
+    posthog-node:
+      specifier: ^5.52.1
+      version: 5.52.5
     tsx:
       specifier: ^4.23.13
       version: 4.23.13
@@ -97,6 +106,9 @@ importers:
       '@thomasfosterau/effect-web-cloudflare':
         specifier: workspace:*
         version: link:packages/cloudflare
+      '@thomasfosterau/effect-web-posthog':
+        specifier: workspace:*
+        version: link:packages/posthog
       '@types/node':
         specifier: 'catalog:'
         version: 26.6.1
@@ -155,6 +167,37 @@ importers:
       effect:
         specifier: 4.0.0-rc.115
         version: 4.0.0-rc.115
+
+  packages/posthog:
+    dependencies:
+      '@thomasfosterau/effect-web':
+        specifier: workspace:^
+        version: link:../web
+    devDependencies:
+      '@distilled.cloud/posthog':
+        specifier: 'catalog:'
+        version: 1.0.0-rc.12(effect@4.0.0-rc.115)
+      '@effect/language-service':
+        specifier: 'catalog:'
+        version: 0.87.2
+      '@types/node':
+        specifier: 'catalog:'
+        version: 26.6.1
+      '@vitest/coverage-istanbul':
+        specifier: 'catalog:'
+        version: 4.1.11(supports-color@7.2.0)(vitest@4.1.11)
+      alchemy:
+        specifier: 'catalog:'
+        version: 2.0.0-beta.79(@effect/platform-node@4.0.0-rc.115(effect@4.0.0-rc.115)(redis@6.2.1))(@types/node@26.6.1)(@typescript/typescript6@6.0.2)(@voidzero-dev/vite-plus-core@0.3.1(@types/node@26.6.1)(@typescript/typescript6@6.0.2)(esbuild@0.28.2)(tsx@4.23.13)(yaml@2.9.1))(effect@4.0.0-rc.115)(vitest@4.1.11)(ws@8.21.3)
+      effect:
+        specifier: 4.0.0-rc.115
+        version: 4.0.0-rc.115
+      posthog-js:
+        specifier: 'catalog:'
+        version: 1.434.9(react@19.3.0)
+      posthog-node:
+        specifier: 'catalog:'
+        version: 5.52.5
 
   packages/web:
     devDependencies:
@@ -525,6 +568,11 @@ packages:
 
   '@distilled.cloud/planetscale@1.0.0-rc.12':
     resolution: {integrity: sha512-YCTB7soZtqzzgcCAUtrNHjAIsq92XS8cpjnbn3VU+sCQ0LnfnFGeMGJxQ/7qLHtx7Hv4+Ms8XNOs2Q5P81Skig==}
+    peerDependencies:
+      effect: 4.0.0-rc.115
+
+  '@distilled.cloud/posthog@1.0.0-rc.12':
+    resolution: {integrity: sha512-qB9EkIJ47hzmDhkOZf26sUYTs56VAB7UKNM6ietdQ9svhtkxNxhtLel35vJxgiO5apE6PPLu7SqZ5khb7UhCAw==}
     peerDependencies:
       effect: 4.0.0-rc.115
 
@@ -1492,6 +1540,15 @@ packages:
   '@polka/url@1.0.0-next.29':
     resolution: {integrity: sha512-wwQAWhWSuHaag8c4q/KN/vCoeOJYshAIvMQwD4GpSb3OiZklFfvAgmj0VCBBImRpuF/aFgIRzllXlVX93Jevww==}
 
+  '@posthog/browser-common@0.9.0':
+    resolution: {integrity: sha512-EWoVzs1vVY7ihpn8yOjj3jyjriHUEEMVSBNL/TW3hk09fTriWRe76vJXrRg0G0yjTYxHmtlSkNn4mOV24ZEzzA==}
+
+  '@posthog/core@1.55.1':
+    resolution: {integrity: sha512-S76bSbCHGVC8oQa1zyue6A6WzkNf1Ue4oRvfvBNLRnFM3UoWnpWnQ4T/4IzrIEtVCQYv1OI7gk8uL8/U6Tuu7w==}
+
+  '@posthog/types@1.412.4':
+    resolution: {integrity: sha512-Q7lV9O9TbLngjOYw1ucm3bS3tn48xb1B4ZQdDy8gv7yfKe99hCTeWYG4xZ36nJM80VxpTF9TriiJt5hngDOkBg==}
+
   '@prisma/debug@7.2.0':
     resolution: {integrity: sha512-YSGTiSlBAVJPzX4ONZmMotL+ozJwQjRmZweQNIq/ER0tQJKJynNkRB3kyvt37eOfsbMCXk3gnLF6J9OJ4QWftw==}
 
@@ -1720,6 +1777,9 @@ packages:
 
   '@types/node@26.6.1':
     resolution: {integrity: sha512-VqGJBMCtdhqkBUCcBLvywI0NJ+KLuVzgNnlBUNFOQjqVxzo2lxLUNg1DSey8+u2u6ktswSAxg+s68QLzWHNOuA==}
+
+  '@types/trusted-types@2.0.7':
+    resolution: {integrity: sha512-ScaPdn1dQczgbl0QFTeTOmVHFULt394XJgOQNoyVhZ6r2vLnMLJfBPd53SB52T/3G36VI1/g2MZaX0cwDuXsfw==}
 
   '@types/ws@8.18.1':
     resolution: {integrity: sha512-ThVF6DCVhA8kUGy+aazFQ4kXQ7E1Ty7A3ypFOe0IcJV8O/M511G99AW24irKrW56Wt44yG9+ij8FaqoBGkuBXg==}
@@ -2308,6 +2368,9 @@ packages:
   convert-source-map@2.0.0:
     resolution: {integrity: sha512-Kvp459HrV2FEJ1CAsi1Ku+MY3kasH19TFykTz2xWmMeq6bk2NU3XXvfJ+Q61m0xktWwt+1HSYf3JZsTms3aRJg==}
 
+  core-js@3.50.0:
+    resolution: {integrity: sha512-BRWgOLKkFeCgRudR6zrs8p9XJZcE14grzKMMssoYrk6krtuEZ7MTKPIY5RzOnqsEKIR9kst7wNzphttraT+Yqw==}
+
   core-util-is@1.0.3:
     resolution: {integrity: sha512-ZQBvi1DcpJ4GDqanjucZ2Hj3wEO5pZDS89BWbkcrvdxksJorwUDDZamX9ldFkp9aw2lmBDLgkObEA4DWNJ9FYQ==}
 
@@ -2349,6 +2412,9 @@ packages:
 
   dom-accessibility-api@0.5.16:
     resolution: {integrity: sha512-X7BJ2yElsnOJ30pZF4uIIDfBEVgF4XEBxL9Bxhy6dnrm5hkzqmsWHGTiHqRiITNhMyFLyAiWndIJP7Z1NTteDg==}
+
+  dompurify@3.4.15:
+    resolution: {integrity: sha512-EUBjM+B+lkDE41iE82DDSCfkoPGfXx8IxFxPMjNzm/Uk4xDet77rTN9wqlxlVg71kK7XGuUMv6wUxJUwwv+Xyw==}
 
   eastasianwidth@0.2.0:
     resolution: {integrity: sha512-I88TYZWc9XiYHRQ4/3c5rjjfgkjhLyW2luGIheGERbNQ6OY7yTybanSpDXZa8y7VUP9YmDcYa+eyq4ca7iLqWA==}
@@ -2448,6 +2514,9 @@ packages:
     peerDependenciesMeta:
       picomatch:
         optional: true
+
+  fflate@0.4.9:
+    resolution: {integrity: sha512-zdxgIEddhfsyCaWpJ2SdXEP8ZMrKJ6+5jl4OupODcywU0IhRk6gdXuVGcPICyfx2H97hVK7xmJtRLPjkxAX8Vw==}
 
   fflate@0.8.3:
     resolution: {integrity: sha512-tbZNuJrLwGUp3zshBtdy4W+ORxZuIh8a5ilyIEQDC5rY1f3U20JMry0Ll3WBzU58EZKsEuJFXhb5gwv8CsPvgA==}
@@ -2895,6 +2964,34 @@ packages:
     resolution: {integrity: sha512-RRuzqDtt5Y9h3quz5hWhK+TPnsmVs6WwSU6LkJMeY4HstUEDuYTG8UJSdawMRzmzAtV+KEoG8N3Qg2qLy5vM/A==}
     engines: {node: ^10 || ^12 || >=14}
 
+  posthog-js@1.434.9:
+    resolution: {integrity: sha512-hiHVOrD0GJw6iXJv4Dg0FWPjjUAXC6j+Td+a8a+Et1qCp5nh4l0dtF4jsOBhCEnz1OOuuoi7yXE2bprZlcbWRw==}
+    peerDependencies:
+      '@types/react': '>=16.8.0'
+      react: '>=16.8.0'
+    peerDependenciesMeta:
+      '@types/react':
+        optional: true
+      react:
+        optional: true
+
+  posthog-node@5.52.5:
+    resolution: {integrity: sha512-r4KRXh2MvcHYh1s3NUca022GqujkJjpmD4qbRzWOLVTu8BfN3fqZj+MyKIxvHPXsS8sKsNVX+MlKk2qzW0Y4GQ==}
+    engines: {node: ^20.20.0 || >=22.22.0}
+    peerDependencies:
+      rxjs: ^7.0.0
+    peerDependenciesMeta:
+      rxjs:
+        optional: true
+
+  preact@10.29.8:
+    resolution: {integrity: sha512-ej2aVZ+vZ8WO7tvlQWRM9N63A0KzF9q4mWJfDUHgYaIofWY9hu74QdnQrjoPMmZi2/nZ5gN0bJCQF49xQqx09Q==}
+    peerDependencies:
+      preact-render-to-string: '>=5'
+    peerDependenciesMeta:
+      preact-render-to-string:
+        optional: true
+
   prettier@3.9.7:
     resolution: {integrity: sha512-T3mF5P7HFzZVLDQuCUNtJj6WK1pcpLMweMNUVwGb01bLNkH9AkKxtZvmInw8K6bnn2O3d6/5RHl6zSHiBAD0Og==}
     engines: {node: '>=14'}
@@ -2912,6 +3009,9 @@ packages:
 
   proper-lockfile@4.1.2:
     resolution: {integrity: sha512-TjNPblN4BwAWMXU8s9AEz4JmQxnD1NNL7bNOY/AKUzyamc379FWASUhc/K1pL2noVb+XmZKLL68cjzLsiOAMaA==}
+
+  query-selector-shadow-dom@1.0.1:
+    resolution: {integrity: sha512-lT5yCqEBgfoMYpf3F2xQRK7zEr1rhIIZuceDK6+xRkJQ4NMbHTwXqk4NkwDwQMNqXgG9r9fyHnzwNVs6zV5KRw==}
 
   randomatic@3.1.1:
     resolution: {integrity: sha512-TuDE5KxZ0J461RVjrJZCJc+J+zCkTb1MbH9AQUq68sMhOMcy9jLcb3BrZKgp9q9Ncltdg4QVqWrH02W2EFFVYw==}
@@ -3230,6 +3330,12 @@ packages:
         optional: true
       jsdom:
         optional: true
+
+  web-vitals@6.2.1:
+    resolution: {integrity: sha512-rLcLXA2sx6+9dE88NHFubwTtGxpK4yYBLj6qHPdFoCaLr0cXGb4efOqtKLlm4loGA4OEKHIQKMKzZkKyOh5ctw==}
+
+  web-vitals@6.2.2:
+    resolution: {integrity: sha512-oto5x6dLEgrRqfcWed+pZEUb2q6ikbFmqF54CRDhI/QGbn+qxC49b4C4OkbH+kb9C3a8shpFD3SgR9kRcs80ZQ==}
 
   which@2.0.2:
     resolution: {integrity: sha512-BLI3Tl1TW3Pvl70l3yq3Y64i+awpwXqsGBYWkkqMtnbXgrMD+yj7rhW0kuEDxzJaYXGjEW5ogapKNMEKNMjibA==}
@@ -3823,6 +3929,11 @@ snapshots:
       effect: 4.0.0-rc.115
 
   '@distilled.cloud/planetscale@1.0.0-rc.12(effect@4.0.0-rc.115)':
+    dependencies:
+      '@distilled.cloud/core': 1.0.0-rc.12(effect@4.0.0-rc.115)
+      effect: 4.0.0-rc.115
+
+  '@distilled.cloud/posthog@1.0.0-rc.12(effect@4.0.0-rc.115)':
     dependencies:
       '@distilled.cloud/core': 1.0.0-rc.12(effect@4.0.0-rc.115)
       effect: 4.0.0-rc.115
@@ -4513,6 +4624,17 @@ snapshots:
 
   '@polka/url@1.0.0-next.29': {}
 
+  '@posthog/browser-common@0.9.0':
+    dependencies:
+      '@posthog/core': 1.55.1
+      '@posthog/types': 1.412.4
+
+  '@posthog/core@1.55.1':
+    dependencies:
+      '@posthog/types': 1.412.4
+
+  '@posthog/types@1.412.4': {}
+
   '@prisma/debug@7.2.0': {}
 
   '@prisma/dev@0.20.0(@typescript/typescript6@6.0.2)':
@@ -4697,6 +4819,9 @@ snapshots:
   '@types/node@26.6.1':
     dependencies:
       undici-types: 8.9.0
+
+  '@types/trusted-types@2.0.7':
+    optional: true
 
   '@types/ws@8.18.1':
     dependencies:
@@ -5131,6 +5256,8 @@ snapshots:
 
   convert-source-map@2.0.0: {}
 
+  core-js@3.50.0: {}
+
   core-util-is@1.0.3: {}
 
   cross-spawn@7.0.6:
@@ -5160,6 +5287,10 @@ snapshots:
       esutils: 2.0.3
 
   dom-accessibility-api@0.5.16: {}
+
+  dompurify@3.4.15:
+    optionalDependencies:
+      '@types/trusted-types': 2.0.7
 
   eastasianwidth@0.2.0: {}
 
@@ -5285,6 +5416,8 @@ snapshots:
   fdir@6.5.0(picomatch@4.0.7):
     optionalDependencies:
       picomatch: 4.0.7
+
+  fflate@0.4.9: {}
 
   fflate@0.8.3: {}
 
@@ -5688,6 +5821,29 @@ snapshots:
       picocolors: 1.1.1
       source-map-js: 1.2.1
 
+  posthog-js@1.434.9(react@19.3.0):
+    dependencies:
+      '@posthog/browser-common': 0.9.0
+      '@posthog/core': 1.55.1
+      '@posthog/types': 1.412.4
+      core-js: 3.50.0
+      dompurify: 3.4.15
+      fflate: 0.4.9
+      preact: 10.29.8
+      query-selector-shadow-dom: 1.0.1
+      web-vitals: 6.2.2
+      web-vitals-soft-navs: web-vitals@6.2.1
+    optionalDependencies:
+      react: 19.3.0
+    transitivePeerDependencies:
+      - preact-render-to-string
+
+  posthog-node@5.52.5:
+    dependencies:
+      '@posthog/core': 1.55.1
+
+  preact@10.29.8: {}
+
   prettier@3.9.7: {}
 
   pretty-format@27.5.1:
@@ -5705,6 +5861,8 @@ snapshots:
       graceful-fs: 4.2.11
       retry: 0.12.0
       signal-exit: 3.0.7
+
+  query-selector-shadow-dom@1.0.1: {}
 
   randomatic@3.1.1:
     dependencies:
@@ -6079,6 +6237,10 @@ snapshots:
       '@vitest/coverage-istanbul': 4.1.11(supports-color@7.2.0)(vitest@4.1.11)
     transitivePeerDependencies:
       - msw
+
+  web-vitals@6.2.1: {}
+
+  web-vitals@6.2.2: {}
 
   which@2.0.2:
     dependencies:

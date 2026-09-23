@@ -1,5 +1,9 @@
 {
   "$schema": "https://raw.githubusercontent.com/Effect-TS/language-service/refs/heads/main/schema.json",
   "files": [],
-  "references": [{ "path": "packages/web" }, { "path": "packages/cloudflare" }]
+  "references": [
+    { "path": "packages/web" },
+    { "path": "packages/cloudflare" },
+    { "path": "packages/posthog" }
+  ]
 }

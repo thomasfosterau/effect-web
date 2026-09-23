@@ -10,9 +10,14 @@
     "packages/cloudflare/src/queues/index.ts",
     "packages/cloudflare/src/cache/index.ts",
     "packages/cloudflare/src/testing/index.ts",
+    "packages/posthog/src/index.ts",
+    "packages/posthog/src/alchemy/index.ts",
+    "packages/posthog/src/server/index.ts",
+    "packages/posthog/src/browser/index.ts",
     "packages/*/tests/**/*.test.ts",
     "packages/*/tests/**/*.types.ts",
-    "**/vite.config.ts"
+    "**/vite.config.ts",
+    "vite.package.ts"
   ],
   "ignorePatterns": ["**/dist/**", "**/docs/**", "**/coverage/**"],
   "ignoreDependencies": [
@@ -57,6 +62,10 @@
       {
         "name": "cloudflare",
         "patterns": ["packages/cloudflare/**"]
+      },
+      {
+        "name": "posthog",
+        "patterns": ["packages/posthog/**"]
       }
     ],
     "rules": [
@@ -66,6 +75,10 @@
       },
       {
         "from": "cloudflare",
+        "allow": ["web"]
+      },
+      {
+        "from": "posthog",
         "allow": ["web"]
       }
     ]
