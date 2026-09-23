@@ -1,6 +1,14 @@
 import { defineConfig } from "vite-plus";
 
 /**
+ * Tests import the package by name, exactly as a consumer would (and as
+ * tsconfig.test.json's `paths` type-checks them), so the runner resolves that
+ * name to `src/` rather than to the built `dist/` that `exports` points at —
+ * a unit run never needs a build first. One entry per `exports` subpath.
+ */
+const srcDir = new URL("./src/", import.meta.url).pathname;
+
+/**
  * Input fingerprint for this package's cached tasks: auto tracking minus
  * node_modules bookkeeping churn (pnpm rewrites `.modules.yaml` on every
  * install), with the lockfile back explicitly so a dependency upgrade still
@@ -60,12 +68,24 @@ export default defineConfig({
   pack: {
     entry: {
       index: "src/index.ts",
+      net: "src/net/index.ts",
+      observability: "src/observability/index.ts",
+      negotiate: "src/negotiate/index.ts",
     },
     format: "esm",
     platform: "neutral",
     dts: true,
     outDir: "dist",
     clean: true,
+  },
+  resolve: {
+    alias: [
+      { find: /^@thomasfosterau\/effect-web$/, replacement: `${srcDir}index.ts` },
+      {
+        find: /^@thomasfosterau\/effect-web\/(net|observability|negotiate)$/,
+        replacement: `${srcDir}$1/index.ts`,
+      },
+    ],
   },
   test: {
     include: ["tests/**/*.test.ts"],
@@ -75,7 +95,10 @@ export default defineConfig({
       : {}),
     coverage: {
       provider: "istanbul",
-      reporter: ["text-summary", "json-summary"],
+      // `json` writes coverage-final.json, the Istanbul map `fallow audit`
+      // reads for exact per-function CRAP scores (`health.coverage` in
+      // .fallowrc.json); without it every function scores as uncovered.
+      reporter: ["text-summary", "json-summary", "json"],
       reportsDirectory: "./coverage",
       include: ["src/**/*.ts"],
       exclude: ["**/*.d.ts"],

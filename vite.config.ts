@@ -92,6 +92,21 @@ export default defineConfig({
       "effect/avoid-option-getorthrow": "warn",
       "effect/no-barrel-imports": "warn",
       "effect/throw-in-effect-gen": "warn",
+      // ---- Effect preset: rules this workspace's conventions cut across ----
+      // `prefer-option-over-null` also fires on `?: T | undefined`, which is
+      // the ONLY spelling of an optional member `exactOptionalPropertyTypes`
+      // lets a caller forward an optional of its own into (AGENTS.md). A bare
+      // `null` / `undefined` in a return type is still a finding to read; the
+      // options-object members are not.
+      "effect/prefer-option-over-null": "warn",
+      // `unknown` is the honest type at the two boundaries these libraries
+      // sit on: a caught failure handed to an error tracker or a log line
+      // (`describeError`, `describeSessionDegraded`), and the free-form
+      // fields of a structured log event. Parsing them would change the
+      // applications' log shape.
+      "effect/no-unknown-parameters": "warn",
+      "effect/no-unsafe-dictionary-type": "warn",
+      "effect/no-runtime-typeof": "warn",
       "typescript/no-explicit-any": "off",
       "typescript/no-empty-object-type": "off",
       "typescript/ban-ts-comment": "off",
@@ -164,6 +179,28 @@ export default defineConfig({
         dependsOn: ["@thomasfosterau/effect-web#docgen"],
         cache: false,
       },
+      // Every package's unit suite under one Istanbul coverage map
+      // (`coverage/coverage-final.json`), which `fallow audit` reads for exact
+      // per-function CRAP scores (`health.coverage` in .fallowrc.json).
+      // Without it fallow estimates every function as uncovered, and any
+      // function with cyclomatic complexity ≥ 5 fails the gate on its own.
+      // Run this before `fallow audit` (the commit hook runs the audit).
+      "test:coverage": {
+        command: "vp test run --coverage",
+        cache: false,
+      },
+    },
+  },
+  test: {
+    // One entry per package: each package's own vite.config.ts is a vitest
+    // project, so the root run and the root coverage map cover them all.
+    projects: ["packages/*/vite.config.ts"],
+    coverage: {
+      provider: "istanbul",
+      reporter: ["text-summary", "json-summary", "json"],
+      reportsDirectory: "./coverage",
+      include: ["packages/*/src/**/*.ts"],
+      exclude: ["**/*.d.ts"],
     },
   },
 });

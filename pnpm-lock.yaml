@@ -24,6 +24,9 @@ catalogs:
     '@mpsuesser/oxlint-plugin-effect':
       specifier: ^0.5.0
       version: 0.5.0
+    '@thomasfosterau/effect-jsonapi':
+      specifier: ^0.14.0
+      version: 0.14.0
     '@types/node':
       specifier: ^26.4.1
       version: 26.6.1
@@ -115,6 +118,9 @@ importers:
       '@effect/language-service':
         specifier: 'catalog:'
         version: 0.87.2
+      '@thomasfosterau/effect-jsonapi':
+        specifier: 'catalog:'
+        version: 0.14.0(effect@4.0.0-rc.115)
       '@types/node':
         specifier: 'catalog:'
         version: 26.6.1
@@ -892,6 +898,12 @@ packages:
     engines: {node: '>=12', npm: '>=6'}
     peerDependencies:
       '@testing-library/dom': '>=7.21.4'
+
+  '@thomasfosterau/effect-jsonapi@0.14.0':
+    resolution: {integrity: sha512-DQ4wdhl3HtC6FaPHI+/8qH3CUZ1v9P6PDRHNvv6JXBarjSU5NS4tKRskFjfcYd6t7ayglMF39y/YOYbiLa6KpQ==}
+    engines: {node: '>=20.0.0'}
+    peerDependencies:
+      effect: 4.0.0-rc.115
 
   '@types/aria-query@5.0.4':
     resolution: {integrity: sha512-rfT93uj5s0PRL7EzccGMs3brplhcrghnDoV26NqKhCAS1hVo+WdNsPvE/yb6ilfr5hi2MEk6d5EWJTKdxg8jVw==}
@@ -2814,6 +2826,10 @@ snapshots:
   '@testing-library/user-event@14.6.7(@testing-library/dom@10.4.2)':
     dependencies:
       '@testing-library/dom': 10.4.2
+
+  '@thomasfosterau/effect-jsonapi@0.14.0(effect@4.0.0-rc.115)':
+    dependencies:
+      effect: 4.0.0-rc.115
 
   '@types/aria-query@5.0.4': {}
 

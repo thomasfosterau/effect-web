@@ -2,6 +2,9 @@
   "$schema": "https://raw.githubusercontent.com/fallow-rs/fallow/main/schema.json",
   "entry": [
     "packages/web/src/index.ts",
+    "packages/web/src/net/index.ts",
+    "packages/web/src/observability/index.ts",
+    "packages/web/src/negotiate/index.ts",
     "packages/*/tests/**/*.test.ts",
     "packages/*/tests/**/*.types.ts",
     "**/vite.config.ts"
@@ -40,12 +43,23 @@
     "stale-suppressions": "warn"
   },
   "boundaries": {
-    "zones": [{ "name": "web", "patterns": ["packages/web/**"] }],
-    "rules": [{ "from": "web", "allow": [] }]
+    "zones": [
+      {
+        "name": "web",
+        "patterns": ["packages/web/**"]
+      }
+    ],
+    "rules": [
+      {
+        "from": "web",
+        "allow": []
+      }
+    ]
   },
   "health": {
     "maxCyclomatic": 20,
     "maxCognitive": 15,
-    "maxCrap": 30
+    "maxCrap": 30,
+    "coverage": "coverage/coverage-final.json"
   }
 }

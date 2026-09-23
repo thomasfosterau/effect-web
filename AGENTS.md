@@ -44,6 +44,7 @@ Everything else that must be visible when touching a package is in that package'
 - `vp run -r test:unit` — unit tests (node Vitest; nothing here needs a database or a credential).
 - `vp run -r build` — `vp pack` → every package's `dist/`.
 - `vp run docgen` — every package's docgen: compiles and runs each `@example` against `dist/`, writes the (git-ignored) API reference under `packages/*/docs/`.
+- `vp run test:coverage` — every package's unit suite under one Istanbul map at `coverage/coverage-final.json`, which `fallow audit` reads for exact per-function CRAP scores. Run it before the audit: without the map fallow scores every function as uncovered, and any function with cyclomatic complexity ≥ 5 fails the gate on its own.
 - `pnpm changeset` — add a changeset; every change to a published package needs one. Releases are cut by the `Release` workflow (changesets/action) on `main`.
 
 Invoke everything through `vp` (`vp exec` instead of `npx`; `vp run <task>` instead of bare `pnpm`). The sanctioned non-`vp` invocations: `pnpm install` (and `pnpm install --frozen-lockfile` in CI), `pnpm changeset` / `pnpm publish` on the release path.
@@ -87,7 +88,7 @@ These are standing instructions and approvals; they override any default "don't 
 
 ## Fallow local gate
 
-Before any `git commit` or `git push`, run `fallow audit --format json --quiet --explain --gate-marker agent`. If the verdict is `fail`, fix the reported findings before retrying. Treat JSON runtime errors like `{ "error": true, ... }` as non-blocking. Audit defaults to `gate=new-only`: only findings introduced by the current changeset affect the verdict.
+Before any `git commit` or `git push`, run `vp run test:coverage` and then `fallow audit --format json --quiet --explain --gate-marker agent` (the commit hook runs the audit; the coverage map is what makes its CRAP scores real). If the verdict is `fail`, fix the reported findings before retrying. Treat JSON runtime errors like `{ "error": true, ... }` as non-blocking. Audit defaults to `gate=new-only`: only findings introduced by the current changeset affect the verdict.
 
 ## Fallow task map
 
