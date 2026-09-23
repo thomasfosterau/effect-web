@@ -24,10 +24,18 @@ catalogMode: strict
 catalog:
   "@changesets/changelog-github": ^1.0.1
   "@changesets/cli": ^3.0.3
+  # Types only, for @thomasfosterau/effect-web-cloudflare (`KVNamespace`,
+  # `R2Bucket`, `ExecutionContext`, …); never a runtime dependency.
+  "@cloudflare/workers-types": ^5.20260823.1
   # Compiles AND RUNS every JSDoc `@example` (the `docgen` task); needs `tsx`
   # and a TypeScript JS API — the TS6 alias below satisfies its peer.
   "@effect/docgen": ^0.5.2
   "@effect/language-service": ^0.87.2
+  # An OPTIONAL peer of alchemy that its `Cloudflare/Workers/WorkerBridge`
+  # imports unconditionally at module load, so any test that touches the
+  # binding scaffold needs it resolvable. Declared explicitly so the
+  # resolution is ours, not an accident of what something else hoisted.
+  "@effect/platform-node": 4.0.0-rc.115
   # Effect Language Service as a native (TypeScript-Go) binary — the TS7 side
   # of the 6/7 split. `effect-tsgo patch` overwrites the native `tsc` binary
   # with an Effect-patched build matched by gitHead, so this pins in lockstep
@@ -45,6 +53,20 @@ catalog:
   # `Middleware`, never re-implemented here).
   "@thomasfosterau/effect-jsonapi": ^0.14.0
   "@types/node": ^26.4.1
+  # The Workers / Alchemy runtime the cloudflare package's scaffold mirrors:
+  # `runtimeStubsLayer` reproduces what alchemy's `WorkerBridge` provides
+  # inside its own entrypoints, so the package is pinned to one exact beta
+  # (the peer range is equally tight — see `catalogs.peers` below).
+  #
+  # NOT the applications' 2.0.0-beta.72: effect 4.0.0-rc.115 renamed
+  # `Config.string` → `Config.String` (and the other primitives likewise), and
+  # beta.72 still calls the old name at module load in 27 files, so
+  # `import "alchemy/Cloudflare"` throws `Config.string is not a function`
+  # under rc.115 — the pair preferenceflow's catalog currently declares.
+  # beta.79 (npm `latest`) is the first alchemy built for rc.115
+  # (`peerDependencies.effect: ">=4.0.0-rc.115"`); website / gardeneria
+  # adopt this package by bumping effect and alchemy together.
+  alchemy: 2.0.0-beta.79
   "@vitest/coverage-istanbul": 4.1.11
   effect: 4.0.0-rc.115
   effect-solutions: ^0.5.3
@@ -77,7 +99,11 @@ catalog:
 # replaces `catalog:peers` with these ranges in the published manifest.
 catalogs:
   peers:
+    "@cloudflare/workers-types": ">=5.20260823.1"
     "@thomasfosterau/effect-jsonapi": ">=0.14.0"
+    # Tight on purpose: the runtime scaffold mirrors `WorkerBridge` internals
+    # of this exact beta. Widen only after re-reading those internals.
+    alchemy: 2.0.0-beta.79
     effect: ">=4.0.0-rc.112"
 
 overrides:
@@ -91,6 +117,13 @@ allowBuilds:
   esbuild: true
   fallow: true
   msgpackr-extract: true
+  # alchemy's Cloudflare runtime pulls `workerd`; its postinstall fetches the
+  # platform binary the local dev path needs (never exercised here, but a
+  # refused build script fails the install under pnpm's strict default).
+  workerd: true
+  # `sharp` arrives via alchemy's toolchain (image resizing in local dev);
+  # its native build is never needed here.
+  sharp: false
 peerDependencyRules:
   allowAny:
     - vite

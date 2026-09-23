@@ -5,6 +5,11 @@
     "packages/web/src/net/index.ts",
     "packages/web/src/observability/index.ts",
     "packages/web/src/negotiate/index.ts",
+    "packages/cloudflare/src/index.ts",
+    "packages/cloudflare/src/hyperdrive/index.ts",
+    "packages/cloudflare/src/queues/index.ts",
+    "packages/cloudflare/src/cache/index.ts",
+    "packages/cloudflare/src/testing/index.ts",
     "packages/*/tests/**/*.test.ts",
     "packages/*/tests/**/*.types.ts",
     "**/vite.config.ts"
@@ -12,6 +17,7 @@
   "ignorePatterns": ["**/dist/**", "**/docs/**", "**/coverage/**"],
   "ignoreDependencies": [
     "@types/node",
+    "@effect/platform-node",
     "effect-solutions",
     "@effect/docgen",
     "@effect/tsgo",
@@ -47,12 +53,20 @@
       {
         "name": "web",
         "patterns": ["packages/web/**"]
+      },
+      {
+        "name": "cloudflare",
+        "patterns": ["packages/cloudflare/**"]
       }
     ],
     "rules": [
       {
         "from": "web",
         "allow": []
+      },
+      {
+        "from": "cloudflare",
+        "allow": ["web"]
       }
     ]
   },

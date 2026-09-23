@@ -105,6 +105,11 @@ export default defineConfig({
       // fields of a structured log event. Parsing them would change the
       // applications' log shape.
       "effect/no-unknown-parameters": "warn",
+      // Same boundaries, other direction: a KV `get` resolves whatever was
+      // stored, an R2 `json()` whatever was archived, a queue message carries
+      // whatever the producer sent. The platform contracts return `unknown`
+      // and the caller decodes (`decodeQueueMessage`, the cache's schema).
+      "effect/no-unknown-returns": "warn",
       "effect/no-unsafe-dictionary-type": "warn",
       "effect/no-runtime-typeof": "warn",
       "typescript/no-explicit-any": "off",
@@ -145,6 +150,20 @@ export default defineConfig({
           "effect/avoid-ts-ignore": "off",
         },
       },
+      // Test fixtures are the seams under test, not domain code: a cast that
+      // drops alchemy's deploy-time provider tags after `Effect.provide`, a
+      // wall-clock `Date` standing in for a publication stamp, a `CI`
+      // variable toggled to drive a reporter. Each stays visible as a
+      // warning; none can be written another way in a fixture.
+      {
+        files: ["**/tests/**/*.ts"],
+        rules: {
+          "effect/require-safety-comment-for-type-assertion": "warn",
+          "effect/use-clock-service": "warn",
+          "effect/avoid-process-env": "warn",
+          "effect/require-effect-concurrency": "warn",
+        },
+      },
     ],
     // Type-aware linting is intentionally disabled: type checking stays the
     // `check` tasks' job (native tsc, Effect-patched).
@@ -168,7 +187,10 @@ export default defineConfig({
       // devDependencies — so a new package adds itself to BOTH lists here.
       check: {
         command: "echo 'check: every type gate green'",
-        dependsOn: ["@thomasfosterau/effect-web#check"],
+        dependsOn: [
+          "@thomasfosterau/effect-web#check",
+          "@thomasfosterau/effect-web-cloudflare#check",
+        ],
         cache: false,
       },
       // Every package's docgen: compiles AND RUNS each JSDoc `@example`
@@ -176,7 +198,10 @@ export default defineConfig({
       // package's (git-ignored) `docs/`. Same pure-graph-node shape.
       docgen: {
         command: "echo 'docgen: every example compiled and ran'",
-        dependsOn: ["@thomasfosterau/effect-web#docgen"],
+        dependsOn: [
+          "@thomasfosterau/effect-web#docgen",
+          "@thomasfosterau/effect-web-cloudflare#docgen",
+        ],
         cache: false,
       },
       // Every package's unit suite under one Istanbul coverage map

@@ -7,6 +7,7 @@ This repository is the **`@thomasfosterau/effect-web` package family**: publisha
 | Package | Directory | What it is |
 | --- | --- | --- |
 | `@thomasfosterau/effect-web` | `packages/web` | Framework-neutral request/response utilities: headers, Vary, cache-control, the cross-origin guard, client IP, SSRF-guarded fetch, structured log + span tracer, the content-negotiation dispatch verdict. Peer: `effect` only. |
+| `@thomasfosterau/effect-web-cloudflare` | `packages/cloudflare` | The Cloudflare Workers / Alchemy runtime scaffold (per-request / per-event binding layers, the execution-context lifecycle, the `Scheduler` bridge, the read-path query counter), the Hyperdrive `Database` seam with the pg client injected, queue producer / consumer glue, the KV read-through resource cache, and the in-memory binding stubs. Peers: `effect`, `alchemy` (exact beta), `@cloudflare/workers-types` (optional). |
 
 Further packages land one issue each (see the tracker); every one adds a row here, a `CLAUDE.md` of its own, and its `#check` / `#docgen` edges in the root `vite.config.ts`.
 
