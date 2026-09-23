@@ -10,7 +10,7 @@ Every helper's doc comment names the application behaviour it carries and the in
 pnpm add @thomasfosterau/effect-web effect
 ```
 
-`effect` (>= 4.0.0-rc.112) is a peer dependency. `@thomasfosterau/effect-jsonapi` (>= 0.14.0) is an **optional** peer, needed only by the `./negotiate` entry.
+`effect` (>= 4.0.0-rc.115) is a peer dependency. `@thomasfosterau/effect-jsonapi` (>= 0.14.0) is an **optional** peer, needed only by the `./negotiate` entry.
 
 | Entry | What it is | Peers |
 | --- | --- | --- |

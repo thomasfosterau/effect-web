@@ -104,7 +104,10 @@ catalogs:
     # Tight on purpose: the runtime scaffold mirrors `WorkerBridge` internals
     # of this exact beta. Widen only after re-reading those internals.
     alchemy: 2.0.0-beta.79
-    effect: ">=4.0.0-rc.112"
+    # rc.115 renamed `Config.string` → `Config.String` (and the other
+    # primitives); everything here is built and tested against rc.115, and
+    # alchemy 2.0.0-beta.79 requires it too.
+    effect: ">=4.0.0-rc.115"
 
 overrides:
   vite: "catalog:"
