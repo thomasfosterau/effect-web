@@ -14,6 +14,9 @@
     "packages/posthog/src/alchemy/index.ts",
     "packages/posthog/src/server/index.ts",
     "packages/posthog/src/browser/index.ts",
+    "packages/robots/src/index.ts",
+    "packages/sitemap/src/index.ts",
+    "packages/cloudflare/src/robots/index.ts",
     "packages/*/tests/**/*.test.ts",
     "packages/*/tests/**/*.types.ts",
     "**/vite.config.ts",
@@ -66,6 +69,14 @@
       {
         "name": "posthog",
         "patterns": ["packages/posthog/**"]
+      },
+      {
+        "name": "robots",
+        "patterns": ["packages/robots/**"]
+      },
+      {
+        "name": "sitemap",
+        "patterns": ["packages/sitemap/**"]
       }
     ],
     "rules": [
@@ -75,10 +86,18 @@
       },
       {
         "from": "cloudflare",
-        "allow": ["web"]
+        "allow": ["web", "robots"]
       },
       {
         "from": "posthog",
+        "allow": ["web"]
+      },
+      {
+        "from": "robots",
+        "allow": []
+      },
+      {
+        "from": "sitemap",
         "allow": ["web"]
       }
     ]

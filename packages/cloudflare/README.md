@@ -7,10 +7,10 @@ Every export's doc comment names the application behaviour it carries and the in
 ## Install
 
 ```sh
-pnpm add @thomasfosterau/effect-web-cloudflare @thomasfosterau/effect-web effect alchemy@2.0.0-beta.79
+pnpm add @thomasfosterau/effect-web-cloudflare @thomasfosterau/effect-web @thomasfosterau/effect-web-robots effect alchemy@2.0.0-beta.79
 ```
 
-Peers: `effect` (>= 4.0.0-rc.115), `alchemy` (**exactly** `2.0.0-beta.79` — the runtime scaffold mirrors that beta's `WorkerBridge` internals; note that `2.0.0-beta.72` cannot be imported under effect rc.115 at all, since rc.115 renamed `Config.string` to `Config.String` and beta.72 still calls the old name at module load), and `@cloudflare/workers-types` (optional, types only). `@thomasfosterau/effect-web` is a dependency.
+Peers: `effect` (>= 4.0.0-rc.115), `alchemy` (**exactly** `2.0.0-beta.79` — the runtime scaffold mirrors that beta's `WorkerBridge` internals; note that `2.0.0-beta.72` cannot be imported under effect rc.115 at all, since rc.115 renamed `Config.string` to `Config.String` and beta.72 still calls the old name at module load), and `@cloudflare/workers-types` (optional, types only). `@thomasfosterau/effect-web` and `@thomasfosterau/effect-web-robots` are dependencies.
 
 | Entry | What it is |
 | --- | --- |
@@ -18,6 +18,7 @@ Peers: `effect` (>= 4.0.0-rc.115), `alchemy` (**exactly** `2.0.0-beta.79` — th
 | `./hyperdrive` | `hyperdriveConnectionString`, `hyperdriveDatabaseLayer` (the degrading `Database` layer with the pg client factory injected), `makeRequestDatabase`. |
 | `./queues` | `enqueueBestEffort`, `enqueueBatchBestEffort`, `sendBatchChunked`, `decodeQueueMessage`, `consumeBatch`, `MissingHyperdrive`, `ENQUEUE_CHUNK`. |
 | `./cache` | `makeResourceCache`, `isPubliclyServeable`, `RESOURCE_CACHE_TTL`, `MIN_RESOURCE_CACHE_TTL`. |
+| `./robots` | `robotsKvCache` — the KV adapter for `@thomasfosterau/effect-web-robots`' `RobotsCache` seam (a read fault is a miss, a write fault a dropped write). |
 | `./testing` | `makeStubKv`, `makeStubR2`, `makeStubQueue`, `makeStubBindings`, `makeStubEnv`, `throwingBinding`, `stubHyperdriveConnectLayer`, `stubBindingsLayer`, `logicalIdOf`, `RetryVisibilityReporter`. |
 
 Every entry is `sideEffects: false`: no top-level statements in `dist/`.
@@ -142,6 +143,7 @@ A spec asserts through the handles (`stubs.kv.peek(key)`, `stubs.kv.seed(key, va
 | `packages/jobs/src/producer.ts` (gardeneria), `embedding/queue.ts` (website), `packages/jobs/src/queue.ts` `sendBatch` (preferenceflow) | `./queues` — the producers |
 | `packages/jobs/src/queues.ts` `decodeQueueMessage` (gardeneria), `consume.ts` `decodeOrDrop` (preferenceflow), `apps/worker/src/handlers.ts` `consume` + `MissingHyperdrive` (preferenceflow), `apps/worker/src/worker.ts` (website) | `./queues` — the consumers |
 | `apps/api/src/cache.ts` (gardeneria, the reference; website's copy lacks the owned / publication axes) | `./cache` + `resolveKvNamespace` |
+| `packages/jobs/src/web-archive/robots.ts` (website), `crawl/robots.ts` (preferenceflow) — the KV read / write around the fetch | `./robots` — `robotsKvCache` (the rest is `@thomasfosterau/effect-web-robots`) |
 | `packages/integration-harness/stub-bindings.ts`, `retry-reporter.ts` (preferenceflow); `harness.ts` `peekStubQueue` / `recordingQueue` (gardeneria) | `./testing` |
 
 The resource declarations (`Cache`, `PrimaryHyperdrive`, `FeedQueue`, …), the env types, `WorkerBindings` and each app's `Database` service stay in the application.

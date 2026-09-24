@@ -12,7 +12,8 @@
       "@thomasfosterau/effect-web-cloudflare/hyperdrive": ["./src/hyperdrive/index.ts"],
       "@thomasfosterau/effect-web-cloudflare/queues": ["./src/queues/index.ts"],
       "@thomasfosterau/effect-web-cloudflare/cache": ["./src/cache/index.ts"],
-      "@thomasfosterau/effect-web-cloudflare/testing": ["./src/testing/index.ts"]
+      "@thomasfosterau/effect-web-cloudflare/testing": ["./src/testing/index.ts"],
+      "@thomasfosterau/effect-web-cloudflare/robots": ["./src/robots/index.ts"]
     }
   },
   "include": ["src", "tests"]

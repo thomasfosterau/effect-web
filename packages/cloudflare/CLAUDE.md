@@ -1,6 +1,6 @@
 # packages/cloudflare — `@thomasfosterau/effect-web-cloudflare`
 
-The Cloudflare Workers / Alchemy half of the family: the per-request / per-event runtime scaffold, the Hyperdrive `Database` seam, queue glue, the KV read-through resource cache and the in-memory binding stubs. Peers: `effect`, `alchemy` (exact beta — see below), `@cloudflare/workers-types` (optional, types only).
+The Cloudflare Workers / Alchemy half of the family: the per-request / per-event runtime scaffold, the Hyperdrive `Database` seam, queue glue, the KV read-through resource cache, the robots.txt KV cache adapter and the in-memory binding stubs. Peers: `effect`, `alchemy` (exact beta — see below), `@cloudflare/workers-types` (optional, types only).
 
 ## Terms
 
@@ -23,4 +23,4 @@ The Cloudflare Workers / Alchemy half of the family: the per-request / per-event
 
 ## Boundary
 
-May import from `@thomasfosterau/effect-web` (`.fallowrc.json` zone `cloudflare` → `web`): `logStructured` for the `read-path.db` line, `logWarningEvent` / `describeError` for the queue drop. Nothing here is imported by `packages/web`.
+May import from `@thomasfosterau/effect-web` (`.fallowrc.json` zone `cloudflare` → `web`, `robots`): `logStructured` for the `read-path.db` line, `logWarningEvent` / `describeError` for the queue drop; and from `@thomasfosterau/effect-web-robots` the `RobotsCache` type the `./robots` KV adapter implements. Nothing here is imported by `packages/web` or `packages/robots`.

@@ -52,13 +52,18 @@
     "./testing": {
       "types": "./dist/testing.d.ts",
       "default": "./dist/testing.js"
+    },
+    "./robots": {
+      "types": "./dist/robots.d.ts",
+      "default": "./dist/robots.js"
     }
   },
   "publishConfig": {
     "access": "public"
   },
   "dependencies": {
-    "@thomasfosterau/effect-web": "workspace:^"
+    "@thomasfosterau/effect-web": "workspace:^",
+    "@thomasfosterau/effect-web-robots": "workspace:^"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "catalog:",

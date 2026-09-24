@@ -25,6 +25,8 @@
     "@thomasfosterau/effect-web": "workspace:*",
     "@thomasfosterau/effect-web-cloudflare": "workspace:*",
     "@thomasfosterau/effect-web-posthog": "workspace:*",
+    "@thomasfosterau/effect-web-robots": "workspace:*",
+    "@thomasfosterau/effect-web-sitemap": "workspace:*",
     "@types/node": "catalog:",
     "@typescript/native": "catalog:",
     "effect": "catalog:",

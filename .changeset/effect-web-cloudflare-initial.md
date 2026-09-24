@@ -8,6 +8,7 @@ Initial release: the Cloudflare Workers / Alchemy runtime scaffold extracted fro
 - `./hyperdrive` — `hyperdriveConnectionString`, `hyperdriveDatabaseLayer` (the degrading `Database` layer, pg client factory injected — composes `@thomasfosterau/effect-drizzle-ext-pg` without depending on it), `makeRequestDatabase`.
 - `./queues` — `enqueueBestEffort`, `enqueueBatchBestEffort`, `sendBatchChunked`, `decodeQueueMessage`, `consumeBatch`, `MissingHyperdrive`.
 - `./cache` — `makeResourceCache` (the KV read-through resource cache, PERF-CACHE-004) with `isPubliclyServeable` and gardeneria's `{ owned, publishGated }` posture as the default serveability policy.
+- `./robots` — `robotsKvCache`, the KV adapter for `@thomasfosterau/effect-web-robots`' per-origin cache seam.
 - `./testing` — `makeStubKv` / `makeStubR2` / `makeStubQueue` / `makeStubBindings`, `makeStubEnv`, `throwingBinding`, `stubHyperdriveConnectLayer`, `stubBindingsLayer`, `logicalIdOf`, `RetryVisibilityReporter`.
 
 Peers: `effect` >= 4.0.0-rc.115, `alchemy` exactly 2.0.0-beta.79 (the first alchemy built for rc.115's `Config.String`), `@cloudflare/workers-types` optional.

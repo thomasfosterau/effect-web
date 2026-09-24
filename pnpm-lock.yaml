@@ -109,6 +109,12 @@ importers:
       '@thomasfosterau/effect-web-posthog':
         specifier: workspace:*
         version: link:packages/posthog
+      '@thomasfosterau/effect-web-robots':
+        specifier: workspace:*
+        version: link:packages/robots
+      '@thomasfosterau/effect-web-sitemap':
+        specifier: workspace:*
+        version: link:packages/sitemap
       '@types/node':
         specifier: 'catalog:'
         version: 26.6.1
@@ -145,6 +151,9 @@ importers:
       '@thomasfosterau/effect-web':
         specifier: workspace:^
         version: link:../web
+      '@thomasfosterau/effect-web-robots':
+        specifier: workspace:^
+        version: link:../robots
     devDependencies:
       '@cloudflare/workers-types':
         specifier: 'catalog:'
@@ -198,6 +207,40 @@ importers:
       posthog-node:
         specifier: 'catalog:'
         version: 5.52.5
+
+  packages/robots:
+    devDependencies:
+      '@effect/language-service':
+        specifier: 'catalog:'
+        version: 0.87.2
+      '@types/node':
+        specifier: 'catalog:'
+        version: 26.6.1
+      '@vitest/coverage-istanbul':
+        specifier: 'catalog:'
+        version: 4.1.11(supports-color@7.2.0)(vitest@4.1.11)
+      effect:
+        specifier: 4.0.0-rc.115
+        version: 4.0.0-rc.115
+
+  packages/sitemap:
+    dependencies:
+      '@thomasfosterau/effect-web':
+        specifier: workspace:^
+        version: link:../web
+    devDependencies:
+      '@effect/language-service':
+        specifier: 'catalog:'
+        version: 0.87.2
+      '@types/node':
+        specifier: 'catalog:'
+        version: 26.6.1
+      '@vitest/coverage-istanbul':
+        specifier: 'catalog:'
+        version: 4.1.11(supports-color@7.2.0)(vitest@4.1.11)
+      effect:
+        specifier: 4.0.0-rc.115
+        version: 4.0.0-rc.115
 
   packages/web:
     devDependencies:
