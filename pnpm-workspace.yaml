@@ -115,6 +115,25 @@ overrides:
   # `effect` MUST be a singleton (see the header): force every resolution to
   # the catalog version so a hoisting reshuffle cannot introduce a second copy.
   effect: "catalog:"
+  # hono / @hono/node-server / lodash — pulled in by alchemy (a devDependency
+  # here and a peer of effect-web-cloudflare) through `alchemy > @prisma/dev >
+  # …`. Build/deploy-time only: `@prisma/dev` is toolchain surface reached
+  # through alchemy, never bundled into a published package, and nothing here
+  # calls Prisma code. `pnpm audit --audit-level high` (ci.yml's Audit step)
+  # flags them regardless, so they take the applications' disposition, copied
+  # verbatim from website / gardeneria / preferenceflow: force the patched line
+  # rather than loosen the gate. Workspace-only — overrides do not travel with
+  # the published packages. Drop each when alchemy's transitive `@prisma/dev`
+  # reaches the patched version on its own.
+  #
+  # hono: GHSA-88fw-hqm2-52qc + GHSA-q5qw-h33p-qvwr (arbitrary file access via
+  # serveStatic); @hono/node-server: GHSA-wc8c-qw6v-h7f6 (authorization bypass
+  # for protected static paths); lodash: GHSA-r5fr-rjxr-66jc (code injection
+  # via `_.template`). All three are serveStatic / template surfaces this repo
+  # never reaches, which is why they are overrides and not a blocker.
+  hono: ^4.12.25
+  "@hono/node-server": ^1.19.10
+  lodash: ^4.17.24
 nodeLinker: hoisted
 allowBuilds:
   esbuild: true
