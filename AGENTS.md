@@ -12,7 +12,7 @@ This repository is the **`@thomasfosterau/effect-web` package family**: publisha
 | `@thomasfosterau/effect-web-robots` | `packages/robots` | RFC 9309: the `effect-robots.txt` library ported with its API kept (`parse` / `encode` / `isAllowed`), the crawler side (`fetchRobots` with the §2.3.1 failure posture, the `RobotsCache` seam, `evaluateRobots`, `makeRobotsChecker`) and the serving side (`robotsBody`). Peer: `effect` only. |
 | `@thomasfosterau/effect-web-sitemap` | `packages/sitemap` | `sitemap.xml` whole or streamed, the sitemap index, the JSON Feed 1.1 builder and the `Cache-Tag` purge-on-mutation helper, generic over each application's route map. Peer: `effect`; depends on `effect-web`. |
 
-Further packages land one issue each (see the tracker); every one adds a row here, a `CLAUDE.md` of its own, and its `#check` / `#docgen` edges in the root `vite.config.ts`.
+Further packages land one issue each (see the tracker); every one adds a row here, a `CLAUDE.md` of its own, and its `#check` / `#docgen` / `#build` (under `test:coverage`) edges in the root `vite.config.ts`.
 
 ## Common pitfalls
 
