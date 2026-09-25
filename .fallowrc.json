@@ -1,0 +1,51 @@
+{
+  "$schema": "https://raw.githubusercontent.com/fallow-rs/fallow/main/schema.json",
+  "entry": [
+    "packages/web/src/index.ts",
+    "packages/*/tests/**/*.test.ts",
+    "packages/*/tests/**/*.types.ts",
+    "**/vite.config.ts"
+  ],
+  "ignorePatterns": ["**/dist/**", "**/docs/**", "**/coverage/**"],
+  "ignoreDependencies": [
+    "@types/node",
+    "effect-solutions",
+    "@effect/docgen",
+    "@effect/tsgo",
+    "@effect/language-service",
+    "@typescript/native",
+    "typescript",
+    "tsx",
+    "vite",
+    "vitest",
+    "vite-plus",
+    "@changesets/cli",
+    "@changesets/changelog-github",
+    "@vitest/coverage-istanbul",
+    "fallow"
+  ],
+  "rules": {
+    "unused-files": "error",
+    "unused-exports": "error",
+    "unused-types": "error",
+    "unused-dependencies": "error",
+    "unused-dev-dependencies": "warn",
+    "unused-enum-members": "error",
+    "unused-class-members": "warn",
+    "unresolved-imports": "error",
+    "unlisted-dependencies": "error",
+    "duplicate-exports": "error",
+    "circular-dependencies": "error",
+    "boundary-violation": "error",
+    "stale-suppressions": "warn"
+  },
+  "boundaries": {
+    "zones": [{ "name": "web", "patterns": ["packages/web/**"] }],
+    "rules": [{ "from": "web", "allow": [] }]
+  },
+  "health": {
+    "maxCyclomatic": 20,
+    "maxCognitive": 15,
+    "maxCrap": 30
+  }
+}
