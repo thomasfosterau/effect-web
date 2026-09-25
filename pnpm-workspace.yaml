@@ -44,7 +44,7 @@ catalog:
   # imports unconditionally at module load, so any test that touches the
   # binding scaffold needs it resolvable. Declared explicitly so the
   # resolution is ours, not an accident of what something else hoisted.
-  "@effect/platform-node": 4.0.0-rc.115
+  "@effect/platform-node": 4.0.0-rc.117
   # Effect Language Service as a native (TypeScript-Go) binary — the TS7 side
   # of the 6/7 split. `effect-tsgo patch` overwrites the native `tsc` binary
   # with an Effect-patched build matched by gitHead, so this pins in lockstep
@@ -77,7 +77,7 @@ catalog:
   # adopt this package by bumping effect and alchemy together.
   alchemy: 2.0.0-beta.79
   "@vitest/coverage-istanbul": 4.1.11
-  effect: 4.0.0-rc.115
+  effect: 4.0.0-rc.117
   effect-solutions: ^0.5.3
   fallow: 3.25.0
   # The browser and server PostHog SDKs — optional peers of
