@@ -21,7 +21,7 @@ Hooks are managed by Vite+; the editable [.vite-hooks/pre-commit](.vite-hooks/pr
 3. `vp run -r test:unit`
 4. `vp run -r build`
 5. `vp run docgen`
-6. `fallow audit --base origin/main`
+6. `vp run test:coverage`, then `fallow audit --base origin/main` (the coverage map is what makes fallow's CRAP scores real)
 7. A changeset (`pnpm changeset`) for every change to a published package.
 8. `git fetch origin main && git rebase origin/main`
 9. Docs: the package `README.md` for any exported change; the package `CLAUDE.md` for a new term or invariant.
@@ -36,6 +36,7 @@ vp run --filter ./packages/web check     # one package's type gate
 vp run -r test:unit                      # unit tests
 vp test run tests/some.test.ts           # single file (from inside the package)
 vp run -r build                          # emit dist/
+vp run test:coverage                     # one Istanbul map for fallow
 vp run --filter ./packages/web docgen    # one package's examples + API reference
 vp run fallow:audit                      # change-set review (not a CI gate)
 ```

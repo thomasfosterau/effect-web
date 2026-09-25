@@ -11,7 +11,7 @@ Tick what you ran. Pre-commit covers format + lint; there is no pre-push hook.
 - [ ] `vp run -r test:unit`
 - [ ] `vp run -r build`
 - [ ] `vp run docgen` (every `@example` compiled and ran against `dist/`)
-- [ ] `fallow audit --base origin/main`
+- [ ] `vp run test:coverage` then `fallow audit --base origin/main`
 - [ ] A changeset under `.changeset/` for every published-package change
 
 ## Notes

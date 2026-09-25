@@ -9,7 +9,10 @@
     // which resolve through `exports` to `dist/`.) Relative to this file;
     // TypeScript 7 removed `baseUrl`.
     "paths": {
-      "@thomasfosterau/effect-web": ["./src/index.ts"]
+      "@thomasfosterau/effect-web": ["./src/index.ts"],
+      "@thomasfosterau/effect-web/net": ["./src/net/index.ts"],
+      "@thomasfosterau/effect-web/observability": ["./src/observability/index.ts"],
+      "@thomasfosterau/effect-web/negotiate": ["./src/negotiate/index.ts"]
     }
   },
   "include": ["src", "tests"]

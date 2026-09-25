@@ -5,9 +5,11 @@
   "description": "Framework-neutral web request/response utilities on effect/unstable/http: cache-control and security headers, Vary, the cross-origin guard, client IP, an SSRF-guarded fetch, structured logging and an allow-listed span tracer.",
   "keywords": [
     "cloudflare-workers",
+    "content-negotiation",
     "effect",
     "fetch",
     "http",
+    "ssrf",
     "sveltekit",
     "typescript"
   ],
@@ -35,6 +37,18 @@
     ".": {
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
+    },
+    "./net": {
+      "types": "./dist/net.d.ts",
+      "default": "./dist/net.js"
+    },
+    "./observability": {
+      "types": "./dist/observability.d.ts",
+      "default": "./dist/observability.js"
+    },
+    "./negotiate": {
+      "types": "./dist/negotiate.d.ts",
+      "default": "./dist/negotiate.js"
     }
   },
   "publishConfig": {
@@ -42,12 +56,19 @@
   },
   "devDependencies": {
     "@effect/language-service": "catalog:",
+    "@thomasfosterau/effect-jsonapi": "catalog:",
     "@types/node": "catalog:",
     "@vitest/coverage-istanbul": "catalog:",
     "effect": "catalog:"
   },
   "peerDependencies": {
+    "@thomasfosterau/effect-jsonapi": "catalog:peers",
     "effect": "catalog:peers"
+  },
+  "peerDependenciesMeta": {
+    "@thomasfosterau/effect-jsonapi": {
+      "optional": true
+    }
   },
   "engines": {
     "node": ">=22"

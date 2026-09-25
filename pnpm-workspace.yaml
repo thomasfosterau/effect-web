@@ -24,10 +24,27 @@ catalogMode: strict
 catalog:
   "@changesets/changelog-github": ^1.0.1
   "@changesets/cli": ^3.0.3
+  # Types only, for @thomasfosterau/effect-web-cloudflare (`KVNamespace`,
+  # `R2Bucket`, `ExecutionContext`, …); never a runtime dependency.
+  "@cloudflare/workers-types": ^5.20260823.1
   # Compiles AND RUNS every JSDoc `@example` (the `docgen` task); needs `tsx`
   # and a TypeScript JS API — the TS6 alias below satisfies its peer.
+  # The PostHog management-API SDK (Effect-native) the `./alchemy` entry of
+  # @thomasfosterau/effect-web-posthog derives its dashboard / feature-flag /
+  # survey CRUD from; an optional peer of that package. NOT preferenceflow's
+  # 1.0.0-rc.9: like alchemy beta.72, rc.9 still calls `Config.string` at
+  # module load (`lib/credentials.js`) and cannot be imported under effect
+  # rc.115; rc.12 is the first built for rc.115 (`peerDependencies.effect:
+  # ">=4.0.0-rc.115"`). Its operation names differ from rc.8's (website /
+  # gardeneria): `getDashboard`, not `dashboardsRetrieve`, etc.
+  "@distilled.cloud/posthog": 1.0.0-rc.12
   "@effect/docgen": ^0.5.2
   "@effect/language-service": ^0.87.2
+  # An OPTIONAL peer of alchemy that its `Cloudflare/Workers/WorkerBridge`
+  # imports unconditionally at module load, so any test that touches the
+  # binding scaffold needs it resolvable. Declared explicitly so the
+  # resolution is ours, not an accident of what something else hoisted.
+  "@effect/platform-node": 4.0.0-rc.115
   # Effect Language Service as a native (TypeScript-Go) binary — the TS7 side
   # of the 6/7 split. `effect-tsgo patch` overwrites the native `tsc` binary
   # with an Effect-patched build matched by gitHead, so this pins in lockstep
@@ -40,11 +57,34 @@ catalog:
   # before bumping any of the three.
   "@effect/tsgo": 0.45.0
   "@mpsuesser/oxlint-plugin-effect": ^0.5.0
+  # Optional peer of @thomasfosterau/effect-web: only the `./negotiate` entry
+  # imports it (the JSON:API §5/§6 media-type rules are adopted from its
+  # `Middleware`, never re-implemented here).
+  "@thomasfosterau/effect-jsonapi": ^0.14.0
   "@types/node": ^26.4.1
+  # The Workers / Alchemy runtime the cloudflare package's scaffold mirrors:
+  # `runtimeStubsLayer` reproduces what alchemy's `WorkerBridge` provides
+  # inside its own entrypoints, so the package is pinned to one exact beta
+  # (the peer range is equally tight — see `catalogs.peers` below).
+  #
+  # NOT the applications' 2.0.0-beta.72: effect 4.0.0-rc.115 renamed
+  # `Config.string` → `Config.String` (and the other primitives likewise), and
+  # beta.72 still calls the old name at module load in 27 files, so
+  # `import "alchemy/Cloudflare"` throws `Config.string is not a function`
+  # under rc.115 — the pair preferenceflow's catalog currently declares.
+  # beta.79 (npm `latest`) is the first alchemy built for rc.115
+  # (`peerDependencies.effect: ">=4.0.0-rc.115"`); website / gardeneria
+  # adopt this package by bumping effect and alchemy together.
+  alchemy: 2.0.0-beta.79
   "@vitest/coverage-istanbul": 4.1.11
   effect: 4.0.0-rc.115
   effect-solutions: ^0.5.3
   fallow: 3.25.0
+  # The browser and server PostHog SDKs — optional peers of
+  # @thomasfosterau/effect-web-posthog's `./browser` and `./server` entries;
+  # here as devDependencies for the tests and the emitted declarations.
+  posthog-js: ^1.429.5
+  posthog-node: ^5.52.1
   # Runs docgen's compiled examples.
   tsx: ^4.23.13
   # TypeScript 6/7 side-by-side: TS7 (the native Go compiler) ships no JS API
@@ -73,7 +113,18 @@ catalog:
 # replaces `catalog:peers` with these ranges in the published manifest.
 catalogs:
   peers:
-    effect: ">=4.0.0-rc.112"
+    "@cloudflare/workers-types": ">=5.20260823.1"
+    "@distilled.cloud/posthog": ">=1.0.0-rc.12"
+    "@thomasfosterau/effect-jsonapi": ">=0.14.0"
+    # Tight on purpose: the runtime scaffold mirrors `WorkerBridge` internals
+    # of this exact beta. Widen only after re-reading those internals.
+    alchemy: 2.0.0-beta.79
+    # rc.115 renamed `Config.string` → `Config.String` (and the other
+    # primitives); everything here is built and tested against rc.115, and
+    # alchemy 2.0.0-beta.79 requires it too.
+    effect: ">=4.0.0-rc.115"
+    posthog-js: ">=1.429.5"
+    posthog-node: ">=5.52.1"
 
 overrides:
   vite: "catalog:"
@@ -81,11 +132,39 @@ overrides:
   # `effect` MUST be a singleton (see the header): force every resolution to
   # the catalog version so a hoisting reshuffle cannot introduce a second copy.
   effect: "catalog:"
+  # hono / @hono/node-server / lodash — pulled in by alchemy (a devDependency
+  # here and a peer of effect-web-cloudflare) through `alchemy > @prisma/dev >
+  # …`. Build/deploy-time only: `@prisma/dev` is toolchain surface reached
+  # through alchemy, never bundled into a published package, and nothing here
+  # calls Prisma code. `pnpm audit --audit-level high` (ci.yml's Audit step)
+  # flags them regardless, so they take the applications' disposition, copied
+  # verbatim from website / gardeneria / preferenceflow: force the patched line
+  # rather than loosen the gate. Workspace-only — overrides do not travel with
+  # the published packages. Drop each when alchemy's transitive `@prisma/dev`
+  # reaches the patched version on its own.
+  #
+  # hono: GHSA-88fw-hqm2-52qc + GHSA-q5qw-h33p-qvwr (arbitrary file access via
+  # serveStatic); @hono/node-server: GHSA-wc8c-qw6v-h7f6 (authorization bypass
+  # for protected static paths); lodash: GHSA-r5fr-rjxr-66jc (code injection
+  # via `_.template`). All three are serveStatic / template surfaces this repo
+  # never reaches, which is why they are overrides and not a blocker.
+  hono: ^4.12.25
+  "@hono/node-server": ^1.19.10
+  lodash: ^4.17.24
 nodeLinker: hoisted
 allowBuilds:
   esbuild: true
   fallow: true
   msgpackr-extract: true
+  # alchemy's Cloudflare runtime pulls `workerd`; its postinstall fetches the
+  # platform binary the local dev path needs (never exercised here, but a
+  # refused build script fails the install under pnpm's strict default).
+  workerd: true
+  # `sharp` arrives via alchemy's toolchain (image resizing in local dev);
+  # its native build is never needed here.
+  sharp: false
+  # posthog-js > core-js: its postinstall only prints a funding banner.
+  core-js: false
 peerDependencyRules:
   allowAny:
     - vite

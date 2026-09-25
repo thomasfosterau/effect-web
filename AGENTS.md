@@ -7,6 +7,10 @@ This repository is the **`@thomasfosterau/effect-web` package family**: publisha
 | Package | Directory | What it is |
 | --- | --- | --- |
 | `@thomasfosterau/effect-web` | `packages/web` | Framework-neutral request/response utilities: headers, Vary, cache-control, the cross-origin guard, client IP, SSRF-guarded fetch, structured log + span tracer, the content-negotiation dispatch verdict. Peer: `effect` only. |
+| `@thomasfosterau/effect-web-posthog` | `packages/posthog` | **Prototype.** PostHog for the applications: the Alchemy providers for a project's environment tokens, dashboards, feature flags and surveys (`./alchemy`), the server-side `PostHog` service, per-request `posthog-node` client and the `/ingest` reverse proxy (`./server`), the lazily loaded `posthog-js` client (`./browser`), and the shared event scrubber (`.`). Peers: `effect`; optional `alchemy` + `@distilled.cloud/posthog`, `posthog-node`, `posthog-js`. |
+| `@thomasfosterau/effect-web-cloudflare` | `packages/cloudflare` | The Cloudflare Workers / Alchemy runtime scaffold (per-request / per-event binding layers, the execution-context lifecycle, the `Scheduler` bridge, the read-path query counter), the Hyperdrive `Database` seam with the pg client injected, queue producer / consumer glue, the KV read-through resource cache, and the in-memory binding stubs. Peers: `effect`, `alchemy` (exact beta), `@cloudflare/workers-types` (optional). |
+| `@thomasfosterau/effect-web-robots` | `packages/robots` | RFC 9309: the `effect-robots.txt` library ported with its API kept (`parse` / `encode` / `isAllowed`), the crawler side (`fetchRobots` with the §2.3.1 failure posture, the `RobotsCache` seam, `evaluateRobots`, `makeRobotsChecker`) and the serving side (`robotsBody`). Peer: `effect` only. |
+| `@thomasfosterau/effect-web-sitemap` | `packages/sitemap` | `sitemap.xml` whole or streamed, the sitemap index, the JSON Feed 1.1 builder and the `Cache-Tag` purge-on-mutation helper, generic over each application's route map. Peer: `effect`; depends on `effect-web`. |
 
 Further packages land one issue each (see the tracker); every one adds a row here, a `CLAUDE.md` of its own, and its `#check` / `#docgen` edges in the root `vite.config.ts`.
 
@@ -44,6 +48,7 @@ Everything else that must be visible when touching a package is in that package'
 - `vp run -r test:unit` — unit tests (node Vitest; nothing here needs a database or a credential).
 - `vp run -r build` — `vp pack` → every package's `dist/`.
 - `vp run docgen` — every package's docgen: compiles and runs each `@example` against `dist/`, writes the (git-ignored) API reference under `packages/*/docs/`.
+- `vp run test:coverage` — every package's unit suite under one Istanbul map at `coverage/coverage-final.json`, which `fallow audit` reads for exact per-function CRAP scores. Run it before the audit: without the map fallow scores every function as uncovered, and any function with cyclomatic complexity ≥ 5 fails the gate on its own.
 - `pnpm changeset` — add a changeset; every change to a published package needs one. Releases are cut by the `Release` workflow (changesets/action) on `main`.
 
 Invoke everything through `vp` (`vp exec` instead of `npx`; `vp run <task>` instead of bare `pnpm`). The sanctioned non-`vp` invocations: `pnpm install` (and `pnpm install --frozen-lockfile` in CI), `pnpm changeset` / `pnpm publish` on the release path.
@@ -87,7 +92,7 @@ These are standing instructions and approvals; they override any default "don't 
 
 ## Fallow local gate
 
-Before any `git commit` or `git push`, run `fallow audit --format json --quiet --explain --gate-marker agent`. If the verdict is `fail`, fix the reported findings before retrying. Treat JSON runtime errors like `{ "error": true, ... }` as non-blocking. Audit defaults to `gate=new-only`: only findings introduced by the current changeset affect the verdict.
+Before any `git commit` or `git push`, run `vp run test:coverage` and then `fallow audit --format json --quiet --explain --gate-marker agent` (the commit hook runs the audit; the coverage map is what makes its CRAP scores real). If the verdict is `fail`, fix the reported findings before retrying. Treat JSON runtime errors like `{ "error": true, ... }` as non-blocking. Audit defaults to `gate=new-only`: only findings introduced by the current changeset affect the verdict.
 
 ## Fallow task map
 

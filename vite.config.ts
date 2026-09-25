@@ -92,6 +92,26 @@ export default defineConfig({
       "effect/avoid-option-getorthrow": "warn",
       "effect/no-barrel-imports": "warn",
       "effect/throw-in-effect-gen": "warn",
+      // ---- Effect preset: rules this workspace's conventions cut across ----
+      // `prefer-option-over-null` also fires on `?: T | undefined`, which is
+      // the ONLY spelling of an optional member `exactOptionalPropertyTypes`
+      // lets a caller forward an optional of its own into (AGENTS.md). A bare
+      // `null` / `undefined` in a return type is still a finding to read; the
+      // options-object members are not.
+      "effect/prefer-option-over-null": "warn",
+      // `unknown` is the honest type at the two boundaries these libraries
+      // sit on: a caught failure handed to an error tracker or a log line
+      // (`describeError`, `describeSessionDegraded`), and the free-form
+      // fields of a structured log event. Parsing them would change the
+      // applications' log shape.
+      "effect/no-unknown-parameters": "warn",
+      // Same boundaries, other direction: a KV `get` resolves whatever was
+      // stored, an R2 `json()` whatever was archived, a queue message carries
+      // whatever the producer sent. The platform contracts return `unknown`
+      // and the caller decodes (`decodeQueueMessage`, the cache's schema).
+      "effect/no-unknown-returns": "warn",
+      "effect/no-unsafe-dictionary-type": "warn",
+      "effect/no-runtime-typeof": "warn",
       "typescript/no-explicit-any": "off",
       "typescript/no-empty-object-type": "off",
       "typescript/ban-ts-comment": "off",
@@ -105,7 +125,7 @@ export default defineConfig({
       // `node:*` are the only things that work there. The Effect preset's
       // service rules have no satisfiable fix in these files.
       {
-        files: ["**/vite.config.ts", "**/vitest.config.ts"],
+        files: ["**/vite.config.ts", "**/vitest.config.ts", "vite.package.ts"],
         rules: {
           "effect/avoid-node-imports": "off",
           "effect/avoid-sync-fs": "off",
@@ -128,6 +148,20 @@ export default defineConfig({
         rules: {
           "eslint/no-unused-vars": "off",
           "effect/avoid-ts-ignore": "off",
+        },
+      },
+      // Test fixtures are the seams under test, not domain code: a cast that
+      // drops alchemy's deploy-time provider tags after `Effect.provide`, a
+      // wall-clock `Date` standing in for a publication stamp, a `CI`
+      // variable toggled to drive a reporter. Each stays visible as a
+      // warning; none can be written another way in a fixture.
+      {
+        files: ["**/tests/**/*.ts"],
+        rules: {
+          "effect/require-safety-comment-for-type-assertion": "warn",
+          "effect/use-clock-service": "warn",
+          "effect/avoid-process-env": "warn",
+          "effect/require-effect-concurrency": "warn",
         },
       },
     ],
@@ -153,7 +187,13 @@ export default defineConfig({
       // devDependencies — so a new package adds itself to BOTH lists here.
       check: {
         command: "echo 'check: every type gate green'",
-        dependsOn: ["@thomasfosterau/effect-web#check"],
+        dependsOn: [
+          "@thomasfosterau/effect-web#check",
+          "@thomasfosterau/effect-web-cloudflare#check",
+          "@thomasfosterau/effect-web-posthog#check",
+          "@thomasfosterau/effect-web-robots#check",
+          "@thomasfosterau/effect-web-sitemap#check",
+        ],
         cache: false,
       },
       // Every package's docgen: compiles AND RUNS each JSDoc `@example`
@@ -161,9 +201,37 @@ export default defineConfig({
       // package's (git-ignored) `docs/`. Same pure-graph-node shape.
       docgen: {
         command: "echo 'docgen: every example compiled and ran'",
-        dependsOn: ["@thomasfosterau/effect-web#docgen"],
+        dependsOn: [
+          "@thomasfosterau/effect-web#docgen",
+          "@thomasfosterau/effect-web-cloudflare#docgen",
+          "@thomasfosterau/effect-web-posthog#docgen",
+          "@thomasfosterau/effect-web-robots#docgen",
+          "@thomasfosterau/effect-web-sitemap#docgen",
+        ],
         cache: false,
       },
+      // Every package's unit suite under one Istanbul coverage map
+      // (`coverage/coverage-final.json`), which `fallow audit` reads for exact
+      // per-function CRAP scores (`health.coverage` in .fallowrc.json).
+      // Without it fallow estimates every function as uncovered, and any
+      // function with cyclomatic complexity ≥ 5 fails the gate on its own.
+      // Run this before `fallow audit` (the commit hook runs the audit).
+      "test:coverage": {
+        command: "vp test run --coverage",
+        cache: false,
+      },
+    },
+  },
+  test: {
+    // One entry per package: each package's own vite.config.ts is a vitest
+    // project, so the root run and the root coverage map cover them all.
+    projects: ["packages/*/vite.config.ts"],
+    coverage: {
+      provider: "istanbul",
+      reporter: ["text-summary", "json-summary", "json"],
+      reportsDirectory: "./coverage",
+      include: ["packages/*/src/**/*.ts"],
+      exclude: ["**/*.d.ts"],
     },
   },
 });
