@@ -184,7 +184,8 @@ export default defineConfig({
       // under tsconfig.json, the type-level tests under tsconfig.test.json).
       // A pure graph node. The packages are named explicitly — a `from:
       // "dependencies"` edge does not traverse the workspace root's own
-      // devDependencies — so a new package adds itself to BOTH lists here.
+      // devDependencies — so a new package adds itself to EVERY list here
+      // (`check`, `docgen`, `test:coverage`).
       check: {
         command: "echo 'check: every type gate green'",
         dependsOn: [
@@ -216,8 +217,22 @@ export default defineConfig({
       // Without it fallow estimates every function as uncovered, and any
       // function with cyclomatic complexity ≥ 5 fails the gate on its own.
       // Run this before `fallow audit` (the commit hook runs the audit).
+      //
+      // Unlike each package's own `test:unit`, this one vitest process runs
+      // every package's suite, so no `{ from: "dependencies" }` edge builds
+      // the siblings a suite imports through `exports` (→ `dist/`); on a
+      // clean tree those suites fail to resolve. Every package's `build` is
+      // named explicitly (cached, so a warm tree pays nothing) — a new
+      // package adds itself to this list as well.
       "test:coverage": {
         command: "vp test run --coverage",
+        dependsOn: [
+          "@thomasfosterau/effect-web#build",
+          "@thomasfosterau/effect-web-cloudflare#build",
+          "@thomasfosterau/effect-web-posthog#build",
+          "@thomasfosterau/effect-web-robots#build",
+          "@thomasfosterau/effect-web-sitemap#build",
+        ],
         cache: false,
       },
     },
