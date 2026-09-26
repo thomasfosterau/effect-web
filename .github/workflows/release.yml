@@ -84,16 +84,20 @@ jobs:
       # When changesets are pending, this opens/updates a "Version Packages" PR
       # (via `pnpm run version`). Once that PR is merged (no changesets remain),
       # it runs `pnpm run release`, which builds every package, publishes each
-      # with `pnpm publish` (pnpm's own OIDC trusted publishing — there is no
-      # NPM_TOKEN to steal) and then `changeset tag`. The action parses the
-      # "New tag:" output, pushes the tags and creates the GitHub releases.
+      # with `pnpm publish --ignore-scripts` (pnpm's own OIDC trusted
+      # publishing — there is no NPM_TOKEN to steal; `--ignore-scripts` keeps
+      # any `prepublishOnly` / `prepack` / `publish` lifecycle script a package
+      # might grow out of this id-token job) and then `changeset tag`. The
+      # action parses the "New tag:" output, pushes the tags and creates the
+      # GitHub releases.
       #
-      # Provenance: pnpm 11 ignores `NPM_CONFIG_*` variables (it reads only
-      # `pnpm_config_*`), so there is no provenance switch here. Left unset,
-      # pnpm attaches provenance by itself when the OIDC token says the
-      # repository is public, and skips it with a warning
-      # (ERR_PNPM_PROVENANCE_INSUFFICIENT_INFORMATION) while it is private —
-      # forcing it on would make npm reject a publish from a private repo.
+      # Provenance: pnpm 11 takes settings like `provenance` only from
+      # `pnpm_config_*` (an `NPM_CONFIG_PROVENANCE` would be ignored), and none
+      # is set here. Left unset, pnpm attaches provenance by itself only when
+      # the OIDC token reports a public repository AND the registry reports
+      # the package as public; while this repository is private it skips it
+      # with a warning (ERR_PNPM_PROVENANCE_INSUFFICIENT_INFORMATION). Forcing
+      # it on would make npm reject a publish from a private repo.
       #
       # v2 of the action pairs with Changesets CLI v3 (`@changesets/cli` in
       # devDependencies) and renamed its inputs from v1's `version` / `publish`
