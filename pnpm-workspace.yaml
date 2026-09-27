@@ -61,7 +61,7 @@ catalog:
   # imports it (the JSON:API §5/§6 media-type rules are adopted from its
   # `Middleware`, never re-implemented here).
   "@thomasfosterau/effect-jsonapi": ^0.14.0
-  "@types/node": ^26.4.1
+  "@types/node": ^26.6.3
   # The Workers / Alchemy runtime the cloudflare package's scaffold mirrors:
   # `runtimeStubsLayer` reproduces what alchemy's `WorkerBridge` provides
   # inside its own entrypoints, so the package is pinned to one exact beta
