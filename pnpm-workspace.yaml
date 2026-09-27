@@ -84,7 +84,7 @@ catalog:
   # @thomasfosterau/effect-web-posthog's `./browser` and `./server` entries;
   # here as devDependencies for the tests and the emitted declarations.
   posthog-js: ^1.434.12
-  posthog-node: ^5.52.1
+  posthog-node: ^5.54.1
   # Runs docgen's compiled examples.
   tsx: ^4.23.15
   # TypeScript 6/7 side-by-side: TS7 (the native Go compiler) ships no JS API
