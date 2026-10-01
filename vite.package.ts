@@ -53,11 +53,56 @@ const escapeRegExp = (value: string) => value.replace(/[.*+?^${}()|[\]\\/]/g, "\
 /** Set (by `test:alchemy` only) to include the alchemy-bound suites in a run. */
 const ALCHEMY_ENV = "EFFECT_WEB_ALCHEMY_TESTS";
 
+/** The test globs held out of the required path (`[]` when none). */
+const alchemyGlobsOf = (
+  alchemyTests: PackageConfigOptions["alchemyTests"],
+): ReadonlyArray<string> =>
+  alchemyTests === undefined ? [] : alchemyTests === "all" ? ["tests/**"] : alchemyTests;
+
+/** `test:unit` / `test:coverage`: absent when every suite is alchemy-bound. */
+const unitTasks = (allAlchemy: boolean) =>
+  allAlchemy
+    ? {}
+    : {
+        "test:unit": {
+          command: "vp test run tests",
+          dependsOn: [siblingBuild],
+          env: ["VITEST_MAX_WORKERS", "NODE_OPTIONS"],
+          input: cacheInputs,
+          output: [],
+        },
+        "test:coverage": {
+          command: "vp test run tests --coverage",
+          dependsOn: [siblingBuild],
+          env: ["VITEST_MAX_WORKERS", "NODE_OPTIONS"],
+          input: cacheInputs,
+          output: ["coverage/**"],
+        },
+      };
+
+/**
+ * The alchemy-bound suites (see `alchemyTests`): RED until alchemy ships an
+ * rc.118 build; run by the non-required `alchemy` CI job.
+ */
+const alchemyTasks = (globs: ReadonlyArray<string>) =>
+  globs.length === 0
+    ? {}
+    : {
+        "test:alchemy": {
+          command: `${ALCHEMY_ENV}=1 vp test run tests`,
+          dependsOn: [siblingBuild],
+          cache: false,
+        },
+      };
+
+/** Vitest `exclude`: the alchemy-bound globs unless `test:alchemy` is running. */
+const alchemyExclude = (globs: ReadonlyArray<string>) =>
+  process.env[ALCHEMY_ENV] === "1" || globs.length === 0
+    ? {}
+    : { exclude: ["**/node_modules/**", "**/dist/**", ...globs] };
+
 export const packageConfig = ({ url, name, entries, alchemyTests }: PackageConfigOptions) => {
-  const alchemyGlobs: ReadonlyArray<string> =
-    alchemyTests === undefined ? [] : alchemyTests === "all" ? ["tests/**"] : alchemyTests;
-  const includeAlchemy = process.env[ALCHEMY_ENV] === "1";
-  const allAlchemy = alchemyTests === "all";
+  const alchemyGlobs = alchemyGlobsOf(alchemyTests);
   const srcDir = new URL("./src/", url).pathname;
   const subpaths = entries.filter((entry) => entry !== "index");
   const entry = Object.fromEntries(
@@ -86,35 +131,8 @@ export const packageConfig = ({ url, name, entries, alchemyTests }: PackageConfi
           input: cacheInputs,
           output: ["dist/**"],
         },
-        ...(allAlchemy
-          ? {}
-          : {
-              "test:unit": {
-                command: "vp test run tests",
-                dependsOn: [siblingBuild],
-                env: ["VITEST_MAX_WORKERS", "NODE_OPTIONS"],
-                input: cacheInputs,
-                output: [],
-              },
-              "test:coverage": {
-                command: "vp test run tests --coverage",
-                dependsOn: [siblingBuild],
-                env: ["VITEST_MAX_WORKERS", "NODE_OPTIONS"],
-                input: cacheInputs,
-                output: ["coverage/**"],
-              },
-            }),
-        // The alchemy-bound suites (see `alchemyTests`): RED until alchemy
-        // ships an rc.118 build; run by the non-required `alchemy` CI job.
-        ...(alchemyGlobs.length === 0
-          ? {}
-          : {
-              "test:alchemy": {
-                command: `${ALCHEMY_ENV}=1 vp test run tests`,
-                dependsOn: [siblingBuild],
-                cache: false,
-              },
-            }),
+        ...unitTasks(alchemyTests === "all"),
+        ...alchemyTasks(alchemyGlobs),
         // Compiles AND RUNS every JSDoc `@example` (see docgen.json). Examples
         // import the package by name exactly as a consumer would, which
         // resolves through `exports` to `dist/` — hence the build edge.
@@ -155,9 +173,7 @@ export const packageConfig = ({ url, name, entries, alchemyTests }: PackageConfi
     },
     test: {
       include: ["tests/**/*.test.ts"],
-      ...(includeAlchemy || alchemyGlobs.length === 0
-        ? {}
-        : { exclude: ["**/node_modules/**", "**/dist/**", ...alchemyGlobs] }),
+      ...alchemyExclude(alchemyGlobs),
       testTimeout: 30_000,
       ...(maxWorkers === undefined ? {} : { maxWorkers: Number(maxWorkers) }),
       coverage: {
