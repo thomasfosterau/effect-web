@@ -1,8 +1,8 @@
 # @thomasfosterau/effect-web
 
-Framework-neutral web request/response utilities on `effect/http`, extracted from the `thomasfosterau/website`, `thomasfosterau/gardeneria` and `thomasfosterau/preferenceflow` applications: the same Fetch-API-level plumbing each of them carried, byte-identical or differing only in comments, now once, with no SvelteKit, Alchemy or Cloudflare dependency, so it serves a SvelteKit hook, an `HttpApi` middleware or a bare Worker equally.
+Framework-neutral web request/response utilities on `effect/http`: cache-control and security headers, Vary, the cross-origin guard, client IP, an SSRF-guarded fetch, structured logging and an allow-listed span tracer. Extracted from the `thomasfosterau/website`, `thomasfosterau/gardeneria` and `thomasfosterau/preferenceflow` applications with no SvelteKit, Alchemy or Cloudflare dependency, so it serves a SvelteKit hook, an `HttpApi` middleware or a bare Worker equally.
 
-Every helper's doc comment names the application behaviour it carries and the invariant id it honours (`CACHE-AUTH-003`, `SEC-SSRF-003`, `SEC-CSRF-001`, `PERF-CACHE-001/005`, `SEC-SSRF-005`); those ids and the `#NNN` issue citations point at the applications' specs, the evidence behind each decision.
+Invariant ids in doc comments (`CACHE-AUTH-003`, `SEC-SSRF-003`, …) name rules from the source applications' specs; `#NNN` citations are issues in those applications.
 
 ## Install
 
@@ -21,13 +21,15 @@ pnpm add @thomasfosterau/effect-web effect
 
 Every entry is `sideEffects: false`: no top-level statements in `dist/`.
 
-## The SvelteKit hook recipe
+## Usage
+
+### A SvelteKit hook
 
 The helpers are written over `effect/http`'s `Headers`, `HttpServerRequest` and `HttpServerResponse`. Three adapters bridge to the Fetch types a SvelteKit `Handle` deals in: `HttpServerRequest.fromWeb` (Effect's own) for a request, `HttpServerResponse.toWeb` (Effect's own) for a whole response, and this package's `updateWebHeaders` / `applyToWebHeaders` for a header policy on a Fetch `Response`. The `*Web` functions (`crossOriginMutationRejectionWeb`, `jsonApiErrorResponseWeb`, `negotiateWebRequest`, `requestForRouterWeb`) are those adapters pre-applied.
 
 ```ts
 // hooks.server.ts
-import type { Handle } from "@sveltejs/kit";
+import type { Handle, RequestEvent } from "@sveltejs/kit";
 import { sequence } from "@sveltejs/kit/hooks";
 import * as Option from "effect/Option";
 import {
@@ -35,6 +37,7 @@ import {
   cacheControlForViewer,
   classifyRoute,
   crossOriginMutationRejectionWeb,
+  ensureCacheControl,
   responseVary,
   securityHeaders,
   stageNoindex,
@@ -42,49 +45,69 @@ import {
 } from "@thomasfosterau/effect-web";
 import {
   chooseNegotiatedResponse,
+  endpointPaths,
   makeApiPathMatcher,
+  makeMarkdownPathMatcher,
   negotiateWebRequest,
 } from "@thomasfosterau/effect-web/negotiate";
-import { PUBLIC_STAGE } from "$env/static/public";
 
-const isApiPath = makeApiPathMatcher(endpointPaths(allApiGroups));
+/** What the application supplies. */
+interface App {
+  readonly apiGroups: Parameters<typeof endpointPaths>[0]; // the served HttpApi groups
+  readonly markdownSegments: ReadonlyArray<string>; // e.g. ["posts", "people"]
+  readonly indexable: boolean; // true on the production stage only
+  readonly authentication: Handle; // resolves `event.locals.user`
+  readonly forwardJsonApi: (request: Request) => Promise<Response>;
+  readonly renderMarkdown: (event: RequestEvent) => Promise<Option.Option<Response>>;
+}
 
-// Outermost: the post-`resolve` header stamp lands on the final response.
-const applyHeaders: Handle = async ({ event, resolve }) => {
-  const response = await resolve(event);
-  applyToWebHeaders(response.headers, (headers) =>
-    responseVary(
-      stageNoindex(securityHeaders(headers), { indexable: PUBLIC_STAGE === "production" }),
-      classifyRoute(event.url.pathname),
-    ),
-  );
-  return response;
+export const makeHandle = (app: App): Handle => {
+  const isApiPath = makeApiPathMatcher(endpointPaths(app.apiGroups));
+  const isMarkdownPath = makeMarkdownPathMatcher(app.markdownSegments);
+
+  // Outermost: the post-`resolve` header stamp lands on the final response.
+  const applyHeaders: Handle = async ({ event, resolve }) => {
+    const response = await resolve(event);
+    applyToWebHeaders(response.headers, (headers) =>
+      responseVary(
+        stageNoindex(securityHeaders(headers), { indexable: app.indexable }),
+        classifyRoute(event.url.pathname),
+      ),
+    );
+    return response;
+  };
+
+  // The JSON:API forward, outside the render middleware: a cross-origin
+  // mutation is refused (already `private, no-store`); anything else gets the
+  // CACHE-AUTH-003 safety net, since `cacheControl` below never sees it.
+  const forward: Handle = async ({ event, resolve }) => {
+    if (!negotiateWebRequest(event.request, { isApiPath }).dispatch) return resolve(event);
+    const rejected = crossOriginMutationRejectionWeb(event.request);
+    if (Option.isSome(rejected)) return rejected.value;
+    return updateWebHeaders(await app.forwardJsonApi(event.request), ensureCacheControl);
+  };
+
+  // After `authentication` (reads the resolved viewer), before `negotiate`
+  // (stamps whichever representation is returned): CACHE-AUTH-003.
+  const cacheControl: Handle = async ({ event, resolve }) =>
+    updateWebHeaders(await resolve(event), (headers) =>
+      cacheControlForViewer(headers, { viewerResolved: event.locals.user !== null }),
+    );
+
+  // Innermost: the Markdown representation, or SvelteKit's own render.
+  const negotiate: Handle = async ({ event, resolve }) => {
+    const verdict = negotiateWebRequest(event.request, { isApiPath, isMarkdownPath });
+    if (verdict.markdown === true) {
+      return chooseNegotiatedResponse(await app.renderMarkdown(event), () => resolve(event));
+    }
+    return resolve(event);
+  };
+
+  return sequence(applyHeaders, forward, app.authentication, cacheControl, negotiate);
 };
-
-// After `authentication` (reads the resolved viewer), before `negotiate`
-// (stamps whichever representation is returned): CACHE-AUTH-003.
-const cacheControl: Handle = async ({ event, resolve }) =>
-  updateWebHeaders(await resolve(event), (headers) =>
-    cacheControlForViewer(headers, { viewerResolved: event.locals.user !== null }),
-  );
-
-// Innermost: the Markdown representation, or SvelteKit's own render.
-const negotiate: Handle = async ({ event, resolve }) => {
-  const verdict = negotiateWebRequest(event.request, { isApiPath, isMarkdownPath });
-  if (verdict.markdown) {
-    return chooseNegotiatedResponse(await renderMarkdownResponse(event), () => resolve(event));
-  }
-  return resolve(event);
-};
-
-// The JSON:API forward, outside the render middleware entirely.
-const forwardJsonApi = (event): Option.Option<Response> =>
-  crossOriginMutationRejectionWeb(event.request); // Some(403) → return it as-is: it is already stamped
-
-export const handle = sequence(applyHeaders, authentication, cacheControl, negotiate);
 ```
 
-A response that bypasses the middleware (a JSON:API forward, an auth short-circuit) still gets the safety net: `updateWebHeaders(response, ensureCacheControl)`.
+A response that bypasses the middleware (an auth short-circuit) still gets the safety net: `updateWebHeaders(response, ensureCacheControl)`. A verdict with an `error` (406 / 415) is answered with `jsonApiErrorResponseWeb(verdict.error)`.
 
 ## API
 
@@ -138,3 +161,7 @@ Pure `(headers: Headers.Headers) => Headers.Headers` functions; compose them and
 - `MARKDOWN_MEDIA_TYPE`, `Representation`, `Negotiation`.
 
 What is adopted from `@thomasfosterau/effect-jsonapi` and what is not: the JSON:API §5/§6 media-type-parameter rule (`ext` / `profile` only; every `ext` URI must be declared) runs through `Middleware.negotiate` for a write and `Middleware.contentTypeIsAcceptable` per `Accept` instance. The **ranking** — whether the JSON:API or Markdown instance outranks every other media type the client offered (`q`, ties win, an unparsable `q` reads as `1`) — is local, because a JSON:API-only server never chooses between representations. Two consequences differ from the applications' hand-rolled parser: an undeclared `ext` is now a 406 / 415 (spec-correct), and the §6 error `code`s are effect-jsonapi's (`not_acceptable`, `unsupported_media_type`).
+
+## License
+
+MIT — see [LICENSE](LICENSE).
