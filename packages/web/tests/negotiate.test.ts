@@ -12,7 +12,7 @@
  */
 import { describe, expect, it } from "vite-plus/test";
 import * as Option from "effect/Option";
-import * as HttpServerRequest from "effect/unstable/http/HttpServerRequest";
+import * as HttpServerRequest from "effect/http/HttpServerRequest";
 import { ApiError } from "@thomasfosterau/effect-jsonapi";
 import {
   CROSS_ORIGIN_REJECTED,

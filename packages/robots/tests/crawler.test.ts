@@ -11,9 +11,9 @@
 import { describe, expect, it } from "vite-plus/test";
 import * as Effect from "effect/Effect";
 import * as Option from "effect/Option";
-import * as HttpClient from "effect/unstable/http/HttpClient";
-import * as HttpClientError from "effect/unstable/http/HttpClientError";
-import * as HttpClientResponse from "effect/unstable/http/HttpClientResponse";
+import * as HttpClient from "effect/http/HttpClient";
+import * as HttpClientError from "effect/http/HttpClientError";
+import * as HttpClientResponse from "effect/http/HttpClientResponse";
 import {
   evaluateRobots,
   fetchRobots,

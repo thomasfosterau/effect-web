@@ -14,8 +14,8 @@ import * as Context from "effect/Context";
 import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
 import * as Option from "effect/Option";
-import * as HttpServerRequest from "effect/unstable/http/HttpServerRequest";
-import * as HttpServerResponse from "effect/unstable/http/HttpServerResponse";
+import * as HttpServerRequest from "effect/http/HttpServerRequest";
+import * as HttpServerResponse from "effect/http/HttpServerResponse";
 import { PostHog as PostHogClient } from "posthog-node";
 import { applyToWebHeaders, resolveClientIp, securityHeaders } from "@thomasfosterau/effect-web";
 import { resolveProjectToken, scrubPostHogEvent } from "../index.ts";
@@ -415,7 +415,7 @@ export const proxyIngestRequest = async (
 };
 
 /**
- * {@link proxyIngestRequest} as an `effect/unstable/http` handler: reads the
+ * {@link proxyIngestRequest} as an `effect/http` handler: reads the
  * `HttpServerRequest` in context, proxies its Web form, and answers with the
  * upstream response as a raw `HttpServerResponse`. For an `HttpRouter` /
  * `HttpApp` front door whose `<prefix>` branch is this handler.
@@ -423,7 +423,7 @@ export const proxyIngestRequest = async (
  * @example
  * ```ts
  * import * as Effect from "effect/Effect"
- * import * as HttpServerRequest from "effect/unstable/http/HttpServerRequest"
+ * import * as HttpServerRequest from "effect/http/HttpServerRequest"
  * import { ingestProxy } from "@thomasfosterau/effect-web-posthog/server"
  *
  * const response = await Effect.runPromise(

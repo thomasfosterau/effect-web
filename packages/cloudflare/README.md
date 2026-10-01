@@ -10,7 +10,7 @@ Every export's doc comment names the application behaviour it carries and the in
 pnpm add @thomasfosterau/effect-web-cloudflare @thomasfosterau/effect-web @thomasfosterau/effect-web-robots effect alchemy@2.0.0-beta.79
 ```
 
-Peers: `effect` (>= 4.0.0-rc.115), `alchemy` (**exactly** `2.0.0-beta.79` — the runtime scaffold mirrors that beta's `WorkerBridge` internals; note that `2.0.0-beta.72` cannot be imported under effect rc.115 at all, since rc.115 renamed `Config.string` to `Config.String` and beta.72 still calls the old name at module load), and `@cloudflare/workers-types` (optional, types only). `@thomasfosterau/effect-web` and `@thomasfosterau/effect-web-robots` are dependencies.
+Peers: `effect` (>= 4.0.0-rc.118), `alchemy` (**exactly** `2.0.0-beta.79` — the runtime scaffold mirrors that beta's `WorkerBridge` internals; note that `2.0.0-beta.72` cannot be imported under effect rc.115 at all, since rc.115 renamed `Config.string` to `Config.String` and beta.72 still calls the old name at module load), and `@cloudflare/workers-types` (optional, types only). `@thomasfosterau/effect-web` and `@thomasfosterau/effect-web-robots` are dependencies.
 
 | Entry | What it is |
 | --- | --- |

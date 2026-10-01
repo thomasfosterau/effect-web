@@ -33,7 +33,7 @@ import * as Predicate from "effect/Predicate";
 import * as Schema from "effect/Schema";
 import * as SchemaTransformation from "effect/SchemaTransformation";
 import * as Str from "effect/String";
-import * as HttpClient from "effect/unstable/http/HttpClient";
+import * as HttpClient from "effect/http/HttpClient";
 
 // ── Types (Effect Data structures) ─────────────────────────────────────
 
@@ -673,8 +673,8 @@ export interface FetchRobotsOptions {
  * @example
  * ```ts
  * import * as Effect from "effect/Effect"
- * import * as HttpClient from "effect/unstable/http/HttpClient"
- * import * as HttpClientResponse from "effect/unstable/http/HttpClientResponse"
+ * import * as HttpClient from "effect/http/HttpClient"
+ * import * as HttpClientResponse from "effect/http/HttpClientResponse"
  * import { fetchRobots, ROBOTS_NO_RESTRICTIONS } from "@thomasfosterau/effect-web-robots"
  *
  * const notFound = HttpClient.make((request) =>
@@ -766,8 +766,8 @@ export const ROBOTS_UNAVAILABLE_REASON =
  * @example
  * ```ts
  * import * as Effect from "effect/Effect"
- * import * as HttpClient from "effect/unstable/http/HttpClient"
- * import * as HttpClientResponse from "effect/unstable/http/HttpClientResponse"
+ * import * as HttpClient from "effect/http/HttpClient"
+ * import * as HttpClientResponse from "effect/http/HttpClientResponse"
  * import { makeRobotsChecker, memoryRobotsCache } from "@thomasfosterau/effect-web-robots"
  *
  * const site = HttpClient.make((request) =>

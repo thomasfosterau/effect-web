@@ -11,4 +11,4 @@ Initial release: the Cloudflare Workers / Alchemy runtime scaffold extracted fro
 - `./robots` — `robotsKvCache`, the KV adapter for `@thomasfosterau/effect-web-robots`' per-origin cache seam.
 - `./testing` — `makeStubKv` / `makeStubR2` / `makeStubQueue` / `makeStubBindings`, `makeStubEnv`, `throwingBinding`, `stubHyperdriveConnectLayer`, `stubBindingsLayer`, `logicalIdOf`, `RetryVisibilityReporter`.
 
-Peers: `effect` >= 4.0.0-rc.115, `alchemy` exactly 2.0.0-beta.79 (the first alchemy built for rc.115's `Config.String`), `@cloudflare/workers-types` optional.
+Peers: `effect` >= 4.0.0-rc.118, `alchemy` exactly 2.0.0-beta.79 (the first alchemy built for rc.115's `Config.String`), `@cloudflare/workers-types` optional.

@@ -10,7 +10,7 @@ Every export's doc comment names the application behaviour it carries and the in
 pnpm add @thomasfosterau/effect-web-sitemap @thomasfosterau/effect-web effect
 ```
 
-Peer: `effect` (>= 4.0.0-rc.115). `@thomasfosterau/effect-web` is a dependency (the purge logs through its event logger). One entry, `sideEffects: false`, no top-level statements in `dist/`.
+Peer: `effect` (>= 4.0.0-rc.118). `@thomasfosterau/effect-web` is a dependency (the purge logs through its event logger). One entry, `sideEffects: false`, no top-level statements in `dist/`.
 
 Everything takes a **site-root-relative path** and the **canonical origin** (`PUBLIC_SITE_URL`, never the request origin — CANON-001). The map from an application's resource types to its route segments (`sitemapPath`, `feedPath`) is application vocabulary and stays in the application.
 

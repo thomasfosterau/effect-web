@@ -8,4 +8,4 @@ Initial release: the discovery documents the website, gardeneria and preferencef
 - JSON Feed 1.1 — `buildJsonFeed`, `FEED_ITEM_LIMIT`, `jsonFeedResponse`.
 - Cache-Tag purge — `FEED_CACHE_TAG`, `SITEMAP_CACHE_TAG`, `makePurgeTagsForResourceType`, `purgeCacheTags` / `purgeCacheTagsPromise`, `CachePurgeContext`, `LOW_CHURN_CACHE_CONTROL`.
 
-Peer: `effect` >= 4.0.0-rc.115; depends on `@thomasfosterau/effect-web`.
+Peer: `effect` >= 4.0.0-rc.118; depends on `@thomasfosterau/effect-web`.

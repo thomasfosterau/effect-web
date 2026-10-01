@@ -24,7 +24,7 @@ import * as Effect from "effect/Effect";
 import * as HashSet from "effect/HashSet";
 import * as Predicate from "effect/Predicate";
 import * as Stream from "effect/Stream";
-import * as HttpServerResponse from "effect/unstable/http/HttpServerResponse";
+import * as HttpServerResponse from "effect/http/HttpServerResponse";
 import { describeError, logErrorEvent } from "@thomasfosterau/effect-web/observability";
 
 // ── Sitemaps ───────────────────────────────────────────────────────────
@@ -245,7 +245,7 @@ export const sitemapStream = <E, R>(
  * ```ts
  * import * as Effect from "effect/Effect"
  * import * as Stream from "effect/Stream"
- * import * as HttpServerResponse from "effect/unstable/http/HttpServerResponse"
+ * import * as HttpServerResponse from "effect/http/HttpServerResponse"
  * import { SITEMAP_CACHE_TAG, sitemapResponse } from "@thomasfosterau/effect-web-sitemap"
  *
  * const response = sitemapResponse("https://example.com", Stream.fromIterable([{ path: "/" }]), { cacheTag: SITEMAP_CACHE_TAG })
@@ -463,7 +463,7 @@ export const JSON_FEED_CONTENT_TYPE = "application/feed+json";
  *
  * @example
  * ```ts
- * import * as HttpServerResponse from "effect/unstable/http/HttpServerResponse"
+ * import * as HttpServerResponse from "effect/http/HttpServerResponse"
  * import { buildJsonFeed, FEED_CACHE_TAG, jsonFeedResponse } from "@thomasfosterau/effect-web-sitemap"
  *
  * const feed = buildJsonFeed({ base: "https://example.com", title: "t", description: "d" }, [])

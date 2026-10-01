@@ -4,7 +4,7 @@
  */
 
 import { describe, expect, it } from "vite-plus/test";
-import * as HttpServerResponse from "effect/unstable/http/HttpServerResponse";
+import * as HttpServerResponse from "effect/http/HttpServerResponse";
 import {
   buildJsonFeed,
   FEED_CACHE_TAG,

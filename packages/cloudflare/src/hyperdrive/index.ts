@@ -20,7 +20,7 @@ import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
 import type * as Redacted from "effect/Redacted";
 import type * as Scope from "effect/Scope";
-import { ConnectionError, SqlError } from "effect/unstable/sql/SqlError";
+import { ConnectionError, SqlError } from "effect/sql/SqlError";
 import { buildRequestService } from "../runtime.ts";
 
 /**

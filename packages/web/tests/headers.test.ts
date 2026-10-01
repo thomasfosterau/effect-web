@@ -7,7 +7,7 @@
  */
 import { describe, expect, it } from "vite-plus/test";
 import * as Option from "effect/Option";
-import * as Headers from "effect/unstable/http/Headers";
+import * as Headers from "effect/http/Headers";
 import {
   appendVary,
   applyToWebHeaders,

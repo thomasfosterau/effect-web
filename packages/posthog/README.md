@@ -93,7 +93,7 @@ if (isIngestPath(event.url.pathname)) {
 ```
 
 ```ts
-// an effect/unstable/http front door
+// an effect/http front door
 import { ingestProxy } from "@thomasfosterau/effect-web-posthog/server";
 
 HttpRouter.mountApp("/ingest", ingestProxy({ getClientAddress }));

@@ -8,4 +8,4 @@ Initial release: RFC 9309 on Effect 4.
 - The crawler side from the website and preferenceflow crawlers: `fetchRobots` with RFC 9309 §2.3.1's failure posture and the §2.5 size cap, the `RobotsCache` seam (`noRobotsCache`, `memoryRobotsCache`; the KV adapter is `@thomasfosterau/effect-web-cloudflare/robots`), `evaluateRobots`, `makeRobotsChecker`, and the TTL / cap constants.
 - The serving side from the applications' `/robots.txt` routes: `robotsBody`, `productionBody`, `NON_PRODUCTION_BODY`, `LOW_CHURN_CACHE_CONTROL`.
 
-Peer: `effect` >= 4.0.0-rc.115.
+Peer: `effect` >= 4.0.0-rc.118.

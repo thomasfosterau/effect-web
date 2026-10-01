@@ -30,8 +30,8 @@
 import * as Arr from "effect/Array";
 import * as Option from "effect/Option";
 import * as Record from "effect/Record";
-import * as Headers from "effect/unstable/http/Headers";
-import * as HttpServerRequest from "effect/unstable/http/HttpServerRequest";
+import * as Headers from "effect/http/Headers";
+import * as HttpServerRequest from "effect/http/HttpServerRequest";
 import { Middleware } from "@thomasfosterau/effect-jsonapi";
 import { isMutatingMethod, JSONAPI_MEDIA_TYPE, type NegotiationError } from "../jsonapi-error.ts";
 
@@ -402,7 +402,7 @@ const negotiateWrite = (
  *
  * @example
  * ```ts
- * import * as HttpServerRequest from "effect/unstable/http/HttpServerRequest"
+ * import * as HttpServerRequest from "effect/http/HttpServerRequest"
  * import { makeApiPathMatcher, negotiateRepresentation } from "@thomasfosterau/effect-web/negotiate"
  *
  * const options = { isApiPath: makeApiPathMatcher(["/posts", "/posts/:id"]) }
@@ -455,8 +455,8 @@ export const negotiateWebRequest = (request: Request, options: NegotiationOption
  *
  * @example
  * ```ts
- * import * as Headers from "effect/unstable/http/Headers"
- * import * as HttpServerRequest from "effect/unstable/http/HttpServerRequest"
+ * import * as Headers from "effect/http/Headers"
+ * import * as HttpServerRequest from "effect/http/HttpServerRequest"
  * import { requestForRouter } from "@thomasfosterau/effect-web/negotiate"
  *
  * const write = HttpServerRequest.fromWeb(

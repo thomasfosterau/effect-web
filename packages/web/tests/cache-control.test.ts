@@ -6,8 +6,8 @@
  * plus the viewer-aware policy the handle itself applies.
  */
 import { describe, expect, it } from "vite-plus/test";
-import * as Headers from "effect/unstable/http/Headers";
-import * as HttpServerResponse from "effect/unstable/http/HttpServerResponse";
+import * as Headers from "effect/http/Headers";
+import * as HttpServerResponse from "effect/http/HttpServerResponse";
 import {
   cacheControlForViewer,
   ensureCacheControl,
