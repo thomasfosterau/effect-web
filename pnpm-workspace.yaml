@@ -83,7 +83,7 @@ catalog:
   # The browser and server PostHog SDKs — optional peers of
   # @thomasfosterau/effect-web-posthog's `./browser` and `./server` entries;
   # here as devDependencies for the tests and the emitted declarations.
-  posthog-js: ^1.434.12
+  posthog-js: ^1.434.15
   posthog-node: ^5.54.1
   # Runs docgen's compiled examples.
   tsx: ^4.23.15
