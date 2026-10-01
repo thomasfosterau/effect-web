@@ -55,7 +55,7 @@ export const SECURITY_HEADER_DEFAULTS = {
  * Adds the baseline security response headers ({@link SECURITY_HEADER_DEFAULTS})
  * to `headers`, leaving any the route already set untouched. The
  * `applySecurityHeaders` policy of the applications' web front door, applied
- * to every rendered page and to the analytics ingest proxy alike.
+ * to every rendered page and to the analytics ingest proxy alike (SEC-HDR-001).
  *
  * @example
  * ```ts
@@ -258,7 +258,7 @@ export const LOCALE_INVARIANT_ASSET_PATHS: ReadonlySet<string> = new Set([
 ]);
 
 /**
- * Per-page Open Graph share cards (OG-003): content-addressed PNGs under
+ * Per-page Open Graph share cards: content-addressed PNGs under
  * `/og/` whose bytes are identical for every visitor and locale — the card
  * text rides in the query, not the cookie or `Accept-Language`. A locale
  * `Vary` would fragment the Cache API by cookie string and defeat the

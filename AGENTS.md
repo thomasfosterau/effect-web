@@ -14,7 +14,7 @@ This repo publishes the `@thomasfosterau/effect-web` package family, extracted f
 
 `effect-web-cloudflare` and `effect-web-posthog` are `"private": true` until alchemy ships an Effect rc.118 build (effect-web#33): `alchemy@2.0.0-beta.79` and `@distilled.cloud/*` import the removed `effect/unstable/*` paths. Their alchemy-bound suites and docgen run only in `vp run alchemy`.
 
-A new package adds a row here and in the root `README.md`, its own `CLAUDE.md`, a `.fallowrc.json` zone and rule, a root `package.json` devDependency, and its `#check` / `#docgen` / `#build` edges in the root `vite.config.ts` (`check`, `docgen`, `test:coverage`).
+A new package adds a row here and in the root `README.md`, its own `CLAUDE.md`, a `.fallowrc.json` zone and rule, a root `package.json` devDependency, and its `#check` / `#docgen` / `#build` edges in the root `vite.config.ts` (`check`, `docgen`, `test:coverage`); a published package also joins the `check:dist` task's `dependsOn` and the `packages` list in `scripts/check-dist-imports.mjs`, or its `dist/` is never import-guarded.
 
 ## Common pitfalls
 

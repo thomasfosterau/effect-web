@@ -192,7 +192,8 @@ export default defineConfig({
       // A pure graph node. The packages are named explicitly — a `from:
       // "dependencies"` edge does not traverse the workspace root's own
       // devDependencies — so a new package adds itself to EVERY list here
-      // (`check`, `docgen`, `test:coverage`).
+      // (`check`, `docgen`, `test:coverage`, and for a published package
+      // `check:dist` plus the `packages` list in scripts/check-dist-imports.mjs).
       check: {
         command: "echo 'check: every type gate green'",
         dependsOn: [

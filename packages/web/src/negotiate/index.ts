@@ -398,7 +398,9 @@ const negotiateWrite = (
  * dependency-free beyond `options` (it reads only the request line and
  * headers), so a cache handle and a dispatch handle can share one verdict.
  * Reads (`GET` / `HEAD`) negotiate on `Accept`, mutating methods on
- * `Content-Type`, and anything else (`OPTIONS`, …) is HTML.
+ * `Content-Type`, and anything else (`OPTIONS`, …) is HTML. The JSON:API
+ * surface is chosen by its media type, never a path prefix, and a disallowed
+ * media-type parameter answers 406 / 415 (JSONAPI-NEG-001 / JSONAPI-NEG-002).
  *
  * @example
  * ```ts
