@@ -27,8 +27,6 @@ catalog:
   # Types only, for @thomasfosterau/effect-web-cloudflare (`KVNamespace`,
   # `R2Bucket`, `ExecutionContext`, …); never a runtime dependency.
   "@cloudflare/workers-types": ^5.20260927.1
-  # Compiles AND RUNS every JSDoc `@example` (the `docgen` task); needs `tsx`
-  # and a TypeScript JS API — the TS6 alias below satisfies its peer.
   # The PostHog management-API SDK (Effect-native) the `./alchemy` entry of
   # @thomasfosterau/effect-web-posthog derives its dashboard / feature-flag /
   # survey CRUD from; an optional peer of that package. NOT preferenceflow's
@@ -38,6 +36,8 @@ catalog:
   # ">=4.0.0-rc.115"`). Its operation names differ from rc.8's (website /
   # gardeneria): `getDashboard`, not `dashboardsRetrieve`, etc.
   "@distilled.cloud/posthog": 1.0.0-rc.12
+  # Compiles AND RUNS every JSDoc `@example` (the `docgen` task); needs `tsx`
+  # and a TypeScript JS API — the TS6 alias below satisfies its peer.
   "@effect/docgen": ^0.5.2
   "@effect/language-service": ^0.87.3
   # An OPTIONAL peer of alchemy that its `Cloudflare/Workers/WorkerBridge`
