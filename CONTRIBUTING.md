@@ -2,9 +2,9 @@
 
 Maintained by Thomas Foster, with a workflow meant to be approachable for both humans and coding agents. Conventions are in [AGENTS.md](AGENTS.md).
 
-## Branch model
+## Branches
 
-`main` plus short-lived feature branches, PR against `main`, squash-merge with a conventional prefix (`feat:`, `fix:`, `docs:`, `chore:`). Rebase onto `origin/main` before opening a PR; never merge `main` into a feature branch (GitHub's "Update branch" button does a merge — avoid it).
+Branch off `main`, rebase rather than merge, squash-merge with a conventional prefix: see [AGENTS.md](AGENTS.md#branches-and-pull-requests).
 
 ## Git hooks
 
@@ -12,19 +12,14 @@ Hooks are managed by Vite+; the editable [.vite-hooks/pre-commit](.vite-hooks/pr
 
 ## CI expectations
 
-[ci.yml](.github/workflows/ci.yml) runs one job: `vp check` (format + lint), `vp run check` (every package's `src` type gate plus its type-level tests), `vp run -r test:unit`, `vp run -r build`, `vp run docgen` (every JSDoc `@example` compiled and executed against `dist/`), `pnpm audit --audit-level high`. [release.yml](.github/workflows/release.yml) runs changesets/action on `main`: it opens the version PR while unreleased changesets exist and publishes once it merges, via npm OIDC trusted publishing (see [PUBLISHING.md](PUBLISHING.md)). [effect-canary.yml](.github/workflows/effect-canary.yml) re-runs the type, test, build and docgen gates weekly against `effect@rc` and files an issue when they go red.
+[ci.yml](.github/workflows/ci.yml) runs one required job, `ci`, whose steps are the gate list in [AGENTS.md](AGENTS.md#verification), and one non-required job, `alchemy` (`vp run alchemy`), which stays red until alchemy ships an Effect rc.118 build (#33). [release.yml](.github/workflows/release.yml) runs changesets/action on `main`: it opens the version PR while unreleased changesets exist and publishes once it merges, via npm OIDC trusted publishing (see [PUBLISHING.md](PUBLISHING.md)). [effect-canary.yml](.github/workflows/effect-canary.yml) re-runs the type, test, build and docgen gates weekly against `effect@rc` and files an issue when they go red.
 
 ## Pre-PR checklist
 
-1. `vp check`
-2. `vp run check`
-3. `vp run -r test:unit`
-4. `vp run -r build`
-5. `vp run docgen`
-6. `vp run test:coverage`, then `fallow audit --base origin/main` (the coverage map is what makes fallow's CRAP scores real)
-7. A changeset (`pnpm changeset`) for every change to a published package.
-8. `git fetch origin main && git rebase origin/main`
-9. Docs: the package `README.md` for any exported change; the package `CLAUDE.md` for a new term or invariant.
+1. The gates in [AGENTS.md](AGENTS.md#verification), each with its final pass/fail.
+2. A changeset (`pnpm changeset`) where [AGENTS.md](AGENTS.md#branches-and-pull-requests) requires one.
+3. `git fetch origin main && git rebase origin/main`
+4. Docs: the package `README.md` for any exported change; the package `CLAUDE.md` for a new term or invariant.
 
 ## Running individual checks
 
