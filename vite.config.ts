@@ -233,7 +233,8 @@ export default defineConfig({
       // ships an rc.118 build (effect-web#33): cloudflare's whole suite and
       // docgen, posthog's `alchemy.test.ts` and docgen. RED until then, so it is NOT in
       // `check`, `docgen` or `test:coverage`; the non-required `alchemy` CI
-      // job runs it. Nothing is skipped.
+      // job runs the four suites as separate steps (one `vp run alchemy` stops at the
+      // first failure); this aggregate is for running them all locally. Nothing is skipped.
       alchemy: {
         command: "echo 'alchemy: every alchemy-bound suite and example green'",
         dependsOn: [
