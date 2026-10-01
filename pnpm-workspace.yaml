@@ -26,7 +26,7 @@ catalog:
   "@changesets/cli": ^3.0.3
   # Types only, for @thomasfosterau/effect-web-cloudflare (`KVNamespace`,
   # `R2Bucket`, `ExecutionContext`, …); never a runtime dependency.
-  "@cloudflare/workers-types": ^5.20260927.1
+  "@cloudflare/workers-types": ^5.20260930.2
   # The PostHog management-API SDK (Effect-native) the `./alchemy` entry of
   # @thomasfosterau/effect-web-posthog derives its dashboard / feature-flag /
   # survey CRUD from; an optional peer of that package. NOT preferenceflow's
