@@ -1,3 +1,3 @@
 # Changesets
 
-Every change to a published package's behaviour ships with a changeset: run `pnpm changeset`, pick the packages and the semver bump, describe the change, and commit the generated file with the PR. The `Release` workflow turns pending changesets into a "Version Packages" PR and publishes once that PR merges — see [PUBLISHING.md](../PUBLISHING.md).
+Every change to a published package's behaviour carries a changeset (`pnpm changeset`); the rule, including which docs-only changes need one, is in [AGENTS.md](../AGENTS.md#branches-and-pull-requests). The `Release` workflow turns pending changesets into a "Version Packages" PR and publishes once that PR merges — see [PUBLISHING.md](../PUBLISHING.md).

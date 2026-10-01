@@ -2,17 +2,13 @@
 
 Describe what changed and why. If this closes an issue, add `Closes #N` so it auto-closes on merge to `main`. For an extraction PR, list which SOURCE APP files (website / gardeneria / preferenceflow) the package supersedes — the apps' adoption issues delete them.
 
-## Validation
+## Verification
 
-Tick what you ran. Pre-commit covers format + lint; there is no pre-push hook.
+Run the gates in [AGENTS.md](https://github.com/thomasfosterau/effect-web/blob/main/AGENTS.md#verification) and list each command with its final pass/fail. If a gate could not run, say which and why.
 
-- [ ] `vp check` (`vp fmt --check` + `vp lint`)
-- [ ] `vp run check` (every package's `src` + type-level tests)
-- [ ] `vp run -r test:unit`
-- [ ] `vp run -r build`
-- [ ] `vp run docgen` (every `@example` compiled and ran against `dist/`)
-- [ ] `vp run test:coverage` then `fallow audit --base origin/main`
-- [ ] A changeset under `.changeset/` for every published-package change
+## Changeset
+
+Name the changeset(s) under `.changeset/`, or say why none is needed (see [AGENTS.md](https://github.com/thomasfosterau/effect-web/blob/main/AGENTS.md#branches-and-pull-requests)).
 
 ## Notes
 

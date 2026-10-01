@@ -1,8 +1,8 @@
 # @thomasfosterau/effect-web-sitemap
 
-The discovery documents the `thomasfosterau/website`, `thomasfosterau/gardeneria` and `thomasfosterau/preferenceflow` applications serve, and the cache they live behind: `sitemap.xml` (rendered whole, or streamed), a sitemap index, `feed.json` (JSON Feed 1.1), and the `Cache-Tag` purge a mutation issues so the edge copies stay fresh.
+Sitemap, sitemap index and JSON Feed 1.1 builders for Effect web applications (rendered or streamed), the low-churn edge cache policy they share, and the `Cache-Tag` purge-on-mutation seam. Extracted from the discovery documents the `thomasfosterau/website`, `thomasfosterau/gardeneria` and `thomasfosterau/preferenceflow` applications serve.
 
-Every export's doc comment names the application behaviour it carries and the invariant id it honours (`CANON-001`, `DISC-010`, `DISC-011`, `PERF-CACHE-002`); those ids and the `#NNN` issue citations point at the applications' specs.
+Invariant ids in doc comments (`CANON-001`, `PERF-CACHE-002`, …) name rules from the source applications' specs; `#NNN` citations are issues in those applications.
 
 ## Install
 
@@ -14,24 +14,33 @@ Peer: `effect` (>= 4.0.0-rc.118). `@thomasfosterau/effect-web` is a dependency (
 
 Everything takes a **site-root-relative path** and the **canonical origin** (`PUBLIC_SITE_URL`, never the request origin — CANON-001). The map from an application's resource types to its route segments (`sitemapPath`, `feedPath`) is application vocabulary and stays in the application.
 
-## Sitemaps
+## Usage
+
+### Sitemaps
 
 ```ts
+import * as Stream from "effect/Stream";
 import {
   lastmodOf,
   renderSitemap,
   SITEMAP_CACHE_TAG,
   sitemapResponse,
+  type SitemapUrl,
 } from "@thomasfosterau/effect-web-sitemap";
 
+// `base` is the canonical origin (`PUBLIC_SITE_URL`); the rows are the application's.
+const STATIC_PAGES: ReadonlyArray<SitemapUrl> = [{ path: "/" }, { path: "/about" }];
+
 // Whole, for a bounded set:
-renderSitemap(base, [
-  ...STATIC_PAGES,
-  ...rows.map((row) => ({ path: `/people/${row.id}`, lastmod: lastmodOf(row.updatedAt) })),
-]);
+const wholeSitemap = (base: string, rows: ReadonlyArray<{ id: string; updatedAt: Date }>) =>
+  renderSitemap(base, [
+    ...STATIC_PAGES,
+    ...rows.map((row) => ({ path: `/people/${row.id}`, lastmod: lastmodOf(row.updatedAt) })),
+  ]);
 
 // Streamed, one chunk per entry, for a large one (run the enumeration before building the response):
-sitemapResponse(base, Stream.fromIterable(entries), { cacheTag: SITEMAP_CACHE_TAG });
+const streamedSitemap = (base: string, entries: ReadonlyArray<SitemapUrl>) =>
+  sitemapResponse(base, Stream.fromIterable(entries), { cacheTag: SITEMAP_CACHE_TAG });
 ```
 
 | Export | What it is |
@@ -42,9 +51,9 @@ sitemapResponse(base, Stream.fromIterable(entries), { cacheTag: SITEMAP_CACHE_TA
 | `sitemapStream(base, Stream<SitemapUrl>)` | The document as a `Stream<string>`: opening, one chunk per entry, closing — never materialised in the isolate. |
 | `sitemapResponse(base, stream, { cacheTag?, cacheControl? })` | The stream as an `HttpServerResponse`: `application/xml`, `LOW_CHURN_CACHE_CONTROL`, the `Cache-Tag`. |
 | `chunkSitemap(entries, size = SITEMAP_MAX_URLS)`, `renderSitemapIndex(base, sitemaps)` | Past 50,000 URLs: split into files and index them. |
-| `URLSET_OPEN`, `URLSET_CLOSE`, `escapeXml` | The pieces, and the escaper for any authored text a consumer decides to emit (nothing here emits any). |
+| `URLSET_OPEN`, `URLSET_CLOSE`, `escapeXml` | The pieces, and the escaper for any authored text a consumer decides to emit. Nothing here emits any: `<loc>` is not escaped, because every location is the canonical origin plus a path built from validated ids or a hand-written list. |
 
-## JSON Feed 1.1
+### JSON Feed 1.1
 
 ```ts
 import {
@@ -52,23 +61,22 @@ import {
   FEED_CACHE_TAG,
   FEED_ITEM_LIMIT,
   jsonFeedResponse,
+  type FeedEntry,
 } from "@thomasfosterau/effect-web-sitemap";
 
-const feed = buildJsonFeed(
-  {
-    base,
-    title: "Thomas Foster — Latest changes",
-    description: `The ${FEED_ITEM_LIMIT} most recent changes.`,
-  },
-  rows.map((row) => ({
-    path: `/posts/${row.id}`,
-    publishedAt: row.publishedAt,
-    updatedAt: row.updatedAt,
-    title: row.title,
-    summary: row.summary,
-  })),
-);
-return jsonFeedResponse(feed, { cacheTag: FEED_CACHE_TAG });
+// `rows` are the newest FEED_ITEM_LIMIT changes, newest first.
+const feedResponse = (base: string, rows: ReadonlyArray<FeedEntry>) =>
+  jsonFeedResponse(
+    buildJsonFeed(
+      {
+        base,
+        title: "Thomas Foster — Latest changes",
+        description: `The ${FEED_ITEM_LIMIT} most recent changes.`,
+      },
+      rows,
+    ),
+    { cacheTag: FEED_CACHE_TAG },
+  );
 ```
 
 | Export | What it is |
@@ -79,15 +87,21 @@ return jsonFeedResponse(feed, { cacheTag: FEED_CACHE_TAG });
 | `jsonFeedResponse(feed, { cacheTag?, cacheControl? })` | 2-space pretty-printed `application/feed+json` with the cache headers — the applications' bytes on the wire and in every cached copy. |
 | `JsonFeed`, `JsonFeedItem`, `JSON_FEED_CONTENT_TYPE` | The shapes and the media type. |
 
-## Cache-Tag purge on mutation
+### Cache-Tag purge on mutation
 
 ```ts
-import { makePurgeTagsForResourceType, purgeCacheTags } from "@thomasfosterau/effect-web-sitemap";
+import {
+  makePurgeTagsForResourceType,
+  purgeCacheTags,
+  type CachePurgeContext,
+} from "@thomasfosterau/effect-web-sitemap";
 
-const purgeTagsForResourceType = makePurgeTagsForResourceType(Object.values(SITEMAP_SEGMENTS));
+// The resource types the sitemap and feed enumerate.
+const purgeTagsForResourceType = makePurgeTagsForResourceType(["posts", "people"]);
 
 // After a mutation to a resource of `type` (and after the response has gone out):
-yield * purgeCacheTags(executionContext, purgeTagsForResourceType(type));
+const purgeAfterMutation = (ctx: CachePurgeContext, type: string) =>
+  purgeCacheTags(ctx, purgeTagsForResourceType(type));
 ```
 
 | Export | What it is |
@@ -99,10 +113,6 @@ yield * purgeCacheTags(executionContext, purgeTagsForResourceType(type));
 | `purgeCacheTagsPromise(ctx, tags)` | The same as a `Promise`, for `ctx.waitUntil`. |
 | `LOW_CHURN_CACHE_CONTROL` | The document `Cache-Control` (an hour at the edge, a day stale-while-revalidate). |
 
-## Superseded application files
+## License
 
-| Application file | Here |
-| --- | --- |
-| `apps/web/src/lib/server/sitemap.ts` (preferenceflow, the reference) + `apps/web/src/routes/sitemap.xml/+server.ts` (all three) + `tests/unit/sitemap.test.ts` (website) | `lastmodOf`, `renderUrl`, `renderSitemap`, `sitemapStream`, `sitemapResponse`. `STATIC_PAGES` and the resource → segment map stay in the application. |
-| `packages/models/src/feed.ts` + `tests/feed.test.ts` (website); `apps/web/src/routes/feed.json/+server.ts` (website, gardeneria) | `buildJsonFeed`, `FEED_ITEM_LIMIT`, `jsonFeedResponse`. |
-| `apps/web/src/lib/server/cache-purge.ts` + `tests/unit/cache-purge.test.ts` (website, gardeneria) | `makePurgeTagsForResourceType`, `purgeCacheTags`, `CachePurgeContext`, the tags. |
+MIT — see [LICENSE](LICENSE).

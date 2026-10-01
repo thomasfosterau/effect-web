@@ -1,15 +1,16 @@
 /**
- * @copyright Thomas Foster
- *
  * Root workspace config. Owns the repo-wide format/lint/staged passes (read
- * statically by `vp fmt` / `vp lint` / `vp staged`) and the root `check` /
- * `docgen` aggregates. Every package's own tasks (`check`, `test:unit`,
- * `build`, `docgen`) live in that package's vite.config.ts; this file
- * deliberately compiles nothing, so adding a package never means editing it.
+ * statically by `vp fmt` / `vp lint` / `vp staged`) and the root aggregates
+ * (`check`, `docgen`, `check:dist`, `alchemy`, `test:coverage`). Every
+ * package's own tasks are defined once in `vite.package.ts` and instantiated
+ * by each package's `vite.config.ts`; this file compiles nothing, but a new
+ * package adds itself to the aggregate lists below.
  *
  * Copied from the effect-drizzle-ext library's root config (and through it
  * the gardeneria application's): every comment that explains a load-bearing
  * decision is part of the standard and travels with the config.
+ *
+ * @copyright Thomas Foster
  */
 
 import { defineConfig } from "vite-plus";
@@ -191,7 +192,8 @@ export default defineConfig({
       // A pure graph node. The packages are named explicitly — a `from:
       // "dependencies"` edge does not traverse the workspace root's own
       // devDependencies — so a new package adds itself to EVERY list here
-      // (`check`, `docgen`, `test:coverage`).
+      // (`check`, `docgen`, `test:coverage`, and for a published package
+      // `check:dist` plus the `packages` list in scripts/check-dist-imports.mjs).
       check: {
         command: "echo 'check: every type gate green'",
         dependsOn: [
@@ -228,7 +230,7 @@ export default defineConfig({
         cache: false,
       },
       // The alchemy-bound work of the two packages held private until alchemy
-      // ships an rc.118 build (effect-web#31): cloudflare's whole suite and
+      // ships an rc.118 build (effect-web#33): cloudflare's whole suite and
       // docgen, posthog's `alchemy.test.ts` and docgen. RED until then, so it is NOT in
       // `check`, `docgen` or `test:coverage`; the non-required `alchemy` CI
       // job runs it. Nothing is skipped.
@@ -247,7 +249,8 @@ export default defineConfig({
       // per-function CRAP scores (`health.coverage` in .fallowrc.json).
       // Without it fallow estimates every function as uncovered, and any
       // function with cyclomatic complexity ≥ 5 fails the gate on its own.
-      // Run this before `fallow audit` (the commit hook runs the audit).
+      // Run this before `fallow audit` (the Claude Code PreToolUse fallow gate
+      // runs the audit on `git commit` / `git push` but never refreshes this map).
       //
       // Unlike each package's own `test:unit`, this one vitest process runs
       // every package's suite, so no `{ from: "dependencies" }` edge builds

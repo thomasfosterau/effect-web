@@ -1,8 +1,8 @@
 # @thomasfosterau/effect-web-robots
 
-The Robots Exclusion Protocol (RFC 9309) on Effect 4: the `effect-robots.txt` library — parse, encode, match — ported to `effect@4` with its API kept, plus the two sides the `thomasfosterau/website`, `thomasfosterau/gardeneria` and `thomasfosterau/preferenceflow` applications built on it: the **crawler side** (fetching an origin's `robots.txt` with the RFC's failure posture, caching it per origin, deciding a URL) and the **serving side** (the application's own `/robots.txt` body per stage).
+The Robots Exclusion Protocol (RFC 9309) for Effect: parse, encode and match robots.txt, evaluate a crawl decision with the §2.3.1 failure posture over a pluggable cache, and build the robots.txt a site serves. The parser is the `effect-robots.txt` library ported to `effect@4` with its API kept; the **crawler side** and the **serving side** are the ones the `thomasfosterau/website`, `thomasfosterau/gardeneria` and `thomasfosterau/preferenceflow` applications built on it.
 
-Every export's doc comment names the application behaviour it carries and the invariant id it honours (`ROBOTS-002` … `ROBOTS-005`, `SEC-PRIV-001`, `PERF-CACHE-002`); those ids and the `#NNN` issue citations point at the applications' specs.
+Invariant ids in doc comments (`ROBOTS-005`, `PERF-CACHE-002`, …) name rules from the source applications' specs; `#NNN` citations are issues in those applications.
 
 ## Install
 
@@ -12,7 +12,9 @@ pnpm add @thomasfosterau/effect-web-robots effect
 
 Peer: `effect` (>= 4.0.0-rc.118). One entry, `sideEffects: false`, no top-level statements in `dist/`.
 
-## The library (effect-robots.txt, ported)
+## Usage
+
+### The library (effect-robots.txt, ported)
 
 ```ts
 import {
@@ -50,11 +52,16 @@ encode(robotsTxt); // the canonical text
 
 Matching is the library's, not the applications': the apps selected a group by **substring** (`userAgent.includes(token)`); the library, following RFC 9309 §2.2.1, matches the **product token** exactly or as a prefix. A `User-agent: Google` group binds `Googlebot`; a `User-agent: bot` group does not bind `Googlebot`.
 
-## The crawler side
+### The crawler side
 
 ```ts
 import * as Effect from "effect/Effect";
+import * as Schema from "effect/Schema";
 import { makeRobotsChecker, memoryRobotsCache } from "@thomasfosterau/effect-web-robots";
+
+class CrawlSkipped extends Schema.TaggedError<CrawlSkipped>()("CrawlSkipped", {
+  reason: Schema.String,
+}) {}
 
 const check = makeRobotsChecker({
   userAgent: "PreferenceFlowBot/1.0 (+https://preferenceflow.com/bot)", // the request header
@@ -62,9 +69,13 @@ const check = makeRobotsChecker({
   cache: memoryRobotsCache(), // or effect-web-cloudflare/robots' KV adapter
 });
 
-// Effect<RobotsDecision, never, HttpClient>
-const decision = yield * check("https://example.com/people/abc?tab=1");
-if (!decision.allowed) return yield * Effect.fail(new CrawlSkipped({ reason: decision.reason }));
+// Effect<void, CrawlSkipped, HttpClient>
+const crawl = (url: string) =>
+  Effect.gen(function* () {
+    const decision = yield* check(url);
+    if (!decision.allowed) return yield* new CrawlSkipped({ reason: decision.reason });
+    // … fetch the page, honouring decision.crawlDelaySeconds
+  });
 ```
 
 | Export | What it is |
@@ -77,15 +88,19 @@ if (!decision.allowed) return yield * Effect.fail(new CrawlSkipped({ reason: dec
 
 The checker runs one `HttpClient` request per origin per cache lifetime; that `HttpClient` should be the SSRF-guarded one (`@thomasfosterau/effect-web/net`) in an application that crawls user-supplied URLs.
 
-## The serving side
+### The serving side
 
 ```ts
-import { LOW_CHURN_CACHE_CONTROL, robotsBody } from "@thomasfosterau/effect-web-robots";
-
 // routes/robots.txt/+server.ts
+import { LOW_CHURN_CACHE_CONTROL, robotsBody } from "@thomasfosterau/effect-web-robots";
+import { PUBLIC_SITE_URL, PUBLIC_STAGE } from "$env/static/public";
+
 export const GET = () =>
   new Response(
-    robotsBody(isProduction, { disallow: ["/api/", "/auth/"], sitemapUrl: `${base}/sitemap.xml` }),
+    robotsBody(PUBLIC_STAGE === "production", {
+      disallow: ["/api/", "/auth/"],
+      sitemapUrl: `${PUBLIC_SITE_URL}/sitemap.xml`,
+    }),
     {
       headers: {
         "content-type": "text/plain; charset=utf-8",
@@ -97,16 +112,12 @@ export const GET = () =>
 
 | Export | What it is |
 | --- | --- |
-| `NON_PRODUCTION_BODY` | `User-agent: *` / `Disallow: /` — every non-production stage is invisible to crawlers, whatever the policy says (SEC-PRIV-001). |
+| `NON_PRODUCTION_BODY` | `User-agent: *` / `Disallow: /` — every non-production stage is invisible to crawlers, whatever the policy says (ROBOTS-005). |
 | `productionBody({ disallow, sitemapUrl, comments? })` | The production document: the comment lines, a `User-agent: *` group with each `disallow` prefix, the `Sitemap:` line. Rendered through `encode`, so it round-trips through `parse`. |
 | `robotsBody(production, policy)` | The stage switch. |
 | `LOW_CHURN_CACHE_CONTROL` | `public, max-age=3600, s-maxage=3600, stale-while-revalidate=86400` — the edge caches the document an hour (PERF-CACHE-002). |
 | `isRobotsBody(value)` | A refinement for a test or a handler. |
 
-## Superseded application files
+## License
 
-| Application file | Here |
-| --- | --- |
-| `effect-robots.txt` `src/{types,schema,matcher,index}.ts` + `src/index.test.ts` | The library section; `tests/library.test.ts` is that suite verbatim. |
-| `packages/jobs/src/web-archive/robots.ts` (website, the reference) + `tests/web-archive-robots.test.ts`; `packages/jobs/src/crawl/robots.ts` (preferenceflow) + `tests/robots.test.ts` | `fetchRobots`, `RobotsCache`, `evaluateRobots`, `makeRobotsChecker`, the constants. The KV adapter is `@thomasfosterau/effect-web-cloudflare/robots`. |
-| `apps/web/src/lib/server/robots.ts` + `routes/robots.txt/+server.ts` (website, gardeneria, preferenceflow) + `tests/unit/robots-txt.test.ts` | `robotsBody`, `productionBody`, `NON_PRODUCTION_BODY`, `LOW_CHURN_CACHE_CONTROL`. The policy (the disallow prefixes, the sitemap URL) stays in the application. |
+MIT — see [LICENSE](LICENSE).

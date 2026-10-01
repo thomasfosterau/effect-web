@@ -1,8 +1,10 @@
 # @thomasfosterau/effect-web-cloudflare
 
-The Cloudflare Workers / Alchemy runtime scaffold the `thomasfosterau/website`, `thomasfosterau/gardeneria` and `thomasfosterau/preferenceflow` applications share, extracted with the per-application parts injected: the Worker's `LogicalId`, the binding-client catalogue and the `Database` layer. Plus the queue glue, the KV read-through resource cache and the in-memory binding stubs their integration harnesses run on.
+The Cloudflare Workers / Alchemy runtime scaffold for Effect: per-request binding layers, the Scheduler bridge, request metrics, the Hyperdrive database seam, queue producer/consumer glue, the KV read-through resource cache, and in-memory binding stubs for tests. Extracted from the `thomasfosterau/website`, `thomasfosterau/gardeneria` and `thomasfosterau/preferenceflow` applications with the per-application parts injected: the Worker's `LogicalId`, the binding-client catalogue and the `Database` layer.
 
-Every export's doc comment names the application behaviour it carries and the invariant id it honours (`PERF-CACHE-004`, `CACHE-AUTH-005`, `PERF-PIPE-001`, `#455`, `#1978`, `#1096`); those ids and the `#NNN` issue citations point at the applications' specs.
+> **Not yet published.** Held private until alchemy ships an Effect rc.118 build (effect-web#33): `alchemy@2.0.0-beta.79` imports the `effect/unstable/*` paths rc.118 removed.
+
+Invariant ids in doc comments (`PERF-CACHE-004`, `CACHE-AUTH-005`, …) name rules from the source applications' specs; `#NNN` citations are issues in those applications.
 
 ## Install
 
@@ -10,7 +12,7 @@ Every export's doc comment names the application behaviour it carries and the in
 pnpm add @thomasfosterau/effect-web-cloudflare @thomasfosterau/effect-web @thomasfosterau/effect-web-robots effect alchemy@2.0.0-beta.79
 ```
 
-Peers: `effect` (>= 4.0.0-rc.118), `alchemy` (**exactly** `2.0.0-beta.79` — the runtime scaffold mirrors that beta's `WorkerBridge` internals; note that `2.0.0-beta.72` cannot be imported under effect rc.115 at all, since rc.115 renamed `Config.string` to `Config.String` and beta.72 still calls the old name at module load), and `@cloudflare/workers-types` (optional, types only). `@thomasfosterau/effect-web` and `@thomasfosterau/effect-web-robots` are dependencies.
+Peers: `effect` (>= 4.0.0-rc.118), `alchemy` (**exactly** `2.0.0-beta.79` — the runtime scaffold mirrors that beta's `WorkerBridge` internals), and `@cloudflare/workers-types` (optional, types only). `@thomasfosterau/effect-web` and `@thomasfosterau/effect-web-robots` are dependencies.
 
 | Entry | What it is |
 | --- | --- |
@@ -23,7 +25,9 @@ Peers: `effect` (>= 4.0.0-rc.118), `alchemy` (**exactly** `2.0.0-beta.79` — th
 
 Every entry is `sideEffects: false`: no top-level statements in `dist/`.
 
-## The runtime scaffold
+## Usage
+
+### The runtime scaffold
 
 Alchemy's binding clients (`Cloudflare.KV.ReadWriteNamespace`, `R2.ReadWriteBucket`, `Queues.WriteQueue`, `Hyperdrive.Connect`, …) resolve `env[LogicalId]` through services that alchemy's own `WorkerBridge` provides inside a `Worker` entrypoint: `RuntimeContext`, `Stack`, `Self<Worker>`, `WorkerEnvironment`. A SvelteKit hook on adapter-cloudflare, an integration harness under Node and a hand-written queue consumer all run outside that entrypoint, so the scaffold provides the same services from stubs.
 
@@ -73,7 +77,7 @@ export const handlerLayer = (env: WorkerEnv) =>
 
 The three bases differ in one thing, the `AlchemyExecutionContext`'s lifetime: `requestLayer` takes the caller's (or binds one to its build scope), `handlerLayer` binds a fresh one per build so a pool lives for exactly one batch or cron fire (#455), and `workerLayer` shares one process-lifetime context for a Node harness.
 
-## The read-through cache
+### The read-through cache
 
 ```ts
 import * as Effect from "effect/Effect";
@@ -97,9 +101,13 @@ const updatePost = (id: string, input: UpdatePost) =>
   dbUpdatePost(id, input).pipe(Effect.tap((post) => posts.setOnKv(id, post)));
 ```
 
-`isPubliclyServeable` is the default policy: `visibility` must be `"public"` (and present, for an `owned` family), `moderationState` must be `"approved"`, `draft` must not be `true`, `deletedAt` must be absent, and with `publishGated` the `publishedAt` stamp must be present and arrived. A family whose gate depends on state outside the cached resource cannot express it here: it closes the gap on the write path and cuts its TTL to the 60-second floor.
+`isPubliclyServeable` is the default policy: `visibility` must be `"public"` (and present, for an `owned` family), `moderationState` must be `"approved"`, `draft` must not be `true`, `deletedAt` must be absent, and with `publishGated` the `publishedAt` stamp must be present and arrived. A family whose gate depends on state outside the cached resource cannot express it here: it closes the gap on the write path and cuts its TTL to the 60-second floor. The gate runs on both sides: a hit that fails it falls through to the database, a database result that fails it is never written, and `setOnKv` deletes a non-serveable resource rather than skipping it. A KV fault degrades to a database read; it never fails a read or a mutation.
 
-## The stubs
+### Queues
+
+The producers are best-effort by design: `enqueueBestEffort` and `enqueueBatchBestEffort` run on the request path and swallow a failed enqueue rather than failing the request. `sendBatchChunked` is the exception: it fails with alchemy's `SendError` and the caller decides.
+
+### The stubs
 
 ```ts
 // packages/integration-harness/stub-bindings.ts
@@ -129,21 +137,10 @@ export const stubBindings = stubBindingsLayer(
 // setup.ts: beforeEach(() => stubs.reset())
 ```
 
-A spec asserts through the handles (`stubs.kv.peek(key)`, `stubs.kv.seed(key, value)`, `stubs.kv.setGetFault(true)`, `stubs.r2.keys()`, `stubs.peekStubQueue("FEED_QUEUE")`) so an assertion about what the cache refused is never vacuous.
-
-## Superseded application files
-
-| Application file | Here |
-| --- | --- |
-| `packages/bindings/src/runtime.ts` (website, gardeneria, preferenceflow) | `.` — `makeWorkerRuntime`, the execution-context lifecycle, `buildRequestService`, `workerEnvConfigProviderLayer` |
-| `packages/bindings/src/scheduler.ts` | `.` — `Scheduler`, `schedulerLayer` |
-| `packages/bindings/src/observability-metrics.ts` | `.` — `withRequestMetrics`, `countingDatabase`, `logDbQueryCount`, `QUERY_METHODS` |
-| `apps/worker/src/env.ts` (preferenceflow, `pipelineEnv`) | `.` — `workerEnv` |
-| `packages/database/src/index.ts` — `connectionString`, `acquirePool`, `withoutThen`, `DatabaseLive`; `packages/bindings` `makeRequestDatabase` | `./hyperdrive` |
-| `packages/jobs/src/producer.ts` (gardeneria), `embedding/queue.ts` (website), `packages/jobs/src/queue.ts` `sendBatch` (preferenceflow) | `./queues` — the producers |
-| `packages/jobs/src/queues.ts` `decodeQueueMessage` (gardeneria), `consume.ts` `decodeOrDrop` (preferenceflow), `apps/worker/src/handlers.ts` `consume` + `MissingHyperdrive` (preferenceflow), `apps/worker/src/worker.ts` (website) | `./queues` — the consumers |
-| `apps/api/src/cache.ts` (gardeneria, the reference; website's copy lacks the owned / publication axes) | `./cache` + `resolveKvNamespace` |
-| `packages/jobs/src/web-archive/robots.ts` (website), `crawl/robots.ts` (preferenceflow) — the KV read / write around the fetch | `./robots` — `robotsKvCache` (the rest is `@thomasfosterau/effect-web-robots`) |
-| `packages/integration-harness/stub-bindings.ts`, `retry-reporter.ts` (preferenceflow); `harness.ts` `peekStubQueue` / `recordingQueue` (gardeneria) | `./testing` |
+A spec asserts through the handles (`stubs.kv.peek(key)`, `stubs.kv.seed(key, value)`, `stubs.kv.setGetFault(true)`, `stubs.r2.keys()`, `stubs.peekStubQueue("FEED_QUEUE")`) so an assertion about what the cache refused is never vacuous. The stubs implement the native binding surface, so a test drives the same alchemy clients the deployed Worker runs; a surface a local test may not reach (multipart upload, a Durable Object) throws rather than passing against a fake.
 
 The resource declarations (`Cache`, `PrimaryHyperdrive`, `FeedQueue`, …), the env types, `WorkerBindings` and each app's `Database` service stay in the application.
+
+## License
+
+MIT — see [LICENSE](LICENSE).

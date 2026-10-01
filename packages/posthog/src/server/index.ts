@@ -54,7 +54,9 @@ export interface PostHogService {
 }
 
 /**
- * The `PostHog` service tag.
+ * The per-request analytics service: `capture` an event, `flush` the buffer;
+ * provide it with {@link posthogLayer} over a client from
+ * {@link makePostHogClient}.
  *
  * @since 0.1.0
  * @category services

@@ -1,8 +1,8 @@
 # @thomasfosterau/effect-web-posthog
 
-> **Prototype.** Extracted from the `thomasfosterau/website`, `thomasfosterau/gardeneria` and `thomasfosterau/preferenceflow` applications, whose copies were byte-identical (the IaC) or differed only in the name of one environment variable (the clients). It stays `0.0.x` until the three have adopted it; the API may still move.
+PostHog for Effect web applications (prototype): the Alchemy providers for a PostHog project's dashboards, feature flags, surveys and environment tokens, the server-side PostHog service and per-request client factory, the lazily loaded browser client, the ingest reverse proxy, and the shared event scrubber.
 
-PostHog for Effect web applications on Cloudflare Workers: the Alchemy providers that manage a PostHog project's environment tokens, dashboards, feature flags and surveys as infrastructure; the server-side `PostHog` Effect service and the per-request `posthog-node` client it wraps; the same-origin ingest reverse proxy that keeps the browser SDK out of ad-blockers; the lazily loaded `posthog-js` client; and the event scrubber both SDKs run.
+> **Prototype, not yet published.** Held private until alchemy ships an Effect rc.118 build (effect-web#33). Extracted from the `thomasfosterau/website`, `thomasfosterau/gardeneria` and `thomasfosterau/preferenceflow` applications, whose copies were byte-identical (the IaC) or differed only in the name of one environment variable (the clients); it stays `0.0.x` until the three have adopted it, and the API may still move.
 
 ## Install
 
@@ -23,7 +23,9 @@ pnpm add posthog-js                                         # ./browser
 
 Every entry is `sideEffects: false`: no top-level statements in `dist/`. `./server` imports no alchemy; `./browser` imports no Node.
 
-## The IaC
+## Usage
+
+### The IaC
 
 ```ts
 // alchemy.run.ts
@@ -51,12 +53,16 @@ const betaFlag = PostHog.FeatureFlag("Beta", { projectId: "12345", key: "beta", 
 
 Each resource is immutable along its identity (`projectId`, plus `environmentId` / `key`) and mutable everywhere else; `Dashboard`, `FeatureFlag` and `Survey` take `delete: true` to remove the PostHog object on destroy and otherwise leave it in place. Attributes are persisted alchemy state and so stay `null`-valued rather than `Option`.
 
-## The server side
+### The server side
 
 ```ts
 // lib/server/posthog.ts — isolate scope: the options; per request: the client
 import { makePostHogClient } from "@thomasfosterau/effect-web-posthog/server";
-import { PUBLIC_POSTHOG_HOST, PUBLIC_POSTHOG_PROJECT_TOKEN, PUBLIC_STAGE } from "$app/env/public";
+import {
+  PUBLIC_POSTHOG_HOST,
+  PUBLIC_POSTHOG_PROJECT_TOKEN,
+  PUBLIC_STAGE,
+} from "$env/static/public";
 
 const options = {
   token: PUBLIC_POSTHOG_PROJECT_TOKEN,
@@ -71,17 +77,26 @@ export const makePostHog = () => makePostHogClient(options);
 import { posthogLayer } from "@thomasfosterau/effect-web-posthog/server";
 // …
 Layer.mergeAll(runtime.requestLayer(input), posthogLayer(input.posthog) /* , … */);
+```
 
+```ts
 // an operation
-const posthog = yield * PostHog;
-yield * posthog.capture({ distinctId: viewer.id, event: "post_created" });
-const scheduler = yield * Scheduler;
-yield * scheduler.waitUntil(posthog.flush); // outlives the response
+import * as Effect from "effect/Effect";
+import { Scheduler } from "@thomasfosterau/effect-web-cloudflare";
+import { PostHog } from "@thomasfosterau/effect-web-posthog/server";
+
+const recordPostCreated = (viewerId: string) =>
+  Effect.gen(function* () {
+    const posthog = yield* PostHog;
+    yield* posthog.capture({ distinctId: viewerId, event: "post_created" });
+    const scheduler = yield* Scheduler;
+    yield* scheduler.waitUntil(posthog.flush); // outlives the response
+  });
 ```
 
 The client is per request on purpose: `posthog-node`'s flush pipeline parks one request's in-flight promise on the instance, every flush chains onto the previous one, the event queue is instance state, and its `waitUntil` cycle is per instance — a shared client hands one request's I/O to another, which workerd forbids (#1233). `withEnvironmentProperty` stamps `environment: <stage>` last on every event, so the stage is authoritative.
 
-### The ingest proxy
+#### The ingest proxy
 
 ```ts
 // hooks.server.ts (SvelteKit) — answered ahead of any session or runtime work
@@ -101,12 +116,16 @@ HttpRouter.mountApp("/ingest", ingestProxy({ getClientAddress }));
 
 Only `FORWARDED_HEADERS` (`accept`, `accept-encoding`, `accept-language`, `content-type`, `content-length`, `user-agent`, `referer`, `origin`) reach PostHog; `cookie` and `authorization` never do. `x-forwarded-for` is the platform-resolved client address (`CF-Connecting-IP`), never the spoofable inbound header (SEC-SSRF-005). An upstream `Set-Cookie` is stripped and the baseline security headers are stamped on the way back. Methods other than `GET` / `POST` / `OPTIONS` / `HEAD` are 405.
 
-## The browser side
+### The browser side
 
 ```ts
 // lib/analytics.ts — nothing else in the app imports posthog-js
 import { makeAnalytics } from "@thomasfosterau/effect-web-posthog/browser";
-import { PUBLIC_POSTHOG_HOST, PUBLIC_POSTHOG_PROJECT_TOKEN, PUBLIC_STAGE } from "$app/env/public";
+import {
+  PUBLIC_POSTHOG_HOST,
+  PUBLIC_POSTHOG_PROJECT_TOKEN,
+  PUBLIC_STAGE,
+} from "$env/static/public";
 
 export const analytics = makeAnalytics({
   token: PUBLIC_POSTHOG_PROJECT_TOKEN,
@@ -117,27 +136,20 @@ export const analytics = makeAnalytics({
 
 ```ts
 // hooks.client.ts
+import type { HandleClientError } from "@sveltejs/kit";
 import { analytics } from "$lib/analytics";
 
 export async function init() {
   analytics.init(); // fire-and-forget: awaiting it would delay hydration by exactly what the code split saves
 }
 
-export const handleError: HandleClientError = async ({ kind, error }) => {
-  if ((kind === "unknown" ? 500 : error.status) !== 404) analytics.captureException(error);
+export const handleError: HandleClientError = async ({ status, error }) => {
+  if (status !== 404) analytics.captureException(error);
 };
 ```
 
 The SDK is `import("posthog-js")`ed once per page load and memoised; captures made before it lands queue behind `init()` and fire in call order. Events go to `apiHost` (`/ingest`, the proxy above) with `before_send: scrubPostHogEvent` and the `environment: <stage>` super property. Every method is `void` and swallows its own failure.
 
-## Superseded application files
+## License
 
-| Application file | Here |
-| --- | --- |
-| `packages/infra-posthog/src/{Api,Config,Dashboard,Environment,FeatureFlag,ProviderUtils,Providers,Survey}.ts` (byte-identical in all three) | `./alchemy` |
-| `packages/infra-posthog/src/Service.ts` | `./server` — `PostHog`, `posthogLayer` |
-| `apps/web/src/lib/server/posthog.ts` (`makePostHog`, `withEnvironmentProperty`) | `./server` — `makePostHogClient`, `withEnvironmentProperty`, `disabledPostHogClient` |
-| `apps/web/src/hooks.server.ts` — `FORWARDED_HEADERS`, `ingestProxy` | `./server` — `proxyIngestRequest`, `ingestProxy`, `isIngestPath` |
-| `apps/web/src/lib/posthog.ts` | `.` — `scrubPostHogProperties`, `scrubPostHogEvent` |
-| `apps/web/src/lib/analytics.ts` | `./browser` — `makeAnalytics` |
-| `apps/web/src/hooks.client.ts` | stays in the app (SvelteKit-typed); the recipe above |
+MIT — see [LICENSE](LICENSE).

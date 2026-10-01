@@ -48,31 +48,27 @@ export const withMissingAsUndefined: <A>(
 const isSdkNotFoundError = (error: unknown): boolean =>
   typeof error === "object" && error !== null && "_tag" in error && error._tag === "NotFound";
 
+// Why the cast: alchemy beta.62–63 typed `ResourceClassLike.Aliases` as
+// `readonly string[]` (optional, no `| undefined`) while `ResourceClass`
+// carries `Aliases: readonly string[] | undefined`, which
+// `exactOptionalPropertyTypes` rejects. The pinned beta.79 accepts
+// `| undefined` (`lib/Resource.d.ts`), so that half is gone; whether the cast
+// can be dropped is effect-web#37.
+//
+// `Provider.collection` additionally can't infer its `Provider<R>` requirement
+// from a `ResourceClassLike` (its requirement conditional matches
+// `ResourceClass`, not the `Like` shape it constrains on — an upstream
+// inconsistency), so that requirement collapses to `never` there; the explicit
+// `Layer.provide(...)` calls in `Providers.ts` still wire each provider at
+// runtime. Re-check on every alchemy bump (pinned: see `alchemy` in
+// pnpm-workspace.yaml).
+
 /**
- * Reassert a `Resource(...)` class as `ResourceClassLike` for the alchemy
- * `Provider.*` seams. alchemy beta.62 types `ResourceClassLike.Aliases` as
- * `readonly string[]` (optional, no `| undefined`) while `ResourceClass` carries
- * `Aliases: readonly string[] | undefined`; under this repo's
- * `exactOptionalPropertyTypes` the two are incompatible, so `Provider.effect` /
- * `Provider.collection` reject a resource class directly. The cast is a pure
- * type coercion — the runtime value is the real class, so `.Type` / `.Aliases` /
+ * Re-types a `Resource(...)` class as `ResourceClassLike` so alchemy's
+ * `Provider.*` seams accept it under `exactOptionalPropertyTypes`; a type-only
+ * cast — the runtime value is the real class, so `.Type` / `.Aliases` /
  * `.Provider` are all still present.
  *
- * `Provider.collection` additionally can't infer its `Provider<R>` requirement
- * from a `ResourceClassLike` (its requirement conditional matches `ResourceClass`,
- * not the `Like` shape it constrains on — an upstream inconsistency), so that
- * requirement collapses to `never` there; the explicit `Layer.provide(...)` calls
- * in {@link ./Providers} still wire each provider at runtime. Drop once upstream
- * aligns the `Aliases` types and the collection constraint/return.
- *
- * Still needed as of alchemy 2.0.0-beta.63 (checked during #1114, which also
- * checked beta.64 before reverting to beta.63 for an unrelated Python-Worker
- * regression — see the PR body): both types are unchanged in
- * `node_modules/alchemy/lib/Resource.d.ts` — `Aliases?: readonly string[]` on
- * `ResourceClassLike`, `Aliases: readonly string[] | undefined` on
- * `ResourceClass`. Re-check on the next alchemy bump.
- */
-/**
  * @since 0.1.0
  * @category utilities
  */
@@ -134,8 +130,7 @@ const replaceOnIdentityChange =
  * `reconcile`/`delete`/`read` (where the resources genuinely differ: REST vs
  * SDK calls, different attribute shapes, whether a `delete` prop is honoured)
  * to be supplied verbatim by each resource module.
- */
-/**
+ *
  * @since 0.1.0
  * @category constructors
  */

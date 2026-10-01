@@ -16,7 +16,8 @@
  * `Database` layer (it lives in `./hyperdrive`, injected through
  * {@link RequestLayerInput.services}).
  *
- * The stubs mirror `WorkerBridge` internals of `alchemy 2.0.0-beta.72` —
+ * The stubs mirror `WorkerBridge` internals of the pinned alchemy beta
+ * (`catalogs.peers.alchemy`) —
  * `getSharedBuild` provides `Stack` as `{ name, stage, bindings: {},
  * resources: {}, actions: {} }` and the Worker entrypoint under the `Self`
  * tag — which is why `alchemy` is a tightly-ranged peer.

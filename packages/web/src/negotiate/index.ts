@@ -273,9 +273,9 @@ const weightOf = (q: Option.Option<string>): number =>
  * parameter, and it terminates the media type's parameter list — so the
  * split is positional: everything before `q` is the media type handed to
  * effect-jsonapi's §5 rule, `q` itself and anything after it belong to the
- * header field. (effect-jsonapi 0.14.0 does not make this split itself and
- * reads a `q` as a media-type parameter; its `main` does. Splitting here
- * keeps the verdict right on either.)
+ * header field. (effect-jsonapi 0.14.0 read a `q` as a media-type
+ * parameter; 0.16.1, the current peer floor, makes this split itself, so
+ * this copy can go: effect-web#35.)
  */
 const parseAccept = (header: Option.Option<string>): ReadonlyArray<AcceptInstance> =>
   Option.match(header, {
@@ -398,7 +398,9 @@ const negotiateWrite = (
  * dependency-free beyond `options` (it reads only the request line and
  * headers), so a cache handle and a dispatch handle can share one verdict.
  * Reads (`GET` / `HEAD`) negotiate on `Accept`, mutating methods on
- * `Content-Type`, and anything else (`OPTIONS`, …) is HTML.
+ * `Content-Type`, and anything else (`OPTIONS`, …) is HTML. The JSON:API
+ * surface is chosen by its media type, never a path prefix, and a disallowed
+ * media-type parameter answers 406 / 415 (JSONAPI-NEG-001 / JSONAPI-NEG-002).
  *
  * @example
  * ```ts

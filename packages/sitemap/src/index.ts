@@ -163,7 +163,8 @@ export const renderUrl = (base: string, entry: SitemapUrl): string => {
 };
 
 /**
- * The `<urlset>` opening, with the XML declaration.
+ * The XML declaration and `<urlset>` opening tag that begin every sitemap
+ * ({@link renderSitemap}, and the first chunk of {@link sitemapStream}).
  *
  * @since 0.1.0
  * @category constants
@@ -171,7 +172,8 @@ export const renderUrl = (base: string, entry: SitemapUrl): string => {
 export const URLSET_OPEN = `<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">`;
 
 /**
- * The `<urlset>` closing.
+ * The `<urlset>` closing tag that ends every sitemap ({@link renderSitemap},
+ * and the last chunk of {@link sitemapStream}).
  *
  * @since 0.1.0
  * @category constants

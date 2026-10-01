@@ -16,7 +16,7 @@ export interface PackageConfigOptions {
   /** `pack.entry`: `index` → `src/index.ts`, every other key → `src/<key>/index.ts`. */
   readonly entries: ReadonlyArray<string>;
   /**
-   * HELD PRIVATE UNTIL alchemy SHIPS AN EFFECT rc.118 BUILD (effect-web#31).
+   * Held private until alchemy ships an Effect rc.118 build (effect-web#33).
    * alchemy 2.0.0-beta.79 (and `@distilled.cloud/*` through it) imports the
    * removed `effect/unstable/*` paths, so any suite that loads the alchemy
    * runtime fails with ERR_MODULE_NOT_FOUND. These test globs (relative to the

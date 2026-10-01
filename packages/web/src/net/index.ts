@@ -179,7 +179,7 @@ export class UnsafeUrl extends Schema.TaggedError<UnsafeUrl>()("UnsafeUrl", {
  * list ({@link isBlockedHost}). The single check every caller that validates
  * a URL before requesting it (or letting something else request it) runs —
  * {@link followRedirects}' per-hop guard and a Browser Rendering navigation
- * guard (SEC-SSRF-004) alike.
+ * guard (SEC-SSRF-003) alike.
  *
  * @example
  * ```ts
