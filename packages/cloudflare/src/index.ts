@@ -13,6 +13,8 @@
  *   batches, drop-and-warn decoding, the consumer prelude.
  * - `./cache` — the KV read-through resource cache with an injectable
  *   serveability policy.
+ * - `./robots` — `robotsKvCache`, the KV adapter for
+ *   `@thomasfosterau/effect-web-robots`' `RobotsCache` seam.
  * - `./testing` — in-memory KV / R2 / Queue stubs, the stub env builder, the
  *   retry-visibility reporter.
  *

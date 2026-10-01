@@ -106,7 +106,7 @@ export class RobotsTxt extends Data.Class<{
 /* oxlint-disable effect/avoid-schema-suffix, effect/require-schema-type-alias */
 
 /**
- * Schema for {@link Rule}.
+ * Validates that a value is a {@link Rule} instance (`Schema.instanceOf`).
  *
  * @since 0.1.0
  * @category schemas
@@ -114,7 +114,7 @@ export class RobotsTxt extends Data.Class<{
 export const RuleSchema = Schema.instanceOf(Rule, { identifier: "Rule" });
 
 /**
- * Schema for {@link RobotGroup}.
+ * Validates that a value is a {@link RobotGroup} instance (`Schema.instanceOf`).
  *
  * @since 0.1.0
  * @category schemas
@@ -122,7 +122,7 @@ export const RuleSchema = Schema.instanceOf(Rule, { identifier: "Rule" });
 export const RobotGroupSchema = Schema.instanceOf(RobotGroup, { identifier: "RobotGroup" });
 
 /**
- * Schema for {@link RobotsTxt}.
+ * Validates that a value is a {@link RobotsTxt} instance (`Schema.instanceOf`); use {@link RobotsTxtFromString} to parse text.
  *
  * @since 0.1.0
  * @category schemas
@@ -598,7 +598,18 @@ export interface RobotsCache<R = never> {
 }
 
 /**
- * A cache that stores nothing: every check fetches.
+ * A cache that stores nothing: every check fetches. The default cache of
+ * {@link makeRobotsChecker}.
+ *
+ * @example
+ * ```ts
+ * import * as Effect from "effect/Effect"
+ * import * as Option from "effect/Option"
+ * import { noRobotsCache } from "@thomasfosterau/effect-web-robots"
+ *
+ * await Effect.runPromise(noRobotsCache.put("https://example.com", "User-agent: *", 60))
+ * Option.isNone(await Effect.runPromise(noRobotsCache.get("https://example.com"))) // true
+ * ```
  *
  * @since 0.1.0
  * @category caches
@@ -925,6 +936,19 @@ export const LOW_CHURN_CACHE_CONTROL =
 /**
  * A guard for the strings the checker treats as sentinels: a real body is
  * neither empty nor the unavailable marker.
+ *
+ * @example
+ * ```ts
+ * import {
+ *   isRobotsBody,
+ *   ROBOTS_NO_RESTRICTIONS,
+ *   ROBOTS_UNAVAILABLE_SENTINEL,
+ * } from "@thomasfosterau/effect-web-robots"
+ *
+ * isRobotsBody("User-agent: *\nDisallow: /admin") // true
+ * isRobotsBody(ROBOTS_NO_RESTRICTIONS) // false
+ * isRobotsBody(ROBOTS_UNAVAILABLE_SENTINEL) // false
+ * ```
  *
  * @since 0.1.0
  * @category predicates

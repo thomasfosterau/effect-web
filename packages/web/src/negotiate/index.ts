@@ -273,9 +273,9 @@ const weightOf = (q: Option.Option<string>): number =>
  * parameter, and it terminates the media type's parameter list — so the
  * split is positional: everything before `q` is the media type handed to
  * effect-jsonapi's §5 rule, `q` itself and anything after it belong to the
- * header field. (effect-jsonapi 0.14.0 does not make this split itself and
- * reads a `q` as a media-type parameter; its `main` does. Splitting here
- * keeps the verdict right on either.)
+ * header field. (effect-jsonapi 0.14.0 read a `q` as a media-type
+ * parameter; 0.16.1, the current peer floor, makes this split itself, so
+ * this copy can go: effect-web#35.)
  */
 const parseAccept = (header: Option.Option<string>): ReadonlyArray<AcceptInstance> =>
   Option.match(header, {

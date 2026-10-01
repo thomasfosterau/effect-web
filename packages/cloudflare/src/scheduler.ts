@@ -26,7 +26,8 @@ export interface SchedulerService {
 }
 
 /**
- * The `Scheduler` service tag.
+ * Keeps an effect running past the response (`ctx.waitUntil` on Workers,
+ * detached when there is no `ctx`); provide it with {@link schedulerLayer}.
  *
  * @since 0.1.0
  * @category services
