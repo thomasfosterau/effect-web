@@ -25,7 +25,6 @@
   "files": [
     "dist",
     "README.md",
-    "CLAUDE.md",
     "LICENSE"
   ],
   "type": "module",
