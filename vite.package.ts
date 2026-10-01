@@ -15,6 +15,16 @@ export interface PackageConfigOptions {
   readonly name: string;
   /** `pack.entry`: `index` → `src/index.ts`, every other key → `src/<key>/index.ts`. */
   readonly entries: ReadonlyArray<string>;
+  /**
+   * HELD PRIVATE UNTIL alchemy SHIPS AN EFFECT rc.118 BUILD (effect-web#31).
+   * alchemy 2.0.0-beta.79 (and `@distilled.cloud/*` through it) imports the
+   * removed `effect/unstable/*` paths, so any suite that loads the alchemy
+   * runtime fails with ERR_MODULE_NOT_FOUND. These test globs (relative to the
+   * package) are left out of `test:unit` / `test:coverage` / the root vitest
+   * run and run only in `test:alchemy`, the separate non-required CI job. They
+   * are not skipped. `"all"` means every test in the package.
+   */
+  readonly alchemyTests?: ReadonlyArray<string> | "all";
 }
 
 /**
@@ -40,7 +50,14 @@ const siblingBuild = { task: "build", from: "dependencies" as const };
 
 const escapeRegExp = (value: string) => value.replace(/[.*+?^${}()|[\]\\/]/g, "\\$&");
 
-export const packageConfig = ({ url, name, entries }: PackageConfigOptions) => {
+/** Set (by `test:alchemy` only) to include the alchemy-bound suites in a run. */
+const ALCHEMY_ENV = "EFFECT_WEB_ALCHEMY_TESTS";
+
+export const packageConfig = ({ url, name, entries, alchemyTests }: PackageConfigOptions) => {
+  const alchemyGlobs: ReadonlyArray<string> =
+    alchemyTests === undefined ? [] : alchemyTests === "all" ? ["tests/**"] : alchemyTests;
+  const includeAlchemy = process.env[ALCHEMY_ENV] === "1";
+  const allAlchemy = alchemyTests === "all";
   const srcDir = new URL("./src/", url).pathname;
   const subpaths = entries.filter((entry) => entry !== "index");
   const entry = Object.fromEntries(
@@ -69,20 +86,35 @@ export const packageConfig = ({ url, name, entries }: PackageConfigOptions) => {
           input: cacheInputs,
           output: ["dist/**"],
         },
-        "test:unit": {
-          command: "vp test run tests",
-          dependsOn: [siblingBuild],
-          env: ["VITEST_MAX_WORKERS", "NODE_OPTIONS"],
-          input: cacheInputs,
-          output: [],
-        },
-        "test:coverage": {
-          command: "vp test run tests --coverage",
-          dependsOn: [siblingBuild],
-          env: ["VITEST_MAX_WORKERS", "NODE_OPTIONS"],
-          input: cacheInputs,
-          output: ["coverage/**"],
-        },
+        ...(allAlchemy
+          ? {}
+          : {
+              "test:unit": {
+                command: "vp test run tests",
+                dependsOn: [siblingBuild],
+                env: ["VITEST_MAX_WORKERS", "NODE_OPTIONS"],
+                input: cacheInputs,
+                output: [],
+              },
+              "test:coverage": {
+                command: "vp test run tests --coverage",
+                dependsOn: [siblingBuild],
+                env: ["VITEST_MAX_WORKERS", "NODE_OPTIONS"],
+                input: cacheInputs,
+                output: ["coverage/**"],
+              },
+            }),
+        // The alchemy-bound suites (see `alchemyTests`): RED until alchemy
+        // ships an rc.118 build; run by the non-required `alchemy` CI job.
+        ...(alchemyGlobs.length === 0
+          ? {}
+          : {
+              "test:alchemy": {
+                command: `${ALCHEMY_ENV}=1 vp test run tests`,
+                dependsOn: [siblingBuild],
+                cache: false,
+              },
+            }),
         // Compiles AND RUNS every JSDoc `@example` (see docgen.json). Examples
         // import the package by name exactly as a consumer would, which
         // resolves through `exports` to `dist/` — hence the build edge.
@@ -123,6 +155,9 @@ export const packageConfig = ({ url, name, entries }: PackageConfigOptions) => {
     },
     test: {
       include: ["tests/**/*.test.ts"],
+      ...(includeAlchemy || alchemyGlobs.length === 0
+        ? {}
+        : { exclude: ["**/node_modules/**", "**/dist/**", ...alchemyGlobs] }),
       testTimeout: 30_000,
       ...(maxWorkers === undefined ? {} : { maxWorkers: Number(maxWorkers) }),
       coverage: {

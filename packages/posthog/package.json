@@ -2,6 +2,7 @@
   "$schema": "https://www.schemastore.org/package",
   "name": "@thomasfosterau/effect-web-posthog",
   "version": "0.0.0",
+  "private": true,
   "description": "PostHog for Effect web applications (prototype): the Alchemy providers for a PostHog project's dashboards, feature flags, surveys and environment tokens, the server-side PostHog service and per-request client factory, the lazily loaded browser client, the ingest reverse proxy, and the shared event scrubber.",
   "keywords": [
     "alchemy",
