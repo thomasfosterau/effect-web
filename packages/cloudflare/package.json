@@ -2,6 +2,7 @@
   "$schema": "https://www.schemastore.org/package",
   "name": "@thomasfosterau/effect-web-cloudflare",
   "version": "0.0.0",
+  "private": true,
   "description": "The Cloudflare Workers / Alchemy runtime scaffold for Effect: per-request binding layers, the Scheduler bridge, request metrics, the Hyperdrive database seam, queue producer/consumer glue, the KV read-through resource cache, and in-memory binding stubs for tests.",
   "keywords": [
     "alchemy",

@@ -7,15 +7,15 @@
 import type * as Effect from "effect/Effect";
 import type * as Option from "effect/Option";
 import type * as Result from "effect/Result";
-import type * as HttpServerResponse from "effect/unstable/http/HttpServerResponse";
+import type * as HttpServerResponse from "effect/http/HttpServerResponse";
 import {
   crossOriginMutationRejection,
   type RouteVaryClass,
   responseVary,
   securityHeaders,
 } from "@thomasfosterau/effect-web";
-import * as Headers from "effect/unstable/http/Headers";
-import * as HttpServerRequest from "effect/unstable/http/HttpServerRequest";
+import * as Headers from "effect/http/Headers";
+import * as HttpServerRequest from "effect/http/HttpServerRequest";
 import {
   checkUrl,
   type FetchFailed,

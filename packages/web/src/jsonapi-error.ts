@@ -11,7 +11,7 @@
  */
 import * as HashSet from "effect/HashSet";
 import * as Schema from "effect/Schema";
-import * as HttpServerResponse from "effect/unstable/http/HttpServerResponse";
+import * as HttpServerResponse from "effect/http/HttpServerResponse";
 
 /**
  * The JSON:API media type. Duplicated from `@thomasfosterau/effect-jsonapi`'s
@@ -144,7 +144,7 @@ export const jsonApiErrorDocument = (error: NegotiationError): JsonApiErrorDocum
  *
  * @example
  * ```ts
- * import * as Headers from "effect/unstable/http/Headers"
+ * import * as Headers from "effect/http/Headers"
  * import { jsonApiErrorResponse, SERVICE_UNAVAILABLE } from "@thomasfosterau/effect-web"
  *
  * const response = jsonApiErrorResponse(SERVICE_UNAVAILABLE)

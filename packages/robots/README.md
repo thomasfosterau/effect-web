@@ -10,7 +10,7 @@ Every export's doc comment names the application behaviour it carries and the in
 pnpm add @thomasfosterau/effect-web-robots effect
 ```
 
-Peer: `effect` (>= 4.0.0-rc.115). One entry, `sideEffects: false`, no top-level statements in `dist/`.
+Peer: `effect` (>= 4.0.0-rc.118). One entry, `sideEffects: false`, no top-level statements in `dist/`.
 
 ## The library (effect-robots.txt, ported)
 

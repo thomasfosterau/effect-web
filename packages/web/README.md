@@ -1,6 +1,6 @@
 # @thomasfosterau/effect-web
 
-Framework-neutral web request/response utilities on `effect/unstable/http`, extracted from the `thomasfosterau/website`, `thomasfosterau/gardeneria` and `thomasfosterau/preferenceflow` applications: the same Fetch-API-level plumbing each of them carried, byte-identical or differing only in comments, now once, with no SvelteKit, Alchemy or Cloudflare dependency, so it serves a SvelteKit hook, an `HttpApi` middleware or a bare Worker equally.
+Framework-neutral web request/response utilities on `effect/http`, extracted from the `thomasfosterau/website`, `thomasfosterau/gardeneria` and `thomasfosterau/preferenceflow` applications: the same Fetch-API-level plumbing each of them carried, byte-identical or differing only in comments, now once, with no SvelteKit, Alchemy or Cloudflare dependency, so it serves a SvelteKit hook, an `HttpApi` middleware or a bare Worker equally.
 
 Every helper's doc comment names the application behaviour it carries and the invariant id it honours (`CACHE-AUTH-003`, `SEC-SSRF-003`, `SEC-CSRF-001`, `PERF-CACHE-001/005`, `SEC-SSRF-005`); those ids and the `#NNN` issue citations point at the applications' specs, the evidence behind each decision.
 
@@ -10,7 +10,7 @@ Every helper's doc comment names the application behaviour it carries and the in
 pnpm add @thomasfosterau/effect-web effect
 ```
 
-`effect` (>= 4.0.0-rc.115) is a peer dependency. `@thomasfosterau/effect-jsonapi` (>= 0.14.0) is an **optional** peer, needed only by the `./negotiate` entry.
+`effect` (>= 4.0.0-rc.118) is a peer dependency. `@thomasfosterau/effect-jsonapi` (>= 0.16.1, the first release built on rc.118) is an **optional** peer, needed only by the `./negotiate` entry.
 
 | Entry | What it is | Peers |
 | --- | --- | --- |
@@ -23,7 +23,7 @@ Every entry is `sideEffects: false`: no top-level statements in `dist/`.
 
 ## The SvelteKit hook recipe
 
-The helpers are written over `effect/unstable/http`'s `Headers`, `HttpServerRequest` and `HttpServerResponse`. Three adapters bridge to the Fetch types a SvelteKit `Handle` deals in: `HttpServerRequest.fromWeb` (Effect's own) for a request, `HttpServerResponse.toWeb` (Effect's own) for a whole response, and this package's `updateWebHeaders` / `applyToWebHeaders` for a header policy on a Fetch `Response`. The `*Web` functions (`crossOriginMutationRejectionWeb`, `jsonApiErrorResponseWeb`, `negotiateWebRequest`, `requestForRouterWeb`) are those adapters pre-applied.
+The helpers are written over `effect/http`'s `Headers`, `HttpServerRequest` and `HttpServerResponse`. Three adapters bridge to the Fetch types a SvelteKit `Handle` deals in: `HttpServerRequest.fromWeb` (Effect's own) for a request, `HttpServerResponse.toWeb` (Effect's own) for a whole response, and this package's `updateWebHeaders` / `applyToWebHeaders` for a header policy on a Fetch `Response`. The `*Web` functions (`crossOriginMutationRejectionWeb`, `jsonApiErrorResponseWeb`, `negotiateWebRequest`, `requestForRouterWeb`) are those adapters pre-applied.
 
 ```ts
 // hooks.server.ts

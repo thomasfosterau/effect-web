@@ -69,6 +69,24 @@ describe("workerEnvConfigProviderLayer", () => {
     expect(got).toBe("fallback");
   });
 
+  // rc.118 treats an empty string as MISSING (unless a provider is built with
+  // `preserveEmptyStrings: true`); the Worker env keeps that default, so a var
+  // deployed as "" behaves like an unset one. Pinned so a change is deliberate.
+  it("reads an empty-string var as missing, as Effect rc.118 does", async () => {
+    const blank = { PUBLIC_SITE_URL: "" };
+    const exit = await Effect.runPromiseExit(
+      Config.String("PUBLIC_SITE_URL").pipe(Effect.provide(workerEnvConfigProviderLayer(blank))),
+    );
+    expect(exit._tag).toBe("Failure");
+    const got = await Effect.runPromise(
+      Config.String("PUBLIC_SITE_URL").pipe(
+        Config.withDefault("fallback"),
+        Effect.provide(workerEnvConfigProviderLayer(blank)),
+      ),
+    );
+    expect(got).toBe("fallback");
+  });
+
   it("does not expose a binding object as a string", async () => {
     const exit = await Effect.runPromiseExit(
       Config.String("Cache").pipe(Effect.provide(workerEnvConfigProviderLayer(env))),

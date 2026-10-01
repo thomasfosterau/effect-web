@@ -2,7 +2,7 @@
  * The Fetch-API adapter: applies a `Headers`-level policy from `./headers`
  * to a Web `Response` — the shape a SvelteKit `Handle` or a Worker `fetch`
  * export deals in. Everything else in this package is written over
- * `effect/unstable/http` types; `HttpServerRequest.fromWeb` /
+ * `effect/http` types; `HttpServerRequest.fromWeb` /
  * `HttpServerResponse.toWeb` are the request and whole-response adapters,
  * and this module is the header-only one.
  *
@@ -14,7 +14,7 @@
  * @since 0.1.0
  */
 import * as Arr from "effect/Array";
-import * as Headers from "effect/unstable/http/Headers";
+import * as Headers from "effect/http/Headers";
 
 /**
  * The names whose value `next` sets differently from `previous` (a policy

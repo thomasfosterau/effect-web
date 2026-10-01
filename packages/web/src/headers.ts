@@ -2,7 +2,7 @@
  * Response-header policies shared by every web surface the applications
  * serve — the security baseline, the stage `noindex`, the `Vary` discipline
  * and the `Cache-Control` safety net — as pure functions over
- * `effect/unstable/http`'s immutable `Headers`, so the same policy applies
+ * `effect/http`'s immutable `Headers`, so the same policy applies
  * to an `HttpServerResponse`, to a Fetch `Response` (through `./web`) or to
  * a SvelteKit hook's `response.headers`.
  *
@@ -19,8 +19,8 @@
 import * as Arr from "effect/Array";
 import * as Option from "effect/Option";
 import * as Record from "effect/Record";
-import * as Headers from "effect/unstable/http/Headers";
-import * as HttpServerResponse from "effect/unstable/http/HttpServerResponse";
+import * as Headers from "effect/http/Headers";
+import * as HttpServerResponse from "effect/http/HttpServerResponse";
 
 /** Sets `name` to `value` only when `headers` carries no header of that name. */
 const setIfAbsent = (headers: Headers.Headers, name: string, value: string): Headers.Headers =>
@@ -59,7 +59,7 @@ export const SECURITY_HEADER_DEFAULTS = {
  *
  * @example
  * ```ts
- * import * as Headers from "effect/unstable/http/Headers"
+ * import * as Headers from "effect/http/Headers"
  * import { securityHeaders } from "@thomasfosterau/effect-web"
  *
  * const headers = securityHeaders(Headers.fromInput({ "x-frame-options": "SAMEORIGIN" }))
@@ -90,7 +90,7 @@ export const securityHeaders = (headers: Headers.Headers): Headers.Headers =>
  *
  * @example
  * ```ts
- * import * as Headers from "effect/unstable/http/Headers"
+ * import * as Headers from "effect/http/Headers"
  * import { stageNoindex } from "@thomasfosterau/effect-web"
  *
  * Headers.get(stageNoindex(Headers.empty, { indexable: false }), "x-robots-tag") // Option.some("noindex")
@@ -114,7 +114,7 @@ export const stageNoindex = (
  *
  * @example
  * ```ts
- * import * as Headers from "effect/unstable/http/Headers"
+ * import * as Headers from "effect/http/Headers"
  * import { appendVary } from "@thomasfosterau/effect-web"
  *
  * const headers = appendVary(Headers.fromInput({ vary: "accept" }), ["Accept", "Cookie"])
@@ -204,7 +204,7 @@ export const VARY_BY_ROUTE_CLASS: Readonly<Record<RouteVaryClass, ReadonlyArray<
  *
  * @example
  * ```ts
- * import * as Headers from "effect/unstable/http/Headers"
+ * import * as Headers from "effect/http/Headers"
  * import { responseVary } from "@thomasfosterau/effect-web"
  *
  * Headers.get(responseVary(Headers.empty, "negotiated"), "vary") // Option.some("Cookie, Accept-Language, Accept")
@@ -389,7 +389,7 @@ export const PRIVATE_NO_STORE = "private, no-store";
  *
  * @example
  * ```ts
- * import * as Headers from "effect/unstable/http/Headers"
+ * import * as Headers from "effect/http/Headers"
  * import { ensureCacheControl } from "@thomasfosterau/effect-web"
  *
  * Headers.get(ensureCacheControl(Headers.empty), "cache-control") // Option.some("private, no-store")
@@ -420,7 +420,7 @@ export const ensureCacheControl = (headers: Headers.Headers): Headers.Headers =>
  *
  * @example
  * ```ts
- * import * as Headers from "effect/unstable/http/Headers"
+ * import * as Headers from "effect/http/Headers"
  * import { cacheControlForViewer } from "@thomasfosterau/effect-web"
  *
  * const declared = Headers.fromInput({ "cache-control": "public, max-age=60" })
@@ -446,8 +446,8 @@ export const cacheControlForViewer = (
  *
  * @example
  * ```ts
- * import * as Headers from "effect/unstable/http/Headers"
- * import * as HttpServerResponse from "effect/unstable/http/HttpServerResponse"
+ * import * as Headers from "effect/http/Headers"
+ * import * as HttpServerResponse from "effect/http/HttpServerResponse"
  * import { ensureCacheControl, securityHeaders, updateHeaders } from "@thomasfosterau/effect-web"
  *
  * const response = updateHeaders(HttpServerResponse.text("hi"), (headers) => ensureCacheControl(securityHeaders(headers)))

@@ -91,6 +91,10 @@ export const envStringEntries = (env: WorkerEnvLike | undefined): Record<string,
  * `Config.String(...)` would fall through to its `withDefault`, silently
  * ignoring the deployed value.
  *
+ * Effect rc.118 treats an empty string as missing, and this provider keeps
+ * that default: a Worker var deployed as `""` falls through to `withDefault`
+ * (and fails a bare `Config.String`) exactly like an unset one.
+ *
  * @example
  * ```ts
  * import * as Config from "effect/Config"

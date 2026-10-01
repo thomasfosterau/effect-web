@@ -31,9 +31,9 @@
  * @since 0.1.0
  */
 import * as Option from "effect/Option";
-import * as Headers from "effect/unstable/http/Headers";
-import type * as HttpServerRequest from "effect/unstable/http/HttpServerRequest";
-import type * as HttpServerResponse from "effect/unstable/http/HttpServerResponse";
+import * as Headers from "effect/http/Headers";
+import type * as HttpServerRequest from "effect/http/HttpServerRequest";
+import type * as HttpServerResponse from "effect/http/HttpServerResponse";
 import { ensureCacheControl, updateHeaders } from "./headers.ts";
 import {
   CROSS_ORIGIN_REJECTED,
@@ -76,7 +76,7 @@ export const isCrossOrigin = (origin: Option.Option<string>, expectedOrigin: str
  *
  * @example
  * ```ts
- * import * as HttpServerRequest from "effect/unstable/http/HttpServerRequest"
+ * import * as HttpServerRequest from "effect/http/HttpServerRequest"
  * import { isCrossOriginRejected } from "@thomasfosterau/effect-web"
  *
  * const request = new Request("https://thomasfoster.au/uploads", { method: "POST" })
@@ -103,7 +103,7 @@ export const isCrossOriginRejected = (
  * @example
  * ```ts
  * import * as Option from "effect/Option"
- * import * as HttpServerRequest from "effect/unstable/http/HttpServerRequest"
+ * import * as HttpServerRequest from "effect/http/HttpServerRequest"
  * import { crossOriginMutationRejection } from "@thomasfosterau/effect-web"
  *
  * const request = new Request("https://thomasfoster.au/posts", { method: "POST" })

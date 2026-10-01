@@ -12,8 +12,8 @@
 
 import { describe, expect, it, vi } from "vite-plus/test";
 import * as Effect from "effect/Effect";
-import * as HttpServerRequest from "effect/unstable/http/HttpServerRequest";
-import * as HttpServerResponse from "effect/unstable/http/HttpServerResponse";
+import * as HttpServerRequest from "effect/http/HttpServerRequest";
+import * as HttpServerResponse from "effect/http/HttpServerResponse";
 import type { PostHog as PostHogClient } from "posthog-node";
 import { SECURITY_HEADER_DEFAULTS } from "@thomasfosterau/effect-web";
 import {
@@ -279,7 +279,7 @@ describe("proxyIngestRequest", () => {
   });
 });
 
-describe("ingestProxy — the effect/unstable/http handler", () => {
+describe("ingestProxy — the effect/http handler", () => {
   it("proxies the HttpServerRequest in context and answers with the raw upstream response", async () => {
     const calls: Array<string> = [];
     const response = await Effect.runPromise(

@@ -125,11 +125,17 @@ export default defineConfig({
       // `node:*` are the only things that work there. The Effect preset's
       // service rules have no satisfiable fix in these files.
       {
-        files: ["**/vite.config.ts", "**/vitest.config.ts", "vite.package.ts"],
+        files: ["**/vite.config.ts", "**/vitest.config.ts", "vite.package.ts", "scripts/**"],
         rules: {
           "effect/avoid-node-imports": "off",
           "effect/avoid-sync-fs": "off",
           "effect/avoid-process-env": "off",
+          // Plain Node build tooling (the task-graph builder, the dist guard):
+          // native loops, `.length` and `Object.fromEntries` are the idiom.
+          "effect/imperative-loops": "off",
+          "effect/no-length-comparison": "off",
+          "effect/prefer-arr-match": "off",
+          "effect/avoid-native-object-helpers": "off",
           "effect/use-console-service": "off",
           "effect/use-filesystem-service": "off",
           "effect/use-path-service": "off",
@@ -204,10 +210,35 @@ export default defineConfig({
         command: "echo 'docgen: every example compiled and ran'",
         dependsOn: [
           "@thomasfosterau/effect-web#docgen",
-          "@thomasfosterau/effect-web-cloudflare#docgen",
-          "@thomasfosterau/effect-web-posthog#docgen",
           "@thomasfosterau/effect-web-robots#docgen",
           "@thomasfosterau/effect-web-sitemap#docgen",
+        ],
+        cache: false,
+      },
+      // Import guard (effect-web#31): the built dist of the three packages
+      // that publish on rc.118 imports no `effect/unstable/*`, alchemy or
+      // `@distilled.cloud/*`. Reads `dist/`, hence the build edges.
+      "check:dist": {
+        command: "node scripts/check-dist-imports.mjs",
+        dependsOn: [
+          "@thomasfosterau/effect-web#build",
+          "@thomasfosterau/effect-web-robots#build",
+          "@thomasfosterau/effect-web-sitemap#build",
+        ],
+        cache: false,
+      },
+      // The alchemy-bound work of the two packages held private until alchemy
+      // ships an rc.118 build (effect-web#31): cloudflare's whole suite and
+      // docgen, posthog's `alchemy.test.ts` and docgen. RED until then, so it is NOT in
+      // `check`, `docgen` or `test:coverage`; the non-required `alchemy` CI
+      // job runs it. Nothing is skipped.
+      alchemy: {
+        command: "echo 'alchemy: every alchemy-bound suite and example green'",
+        dependsOn: [
+          "@thomasfosterau/effect-web-cloudflare#test:alchemy",
+          "@thomasfosterau/effect-web-cloudflare#docgen",
+          "@thomasfosterau/effect-web-posthog#test:alchemy",
+          "@thomasfosterau/effect-web-posthog#docgen",
         ],
         cache: false,
       },
