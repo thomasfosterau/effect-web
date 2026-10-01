@@ -8,8 +8,10 @@
 
 import { describe, expect, it } from "vite-plus/test";
 import * as Cloudflare from "alchemy/Cloudflare";
+import * as Cause from "effect/Cause";
 import * as Config from "effect/Config";
 import * as Effect from "effect/Effect";
+import * as Exit from "effect/Exit";
 import {
   envStringEntries,
   workerEnv,
@@ -77,7 +79,10 @@ describe("workerEnvConfigProviderLayer", () => {
     const exit = await Effect.runPromiseExit(
       Config.String("PUBLIC_SITE_URL").pipe(Effect.provide(workerEnvConfigProviderLayer(blank))),
     );
-    expect(exit._tag).toBe("Failure");
+    expect(Exit.isFailure(exit)).toBe(true);
+    const error = Exit.isFailure(exit) ? Cause.squash(exit.cause) : undefined;
+    expect(error).toBeInstanceOf(Config.ConfigError);
+    expect(String(error)).toContain("PUBLIC_SITE_URL");
     const got = await Effect.runPromise(
       Config.String("PUBLIC_SITE_URL").pipe(
         Config.withDefault("fallback"),

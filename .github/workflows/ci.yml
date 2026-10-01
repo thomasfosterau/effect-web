@@ -81,5 +81,17 @@ jobs:
         with:
           persist-credentials: false
       - uses: ./.github/actions/setup
-      - name: Alchemy-bound suites and examples
-        run: vp run alchemy
+      # One step per suite: vite-plus cancels the remaining tasks of a single
+      # `vp run alchemy` at the first failure, which would hide the other three.
+      - name: effect-web-cloudflare alchemy-bound tests
+        if: ${{ !cancelled() }}
+        run: vp run --filter @thomasfosterau/effect-web-cloudflare test:alchemy
+      - name: effect-web-cloudflare docgen
+        if: ${{ !cancelled() }}
+        run: vp run --filter @thomasfosterau/effect-web-cloudflare docgen
+      - name: effect-web-posthog alchemy-bound tests
+        if: ${{ !cancelled() }}
+        run: vp run --filter @thomasfosterau/effect-web-posthog test:alchemy
+      - name: effect-web-posthog docgen
+        if: ${{ !cancelled() }}
+        run: vp run --filter @thomasfosterau/effect-web-posthog docgen

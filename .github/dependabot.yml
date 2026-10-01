@@ -4,7 +4,8 @@
 #
 # `groups` collect dependencies that MUST move together: the Effect 4 release
 # line is a lockstep-versioned singleton set; the vitest toolchain is pinned to
-# vite-plus's exact versions, so version updates to any of the three are
+# vite-plus's exact versions, so version updates to any of the four (`vite`,
+# `vitest`, `@vitest/coverage-istanbul` and `vite-plus`) are
 # ignored (they move together by hand, with the @effect/tsgo pin — see
 # pnpm-workspace.yaml) while SECURITY updates stay enabled (the ignore is
 # scoped to the `version-update:semver-*` update types; a bare
@@ -54,6 +55,13 @@ updates:
             "version-update:semver-patch",
           ]
       - dependency-name: "vite-plus"
+        update-types:
+          [
+            "version-update:semver-major",
+            "version-update:semver-minor",
+            "version-update:semver-patch",
+          ]
+      - dependency-name: "@vitest/coverage-istanbul"
         update-types:
           [
             "version-update:semver-major",
