@@ -505,7 +505,7 @@ describe("RetryVisibilityReporter", () => {
     expect(reporter.retriedThenPassed()).toHaveLength(1);
     reporter.onTestRunEnd();
     expect(warn.mock.calls.map((call) => String(call[0]))[1]).toMatch(/^::warning::/);
-    if (previous === undefined) delete process.env.CI;
+    if (previous === undefined) Reflect.deleteProperty(process.env, "CI");
     else process.env.CI = previous;
   });
 });
