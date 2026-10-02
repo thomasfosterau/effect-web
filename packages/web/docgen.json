@@ -1,5 +1,6 @@
 {
   "$schema": "../../node_modules/@effect/docgen/schema.json",
+  "runExamples": true,
   "exclude": ["src/index.ts", "src/internal/**/*.ts"],
   "parseCompilerOptions": {
     "noEmit": true,
