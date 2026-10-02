@@ -13,8 +13,8 @@ catalogs:
       specifier: ^3.0.3
       version: 3.0.3
     '@cloudflare/workers-types':
-      specifier: ^5.20260927.1
-      version: 5.20260927.1
+      specifier: ^5.20260930.2
+      version: 5.20260930.2
     '@distilled.cloud/posthog':
       specifier: 1.0.0-rc.12
       version: 1.0.0-rc.12
@@ -158,7 +158,7 @@ importers:
     devDependencies:
       '@cloudflare/workers-types':
         specifier: 'catalog:'
-        version: 5.20260927.1
+        version: 5.20260930.2
       '@effect/language-service':
         specifier: 'catalog:'
         version: 0.87.3
@@ -572,8 +572,8 @@ packages:
     cpu: [x64]
     os: [win32]
 
-  '@cloudflare/workers-types@5.20260927.1':
-    resolution: {integrity: sha512-7/L0y4Pb8ig/8QSQW4/g4WbGyPYKniw+uC03nkN7VMvawHTWEuqeoVCKi9nOHKiya434eeEUaic2o0+vJhKjYw==}
+  '@cloudflare/workers-types@5.20260930.2':
+    resolution: {integrity: sha512-zOJM3vdCVB7iszFDvXvusORu1Ssre6+6x1t+opmbJ4ahi4keylnK/hB6/dKuRPLG7eqS/DO7W4IMjvas6pCvJg==}
 
   '@distilled.cloud/aws@1.0.0-rc.12':
     resolution: {integrity: sha512-L4TTEwMKB1ymXbYUqvYeoy5UWgmJtqQSzry2qWtAvD2ccwVGy0F7cFViEIYQk7boF4ZIP6SfhAls4+y1fVIi/g==}
@@ -4008,7 +4008,7 @@ snapshots:
   '@cloudflare/workerd-windows-64@1.20260901.1':
     optional: true
 
-  '@cloudflare/workers-types@5.20260927.1': {}
+  '@cloudflare/workers-types@5.20260930.2': {}
 
   '@distilled.cloud/aws@1.0.0-rc.12(effect@4.0.0-rc.118)':
     dependencies:
@@ -4139,7 +4139,7 @@ snapshots:
 
   '@effect/sql-d1@4.0.0-rc.117(effect@4.0.0-rc.118)':
     dependencies:
-      '@cloudflare/workers-types': 5.20260927.1
+      '@cloudflare/workers-types': 5.20260930.2
       effect: 4.0.0-rc.118
 
   '@effect/sql-sqlite-do@4.0.0-rc.117(effect@4.0.0-rc.118)':
