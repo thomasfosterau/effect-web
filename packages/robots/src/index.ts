@@ -13,8 +13,8 @@
  *    `packages/jobs/src/crawl/robots.ts`): {@link evaluateRobots} (the
  *    decision with its diagnostics), {@link fetchRobots} (RFC 9309 §2.3.1's
  *    failure posture over an `HttpClient`), {@link RobotsCache} (the
- *    pluggable per-origin cache — a Workers KV adapter in the applications,
- *    owned by the consuming application) and
+ *    pluggable per-origin cache; a persistent adapter, such as Workers KV,
+ *    lives in the consuming application) and
  *    {@link makeRobotsChecker} (the cached `checkRobots` decision).
  * 3. **The serving side** (`apps/web/src/lib/server/robots.ts` in all three
  *    applications): {@link robotsBody}, the stage-aware `robots.txt` a site
@@ -580,8 +580,8 @@ export const ROBOTS_NO_RESTRICTIONS = "";
 /**
  * The pluggable per-origin cache the checker reads through. Both methods
  * are infallible by contract: a cache that can fail degrades to a miss / a
- * dropped write inside its adapter (KV in the applications, an adapter the
- * consuming application owns).
+ * dropped write inside its adapter. A persistent adapter, such as Workers
+ * KV, lives in the consuming application.
  *
  * @since 0.1.0
  * @category models

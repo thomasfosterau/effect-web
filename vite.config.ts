@@ -106,10 +106,11 @@ export default defineConfig({
       // fields of a structured log event. Parsing them would change the
       // applications' log shape.
       "effect/no-unknown-parameters": "warn",
-      // Same boundaries, other direction: a KV `get` resolves whatever was
-      // stored, an R2 `json()` whatever was archived, a queue message carries
-      // whatever the producer sent. The platform contracts return `unknown`
-      // and the caller decodes (`decodeQueueMessage`, the cache's schema).
+      // Same boundaries, other direction: a function that hands back
+      // `unknown` (a parsed robots body, a sitemap or feed value, a caught
+      // failure) pushes the decoding onto its caller. Where the platform or
+      // the caller owns the shape, `unknown` is honest; otherwise return a
+      // decoded type.
       "effect/no-unknown-returns": "warn",
       "effect/no-unsafe-dictionary-type": "warn",
       "effect/no-runtime-typeof": "warn",
@@ -160,7 +161,7 @@ export default defineConfig({
       // Test fixtures are the seams under test, not domain code: a
       // wall-clock `Date` standing in for a publication stamp, a `CI`
       // variable toggled to drive a reporter. Each stays visible as a
-      // warning; none can be written another way in a fixture.
+      // warning, because a fixture cannot be written another way.
       {
         files: ["**/tests/**/*.ts"],
         rules: {
