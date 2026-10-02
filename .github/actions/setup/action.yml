@@ -32,10 +32,9 @@ runs:
         node-version: latest
         cache: pnpm
 
-    # Retried: pnpm's linker can race itself when `workerd` (pulled in by
-    # alchemy, and in `allowBuilds`) resolves twice and both copies build — a
-    # transient ENOENT on the rename of a `_tmp_<pid>_<hex>` staging directory,
-    # seen in gardeneria CI on cold-store runs (see effect-drizzle-ext's copy of
+    # Retried: pnpm's linker can race itself when a package with a build
+    # script resolves twice and both copies build — a transient ENOENT on the
+    # rename of a `_tmp_<pid>_<hex>` staging directory, seen in gardeneria CI on cold-store runs (see effect-drizzle-ext's copy of
     # this action). Every attempt keeps `--frozen-lockfile` and install scripts,
     # so a deterministic failure (lockfile drift, a policy violation) still
     # fails all three.

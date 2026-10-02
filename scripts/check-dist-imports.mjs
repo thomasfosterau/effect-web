@@ -1,20 +1,14 @@
 /**
  * Import guard for the packages that publish on Effect rc.118 (effect-web#31):
  * the built `dist/` of effect-web, effect-web-robots and effect-web-sitemap
- * must import no removed `effect/unstable/*` path and nothing from the
- * alchemy runtime (`alchemy`, `@distilled.cloud/*`), which cannot load on
- * rc.118 until it ships a new build. Run after `vp run -r build`
+ * must import no removed `effect/unstable/*` path. Run after `vp run -r build`
  * (`vp run check:dist`).
  */
 import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 
 const packages = ["web", "robots", "sitemap"];
-const forbidden = [
-  /["'`]effect\/(?:unstable|httpapi)(?:\/[^"'`]*)?["'`]/,
-  /["'`]alchemy(?:\/[^"'`]*)?["'`]/,
-  /["'`]@distilled\.cloud\/[^"'`]*["'`]/,
-];
+const forbidden = [/["'`]effect\/(?:unstable|httpapi)(?:\/[^"'`]*)?["'`]/];
 
 const failures = [];
 for (const name of packages) {
@@ -36,6 +30,4 @@ if (failures.length > 0) {
   console.error(failures.join("\n"));
   process.exit(1);
 }
-console.log(
-  `check:dist: ${packages.length} packages import no effect/unstable, alchemy or @distilled.cloud`,
-);
+console.log(`check:dist: ${packages.length} packages import no effect/unstable`);

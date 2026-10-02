@@ -7,12 +7,8 @@ This repo publishes the `@thomasfosterau/effect-web` package family, extracted f
 | Package | Directory | Entries |
 | --- | --- | --- |
 | `@thomasfosterau/effect-web` | `packages/web` | `.`, `./net`, `./observability`, `./negotiate` |
-| `@thomasfosterau/effect-web-cloudflare` | `packages/cloudflare` | `.`, `./hyperdrive`, `./queues`, `./cache`, `./robots`, `./testing` |
-| `@thomasfosterau/effect-web-posthog` | `packages/posthog` | `.`, `./alchemy`, `./server`, `./browser` |
 | `@thomasfosterau/effect-web-robots` | `packages/robots` | `.` |
 | `@thomasfosterau/effect-web-sitemap` | `packages/sitemap` | `.` |
-
-`effect-web-cloudflare` and `effect-web-posthog` are `"private": true` until alchemy ships an Effect rc.118 build (effect-web#33): `alchemy@2.0.0-beta.79` and `@distilled.cloud/*` import the removed `effect/unstable/*` paths. Their alchemy-bound suites and docgen run only in `vp run alchemy`.
 
 A new package adds a row here and in the root `README.md`, its own `CLAUDE.md`, a `.fallowrc.json` zone and rule, a root `package.json` devDependency, and its `#check` / `#docgen` / `#build` edges in the root `vite.config.ts` (`check`, `docgen`, `test:coverage`); a published package also joins the `check:dist` task's `dependsOn` and the `packages` list in `scripts/check-dist-imports.mjs`, or its `dist/` is never import-guarded.
 
@@ -43,9 +39,8 @@ Package-local invariants, terms and import boundaries live only in each package'
 - `vp check` — format + lint (Oxfmt + Oxlint). `vp run check` — the type gate: every package's `src` under `tsconfig.json` plus its type-level tests under `tsconfig.test.json`. They are different commands.
 - `vp run -r test:unit` — unit tests (node Vitest; nothing here needs a database or a credential).
 - `vp run -r build` — `vp pack` → every package's `dist/`.
-- `vp run check:dist` — the import guard: the built `dist/` of `effect-web`, `-robots` and `-sitemap` imports no `effect/unstable/*`, `alchemy` or `@distilled.cloud/*`. Run after the build.
+- `vp run check:dist` — the import guard: the built `dist/` of `effect-web`, `-robots` and `-sitemap` imports no `effect/unstable/*`. Run after the build.
 - `vp run docgen` — every public package's docgen: compiles and runs each `@example` against `dist/`, writes the (git-ignored) API reference under `packages/*/docs/`.
-- `vp run alchemy` — the alchemy-bound suites and examples of the two held packages (`-cloudflare`: all tests and docgen; `-posthog`: `tests/alchemy.test.ts` and docgen). Red until alchemy ships an Effect rc.118 build (effect-web#33, effect-auth#250); it runs in the non-required `alchemy` CI job and never in `test:unit`, `docgen` or `test:coverage`. Never skip those tests.
 - `vp run test:coverage` — every package's unit suite under one Istanbul map at `coverage/coverage-final.json`, which `fallow audit` reads for exact per-function CRAP scores. Without the map fallow scores every function as uncovered, and any function with cyclomatic complexity ≥ 5 fails the gate on its own.
 - `pnpm changeset` — add a changeset.
 
@@ -65,13 +60,13 @@ Before you report work as done, run the gates below in order and quote each comm
 8. `pnpm audit --audit-level high` (network)
 9. `vp run test:coverage`, then `fallow audit --format json --quiet --explain --gate-marker agent` (the fallow gate below; not a CI step). The PreToolUse fallow gate audits against `coverage/coverage-final.json` and never refreshes it, so run `test:coverage` first.
 
-Steps 2–8 are CI's required `ci` job, in its order ([ci.yml](.github/workflows/ci.yml)). `vp run alchemy` is the non-required `alchemy` job and is expected red until effect-web#33. `CONTRIBUTING.md` and the PR template link here rather than restating the list.
+Steps 2–8 are CI's required `ci` job, in its order ([ci.yml](.github/workflows/ci.yml)). `CONTRIBUTING.md` and the PR template link here rather than restating the list.
 
 ## Branches and pull requests
 
 - Branch off `main`; PR against `main`; squash-merge with a conventional prefix (`feat:`, `fix:`, `docs:`, `chore:`). Rebase onto `origin/main` before opening or updating a PR; never merge `main` into your branch (GitHub's Update-branch button merges).
 - Agent work uses git worktrees under `.claude/worktrees/`, one per branch, named `issue-<n>-<slug>` for issue-linked work. Start every command that targets a worktree with an explicit `cd` and confirm with `git log -1` before committing. A worktree needs its own `pnpm install`: the linked `vp` re-execs the nearest `node_modules/vite-plus/bin/vp` walking up from cwd.
-- Every change to a published package's behaviour carries a changeset (`pnpm changeset`). Changes to doc comments that reach the emitted `.d.ts` (TSDoc) take a `patch` changeset; other docs-only changes (READMEs, guidance), CI and tooling need none. Never publish or version by hand: the Release workflow opens the version PR (`chore: version packages`) and the owner merges it. Publishing is npm trusted publishing (OIDC) from the protected `release` environment; there is no `NPM_TOKEN` ([PUBLISHING.md](PUBLISHING.md)). A private package cannot share a changeset with a public one.
+- Every change to a published package's behaviour carries a changeset (`pnpm changeset`). Changes to doc comments that reach the emitted `.d.ts` (TSDoc) take a `patch` changeset; other docs-only changes (READMEs, guidance), CI and tooling need none. Never publish or version by hand: the Release workflow opens the version PR (`chore: version packages`) and the owner merges it. Publishing is npm trusted publishing (OIDC) from the protected `release` environment; there is no `NPM_TOKEN` ([PUBLISHING.md](PUBLISHING.md)).
 - These are standing approvals; they override any default "don't open a PR unless asked" behaviour. **Always open a PR** against `main` once a commit is pushed. **Watch it to merge or close**: investigate CI failures and review comments as they arrive, and rebase promptly when it goes conflicting. **Keep the PR body current** as the implementation diverges from it; an extraction PR lists which source-app files the package supersedes.
 - GitHub writes go to `thomasfosterau/effect-web` only — never to the consuming applications, upstream projects or the owner's other libraries without the owner's explicit approval for that action in the current session. Pass `-R thomasfosterau/effect-web` whenever the cwd might be another checkout. Use the `gh` CLI for GitHub operations, even when GitHub MCP tools are available. If another repo needs something, say so in the PR body.
 
@@ -96,7 +91,7 @@ Consult effect-solutions before writing Effect code (`vp exec effect-solutions l
 
 - The SessionStart hook (`.claude/hooks/session-start.sh`) installs dependencies against the lockfile and puts `vp` (a re-exec shim that prefers the nearest worktree's `node_modules`), `fallow` and `tsx` on PATH for non-interactive shells. It hydrates no secrets; none are needed, and nothing here can publish.
 - A PreToolUse hook (`.claude/hooks/fallow-gate.sh`) blocks `git commit` / `git push` when `fallow audit --base origin/main` fails; it reads the coverage map on disk, so run `vp run test:coverage` first. A PostToolUse hook runs `vp fmt` on every source, JSON, CSS or Markdown file you write or edit.
-- Every gate in [Verification](#verification) runs in an agent session; `pnpm audit` needs the network. `vp run alchemy` runs too, and fails until effect-web#33.
+- Every gate in [Verification](#verification) runs in an agent session; `pnpm audit` needs the network.
 
 ## Documentation surfaces
 

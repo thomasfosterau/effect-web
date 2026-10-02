@@ -1,7 +1,7 @@
 /**
  * Root workspace config. Owns the repo-wide format/lint/staged passes (read
  * statically by `vp fmt` / `vp lint` / `vp staged`) and the root aggregates
- * (`check`, `docgen`, `check:dist`, `alchemy`, `test:coverage`). Every
+ * (`check`, `docgen`, `check:dist`, `test:coverage`). Every
  * package's own tasks are defined once in `vite.package.ts` and instantiated
  * by each package's `vite.config.ts`; this file compiles nothing, but a new
  * package adds itself to the aggregate lists below.
@@ -157,8 +157,7 @@ export default defineConfig({
           "effect/avoid-ts-ignore": "off",
         },
       },
-      // Test fixtures are the seams under test, not domain code: a cast that
-      // drops alchemy's deploy-time provider tags after `Effect.provide`, a
+      // Test fixtures are the seams under test, not domain code: a
       // wall-clock `Date` standing in for a publication stamp, a `CI`
       // variable toggled to drive a reporter. Each stays visible as a
       // warning; none can be written another way in a fixture.
@@ -198,8 +197,6 @@ export default defineConfig({
         command: "echo 'check: every type gate green'",
         dependsOn: [
           "@thomasfosterau/effect-web#check",
-          "@thomasfosterau/effect-web-cloudflare#check",
-          "@thomasfosterau/effect-web-posthog#check",
           "@thomasfosterau/effect-web-robots#check",
           "@thomasfosterau/effect-web-sitemap#check",
         ],
@@ -218,30 +215,14 @@ export default defineConfig({
         cache: false,
       },
       // Import guard (effect-web#31): the built dist of the three packages
-      // that publish on rc.118 imports no `effect/unstable/*`, alchemy or
-      // `@distilled.cloud/*`. Reads `dist/`, hence the build edges.
+      // that publish on rc.118 imports no `effect/unstable/*`. Reads `dist/`,
+      // hence the build edges.
       "check:dist": {
         command: "node scripts/check-dist-imports.mjs",
         dependsOn: [
           "@thomasfosterau/effect-web#build",
           "@thomasfosterau/effect-web-robots#build",
           "@thomasfosterau/effect-web-sitemap#build",
-        ],
-        cache: false,
-      },
-      // The alchemy-bound work of the two packages held private until alchemy
-      // ships an rc.118 build (effect-web#33): cloudflare's whole suite and
-      // docgen, posthog's `alchemy.test.ts` and docgen. RED until then, so it is NOT in
-      // `check`, `docgen` or `test:coverage`; the non-required `alchemy` CI
-      // job runs the four suites as separate steps (one `vp run alchemy` stops at the
-      // first failure); this aggregate is for running them all locally. Nothing is skipped.
-      alchemy: {
-        command: "echo 'alchemy: every alchemy-bound suite and example green'",
-        dependsOn: [
-          "@thomasfosterau/effect-web-cloudflare#test:alchemy",
-          "@thomasfosterau/effect-web-cloudflare#docgen",
-          "@thomasfosterau/effect-web-posthog#test:alchemy",
-          "@thomasfosterau/effect-web-posthog#docgen",
         ],
         cache: false,
       },
@@ -263,8 +244,6 @@ export default defineConfig({
         command: "vp test run --coverage",
         dependsOn: [
           "@thomasfosterau/effect-web#build",
-          "@thomasfosterau/effect-web-cloudflare#build",
-          "@thomasfosterau/effect-web-posthog#build",
           "@thomasfosterau/effect-web-robots#build",
           "@thomasfosterau/effect-web-sitemap#build",
         ],
