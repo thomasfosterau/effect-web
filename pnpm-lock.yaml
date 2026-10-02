@@ -58,8 +58,8 @@ catalogs:
       specifier: ^1.435.5
       version: 1.435.5
     posthog-node:
-      specifier: ^5.54.1
-      version: 5.54.1
+      specifier: ^5.55.0
+      version: 5.55.0
     tsx:
       specifier: ^4.23.15
       version: 4.23.15
@@ -207,7 +207,7 @@ importers:
         version: 1.435.5(react@19.3.0)
       posthog-node:
         specifier: 'catalog:'
-        version: 5.54.1
+        version: 5.55.0
 
   packages/robots:
     devDependencies:
@@ -3089,8 +3089,8 @@ packages:
       react:
         optional: true
 
-  posthog-node@5.54.1:
-    resolution: {integrity: sha512-3+tg86gLKRaR+MjQOdALGUJQDAXHWVyDUJI2h3EJa0c4GWTQu3+R62C3t49dz1T3QWyJq1msq5Qa+B55/ZEHxg==}
+  posthog-node@5.55.0:
+    resolution: {integrity: sha512-8dFtlDTqs0CKGZ8t4mUnk4NdShAgzru3B9D0MfM/NTBzlRyAjctivzWINLtMLRQxYjvgBohxy7RTwiQf4mPycQ==}
     engines: {node: ^20.20.0 || >=22.22.0}
     peerDependencies:
       rxjs: ^7.0.0
@@ -6038,7 +6038,7 @@ snapshots:
     transitivePeerDependencies:
       - preact-render-to-string
 
-  posthog-node@5.54.1:
+  posthog-node@5.55.0:
     dependencies:
       '@posthog/core': 1.55.2
 
