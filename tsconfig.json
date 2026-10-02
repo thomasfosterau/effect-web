@@ -3,8 +3,6 @@
   "files": [],
   "references": [
     { "path": "packages/web" },
-    { "path": "packages/cloudflare" },
-    { "path": "packages/posthog" },
     { "path": "packages/robots" },
     { "path": "packages/sitemap" }
   ]

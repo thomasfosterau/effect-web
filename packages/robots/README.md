@@ -66,7 +66,7 @@ class CrawlSkipped extends Schema.TaggedError<CrawlSkipped>()("CrawlSkipped", {
 const check = makeRobotsChecker({
   userAgent: "PreferenceFlowBot/1.0 (+https://preferenceflow.com/bot)", // the request header
   userAgentToken: "PreferenceFlowBot", // the product token robots.txt names
-  cache: memoryRobotsCache(), // or effect-web-cloudflare/robots' KV adapter
+  cache: memoryRobotsCache(), // or your own KV-backed adapter
 });
 
 // Effect<void, CrawlSkipped, HttpClient>
@@ -81,7 +81,7 @@ const crawl = (url: string) =>
 | Export | What it is |
 | --- | --- |
 | `fetchRobots(origin, { userAgent, timeout?, maxBytes? })` | `GET <origin>/robots.txt` through `HttpClient`, with RFC 9309 §2.3.1's failure posture: a 2xx body (capped at `MAX_ROBOTS_BYTES`, §2.5), an empty string for 4xx / no file (`ROBOTS_NO_RESTRICTIONS` — crawl freely), and `ROBOTS_UNAVAILABLE_SENTINEL` for 5xx, a timeout or a transport error (treat as disallow). Never fails. |
-| `RobotsCache<R>` | The per-origin cache seam: `get(origin): Effect<Option<string>, never, R>`, `put(origin, value, ttlSeconds)`. `noRobotsCache` fetches every time; `memoryRobotsCache()` is a `Map` for tests; `@thomasfosterau/effect-web-cloudflare/robots` has the KV adapter. |
+| `RobotsCache<R>` | The per-origin cache seam: `get(origin): Effect<Option<string>, never, R>`, `put(origin, value, ttlSeconds)`. `noRobotsCache` fetches every time; `memoryRobotsCache()` is a `Map` for tests; a persistent adapter (for example Workers KV) lives in the consuming application. |
 | `ROBOTS_CACHE_TTL_SECONDS` (24 h), `ROBOTS_UNAVAILABLE_TTL_SECONDS` (1 h) | Cache lifetimes: a body or "no restrictions" lives a day; an unavailable verdict is retried after an hour. |
 | `evaluateRobots(robotsTxt, token, path, { maxCrawlDelaySeconds? })` | The crawl decision with the reasons: `{ allowed, matchedPattern: Option<string>, crawlDelaySeconds: Option<number> }`. The path is matched **with** its query string (a `?tab=` can be disallowed) and without its fragment; the crawl delay is capped at `MAX_CRAWL_DELAY_SECONDS` (30) and dropped when not positive. |
 | `makeRobotsChecker(options)` | `(url) => Effect<RobotsDecision, never, HttpClient \| R>`: cache lookup → fetch on a miss → cache the body / the sentinel with the right TTL → evaluate. `RobotsDecision` is `{ allowed: true, crawlDelaySeconds }` or `{ allowed: false, reason }` (`ROBOTS_UNAVAILABLE_REASON`, or `disallowed by robots.txt rule '<pattern>'`). |

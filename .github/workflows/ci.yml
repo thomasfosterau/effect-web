@@ -1,6 +1,6 @@
 name: CI
 
-# ONE required job (plus the non-required `alchemy` job below), ONE required check: the pipeline's task graph lives in
+# ONE required job, ONE required check: the pipeline's task graph lives in
 # vite.config.ts (the root `check` and `docgen` tasks and every package's
 # `test:unit` / `build`), not in GitHub Actions `needs:`. Copied in shape from
 # the effect-drizzle-ext library (and through it the gardeneria application),
@@ -52,46 +52,10 @@ jobs:
         run: vp run -r test:unit
       - name: Build
         run: vp run -r build
-      - name: Dist import guard (no effect/unstable, no alchemy)
+      - name: Dist import guard (no effect/unstable)
         run: vp run check:dist
       # Type-checks AND runs every JSDoc @example against the built dist/.
       - name: Verify documentation examples (docgen)
         run: vp run docgen
       - name: Audit
         run: pnpm audit --audit-level high
-
-  # The alchemy-bound suites of the two packages held private until alchemy
-  # ships an Effect rc.118 build: all of effect-web-cloudflare (tests and
-  # docgen) and effect-web-posthog's alchemy.test.ts and docgen. alchemy 2.0.0-beta.79
-  # imports `effect/unstable/*`, which rc.118 removed, so this job is RED until
-  # then (effect-web#33, effect-auth#250). It is deliberately not
-  # required and not `continue-on-error`: the failure stays visible. Do not
-  # skip these tests and do not add them back to `test:unit`.
-  alchemy:
-    name: Alchemy runtime (blocked on effect-web#33)
-    runs-on: ubuntu-latest
-    timeout-minutes: 20
-    permissions:
-      contents: read
-    env:
-      NODE_OPTIONS: --max-old-space-size=2048
-      VITEST_MAX_WORKERS: 2
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-      - uses: ./.github/actions/setup
-      # One step per suite: vite-plus cancels the remaining tasks of a single
-      # `vp run alchemy` at the first failure, which would hide the other three.
-      - name: effect-web-cloudflare alchemy-bound tests
-        if: ${{ !cancelled() }}
-        run: vp run --filter @thomasfosterau/effect-web-cloudflare test:alchemy
-      - name: effect-web-cloudflare docgen
-        if: ${{ !cancelled() }}
-        run: vp run --filter @thomasfosterau/effect-web-cloudflare docgen
-      - name: effect-web-posthog alchemy-bound tests
-        if: ${{ !cancelled() }}
-        run: vp run --filter @thomasfosterau/effect-web-posthog test:alchemy
-      - name: effect-web-posthog docgen
-        if: ${{ !cancelled() }}
-        run: vp run --filter @thomasfosterau/effect-web-posthog docgen

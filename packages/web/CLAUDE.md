@@ -8,7 +8,7 @@ Imports nothing from this workspace (`.fallowrc.json` zone `web`, no outbound ru
 
 ## Invariants
 
-- **No SvelteKit, Alchemy or Cloudflare dependency**, at the type level included. Anything that needs a Worker binding lives in `effect-web-cloudflare`; anything that needs `$app/*` lives in `effect-svelte`.
+- **No SvelteKit, Alchemy or Cloudflare dependency**, at the type level included. Anything that needs a Worker binding lives in the consuming application; anything that needs `$app/*` lives in `effect-svelte`.
 - **Allow-lists and predicates are parameters**: no viewer or session shape beyond "a viewer was resolved", no route names, no span names. `spanTracer` takes its allow-list; it is never a constant.
 - **The stage is the caller's**: nothing here reads an environment (`stageNoindex` takes `indexable`).
 - **`logStructured` keeps the flat line shape** (`{"event":…}`), never Effect's logger envelope: the applications' dashboards read it.

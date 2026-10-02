@@ -4,7 +4,7 @@ RFC 9309 on Effect 4: the `effect-robots.txt` library ported with its API kept (
 
 ## Boundary
 
-Peer: `effect` only. Imports nothing from this workspace (`.fallowrc.json` zone `robots`, no outbound rule). `effect-web-cloudflare` imports its `RobotsCache` type for the KV adapter.
+Peer: `effect` only. Imports nothing from this workspace (`.fallowrc.json` zone `robots`, no outbound rule).
 
 ## Invariants
 
@@ -19,4 +19,4 @@ Peer: `effect` only. Imports nothing from this workspace (`.fallowrc.json` zone 
 - **Product token** — the `User-agent:` name a group binds (`PreferenceFlowBot`), distinct from the **request header** (`PreferenceFlowBot/1.0 (+https://…)`). `makeRobotsChecker` takes both: `userAgentToken` selects the group, `userAgent` is sent.
 - **Group selection** — RFC 9309 §2.2.1: the group whose token matches the crawler's exactly or as a prefix (case-insensitive), longest wins; `*` matches everything and loses to any named group. The applications matched by substring; the library's rule is the one shipped, and the README says so.
 - **Failure posture** — RFC 9309 §2.3.1: 4xx / no file → no restrictions (`""`); 5xx, timeout, transport fault → unavailable (`ROBOTS_UNAVAILABLE_SENTINEL`, treated as disallow). `fetchRobots` never fails; it returns one of the three.
-- **Cache seam** — `RobotsCache<R>`: per-origin `get` / `put` with a TTL, generic over its requirements. The KV adapter lives in `effect-web-cloudflare/robots`, never here.
+- **Cache seam** — `RobotsCache<R>`: per-origin `get` / `put` with a TTL, generic over its requirements. Persistent adapters (a Workers KV one, say) live in the consuming application, never here.
