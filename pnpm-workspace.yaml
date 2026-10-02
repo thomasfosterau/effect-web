@@ -26,7 +26,7 @@ catalog:
   "@changesets/cli": ^3.0.3
   # Compiles AND RUNS every JSDoc `@example` (the `docgen` task); needs `tsx`
   # and a TypeScript JS API — the TS6 alias below satisfies its peer.
-  "@effect/docgen": ^0.5.2
+  "@effect/docgen": ^4.0.0
   "@effect/language-service": ^0.87.3
   # Effect Language Service as a native (TypeScript-Go) binary — the TS7 side
   # of the 6/7 split. `effect-tsgo patch` overwrites the native `tsc` binary
@@ -50,7 +50,7 @@ catalog:
   # Must equal the vitest that vite-plus bundles (see `vitest` below); vite-plus
   # refuses to run coverage on a mismatch.
   "@vitest/coverage-istanbul": 4.1.11
-  effect: 4.0.0-rc.118
+  effect: 4.0.0
   effect-solutions: ^0.5.3
   fallow: 3.31.0
   # Runs docgen's compiled examples.
