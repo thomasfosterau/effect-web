@@ -10,14 +10,6 @@
 # needs the repo on disk first).
 name: Setup toolchain
 description: Set up Node.js and pnpm, restore the package cache, and install dependencies.
-inputs:
-  frozen-lockfile:
-    description: >-
-      Whether the install must match the committed lockfile exactly. Every
-      gate leaves this at its default; only the Effect canary, which rewrites
-      the catalog to float `effect`, turns it off.
-    required: false
-    default: "true"
 runs:
   using: composite
   steps:
@@ -42,13 +34,8 @@ runs:
     - name: Install dependencies
       shell: bash
       run: |
-        if [ "${{ inputs.frozen-lockfile }}" = "true" ]; then
-          lockfile_flag=--frozen-lockfile
-        else
-          lockfile_flag=--no-frozen-lockfile
-        fi
         for attempt in 1 2 3; do
-          if pnpm install "$lockfile_flag"; then
+          if pnpm install --frozen-lockfile; then
             break
           fi
           if [ "$attempt" -eq 3 ]; then
