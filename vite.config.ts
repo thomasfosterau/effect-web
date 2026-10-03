@@ -73,26 +73,17 @@ export default defineConfig({
       // The modules under packages/*/src are ports of behaviour the
       // applications carry today, which predates the Effect oxlint preset. The
       // rules below sit at `warn` so a port stays committable while each site
-      // stays reported; a new site is a defect, not headroom.
+      // stays reported; a new site is a defect, not headroom. Once a rule's
+      // count reaches zero its line is deleted, so it is back at the preset's
+      // `error` (effect-web#48).
       "effect/imperative-loops": "warn",
       "effect/avoid-native-object-helpers": "warn",
       "effect/avoid-non-null-assertion": "warn",
-      "effect/avoid-any": "warn",
       "effect/avoid-untagged-errors": "warn",
       "effect/avoid-direct-json": "warn",
-      "effect/prefer-arr-match": "warn",
-      "effect/no-length-comparison": "warn",
-      "effect/prefer-arr-sort": "warn",
-      "effect/avoid-try-catch": "warn",
-      "effect/yield-in-for-loop": "warn",
-      "effect/prefer-effect-is": "warn",
-      "effect/avoid-expect-in-if": "warn",
       "effect/effect-run-in-body": "warn",
-      "effect/prefer-effect-fn": "warn",
       "effect/avoid-direct-tag-checks": "warn",
       "effect/avoid-option-getorthrow": "warn",
-      "effect/no-barrel-imports": "warn",
-      "effect/throw-in-effect-gen": "warn",
       // ---- Effect preset: rules this workspace's conventions cut across ----
       // `prefer-option-over-null` also fires on `?: T | undefined`, which is
       // the ONLY spelling of an optional member `exactOptionalPropertyTypes`
@@ -106,12 +97,6 @@ export default defineConfig({
       // fields of a structured log event. Parsing them would change the
       // applications' log shape.
       "effect/no-unknown-parameters": "warn",
-      // Same boundaries, other direction: a function that hands back
-      // `unknown` (a parsed robots body, a sitemap or feed value, a caught
-      // failure) pushes the decoding onto its caller. Where the platform or
-      // the caller owns the shape, `unknown` is honest; otherwise return a
-      // decoded type.
-      "effect/no-unknown-returns": "warn",
       "effect/no-unsafe-dictionary-type": "warn",
       "effect/no-runtime-typeof": "warn",
       "typescript/no-explicit-any": "off",
