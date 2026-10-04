@@ -402,11 +402,15 @@ describe("the Accept q split is positional (RFC 9110 §12.4.2)", () => {
     expect(n.error).toBe(NOT_ACCEPTABLE);
   });
 
-  it("reads the weight from q, not from what follows it", () => {
-    expect(
-      negotiate(get("/posts", `${JSONAPI_MEDIA_TYPE};q=0.5;foo=bar, text/html;q=0.9`)).dispatch,
-    ).toBe(false);
+  it("reads the weight from the first q, not from what follows it", () => {
+    expectHtmlFallthrough(
+      negotiate(get("/posts", `${JSONAPI_MEDIA_TYPE};q=0.5;foo=bar, text/html;q=0.9`)),
+    );
     expectHtmlFallthrough(negotiate(get("/posts", `${JSONAPI_MEDIA_TYPE};q=0;foo=bar, text/html`)));
+    expectHtmlFallthrough(negotiate(get("/posts", `${JSONAPI_MEDIA_TYPE};q=0;q=1, text/html`)));
+    expectHtmlFallthrough(
+      negotiate(get("/posts", `${JSONAPI_MEDIA_TYPE};q=0.5;q=1, text/html;q=0.9`)),
+    );
   });
 
   it("tolerates whitespace and empty parts around the parameters", () => {

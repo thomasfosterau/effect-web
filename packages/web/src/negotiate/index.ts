@@ -241,9 +241,9 @@ export const makeMarkdownPathMatcher = (
 // ── Accept ranking ──────────────────────────────────────────────────
 
 /**
- * One `Accept` instance: its lowercased base type, the whole entry (media
- * type, `q` and any accept-extension parameters, with empty `;` parts
- * dropped) and its weight.
+ * One `Accept` instance: its lowercased base type, the entry (media type,
+ * `q` and any accept-extension parameters, each part trimmed and empty `;`
+ * parts dropped) and its weight.
  */
 interface AcceptInstance {
   readonly base: string;
@@ -277,11 +277,12 @@ const weightOf = (params: ReadonlyArray<string>): number =>
  * Splits an `Accept` header into its instances. The media-type / `q` split
  * (RFC 9110 §12.4.2: `q` ends the media type's parameter list, so what
  * follows it is an accept-extension, never a media-type parameter) is
- * effect-jsonapi's: the whole entry goes to `Middleware.contentTypeIsAcceptable`,
+ * effect-jsonapi's: the entry goes to `Middleware.contentTypeIsAcceptable`,
  * which splits positionally at `q` (since 0.16.1, the peer floor). Only the
- * weight is read here — see `weightOf`. Empty `;` parts (a trailing `;`) are
- * dropped first, as the applications did: effect-jsonapi would read one as a
- * nameless media-type parameter and refuse the instance.
+ * weight is read here — see `weightOf`. Each part is trimmed and empty `;`
+ * parts (a trailing `;`) are dropped first, as the applications did:
+ * effect-jsonapi would read one as a nameless media-type parameter and refuse
+ * the instance.
  */
 const parseAccept = (header: Option.Option<string>): ReadonlyArray<AcceptInstance> =>
   Option.match(header, {
