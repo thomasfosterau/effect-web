@@ -47,8 +47,7 @@ export const MARKDOWN_MEDIA_TYPE = "text/markdown";
  * The representations a URL can resolve to. This is the normalized `Accept`
  * token the negotiation verdict produces — never the raw `Accept` header —
  * so a cache keyed on it holds at most one entry per representation
- * regardless of how many distinct `Accept` strings clients send
- * (PERF-CACHE-005).
+ * regardless of how many distinct `Accept` strings clients send.
  *
  * @since 0.1.0
  * @category models
@@ -62,7 +61,10 @@ export type Representation = "text/html" | typeof JSONAPI_MEDIA_TYPE | typeof MA
  * @category models
  */
 export interface Negotiation {
-  /** Normalized cache-key representation token (meaningful for `GET`/`HEAD`). */
+  /**
+   * Normalized cache-key representation token, never the raw `Accept`
+   * header (PERF-CACHE-005). Meaningful for `GET`/`HEAD`.
+   */
   readonly representation: Representation;
   /** `true` → serve this request from the JSON:API. */
   readonly dispatch: boolean;
@@ -211,8 +213,9 @@ export const endpointPaths = (
 /**
  * Builds the `isMarkdownPath` predicate from the content **route** segments
  * that serve a Markdown representation: a single `<segment>/<id>` path whose
- * segment is in the list. An empty list matches nothing, so `text/markdown`
- * always falls through to HTML.
+ * segment is in the list, so the Markdown is served from the page's own URL
+ * (DISC-009). An empty list matches nothing, so `text/markdown` always falls
+ * through to HTML.
  *
  * @example
  * ```ts
@@ -401,10 +404,12 @@ const negotiateWrite = (
  * Negotiates a single request into a {@link Negotiation}. Pure and
  * dependency-free beyond `options` (it reads only the request line and
  * headers), so a cache handle and a dispatch handle can share one verdict.
- * Reads (`GET` / `HEAD`) negotiate on `Accept`, mutating methods on
- * `Content-Type`, and anything else (`OPTIONS`, …) is HTML. The JSON:API
- * surface is chosen by its media type, never a path prefix, and a disallowed
- * media-type parameter answers 406 / 415 (JSONAPI-NEG-001 / JSONAPI-NEG-002).
+ * Reads (`GET` / `HEAD`) negotiate on `Accept`, a Markdown path's
+ * `text/markdown` first, served from the page's own URL (DISC-009);
+ * mutating methods negotiate on `Content-Type`; anything else (`OPTIONS`,
+ * …) is HTML. The JSON:API surface is chosen by its media type, never a
+ * path prefix, and a disallowed media-type parameter answers 406 / 415
+ * (JSONAPI-NEG-001 / JSONAPI-NEG-002).
  *
  * @example
  * ```ts
