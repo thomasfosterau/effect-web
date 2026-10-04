@@ -12,7 +12,7 @@ Imports nothing from this workspace (`.fallowrc.json` zone `web`, no outbound ru
 - **Allow-lists and predicates are parameters**: no viewer or session shape beyond "a viewer was resolved", no route names, no span names. `spanTracer` takes its allow-list; it is never a constant.
 - **The stage is the caller's**: nothing here reads an environment (`stageNoindex` takes `indexable`).
 - **`logStructured` keeps the flat line shape** (`{"event":…}`), never Effect's logger envelope: the applications' dashboards read it.
-- **The `Accept` `q` split is positional and local** (RFC 9110 §12.4.2) because effect-jsonapi 0.14.0 read `q` as a media-type parameter. The optional peer's floor is now `>=0.16.1`, which splits `q` itself; dropping the local copy is effect-web#35.
+- **The `Accept` `q` split is effect-jsonapi's; the weight is local.** Each `Accept` entry goes whole to `Middleware.contentTypeIsAcceptable`, which ends the media type at `q` (RFC 9110 §12.4.2) from the `>=0.16.1` peer floor on. `q` itself is read locally, because effect-jsonapi exports no per-entry weight and its `acceptIsAcceptable` reads an unparsable `q` as a refusal where the applications read it as `1`. Empty `;` parts are dropped before the hand-off.
 - **The plain-`Promise` / plain-`Error` forms** (`assertAllowedUrl`, `fetchFollowingRedirects`) keep the applications' message wording; their tests pin it.
 
 ## Terms

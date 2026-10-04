@@ -241,41 +241,47 @@ export const makeMarkdownPathMatcher = (
 // ── Accept ranking ──────────────────────────────────────────────────
 
 /**
- * One `Accept` instance: its lowercased base type, the media type proper
- * (type plus the parameters positioned BEFORE `q`) and its weight.
+ * One `Accept` instance: its lowercased base type, the whole entry (media
+ * type, `q` and any accept-extension parameters, with empty `;` parts
+ * dropped) and its weight.
  */
 interface AcceptInstance {
   readonly base: string;
-  readonly mediaType: string;
+  readonly entry: string;
   readonly weight: number;
 }
 
 const paramName = (param: string): string => (param.split("=")[0] ?? "").trim().toLowerCase();
 
 /**
- * The weight of an `Accept` instance: its `q`, which defaults to `1` when
- * absent AND when unparsable — the applications' choice, pinned by their
+ * The weight of an `Accept` instance: its first `q`, which defaults to `1`
+ * when absent AND when unparsable — the applications' choice, pinned by their
  * tests, so a client that mangles its `q` still ties rather than being read
- * as refusing.
+ * as refusing. Local because effect-jsonapi exports no per-entry weight: its
+ * entry parser is `@internal`, and `Middleware.acceptIsAcceptable` reads an
+ * unparsable `q` as a refusal.
  */
-const weightOf = (q: Option.Option<string>): number =>
-  Option.match(q, {
-    onNone: () => 1,
-    onSome: (param) => {
-      const value = Number.parseFloat(param.split("=")[1] ?? "");
-      return Number.isFinite(value) ? value : 1;
+const weightOf = (params: ReadonlyArray<string>): number =>
+  Option.match(
+    Arr.findFirst(params, (param) => paramName(param) === "q"),
+    {
+      onNone: () => 1,
+      onSome: (param) => {
+        const value = Number.parseFloat(param.split("=")[1] ?? "");
+        return Number.isFinite(value) ? value : 1;
+      },
     },
-  });
+  );
 
 /**
- * Splits an `Accept` header into its instances. Per RFC 9110 §12.4.2 the
- * `q` parameter is the weight of an `Accept` entry, not a media-type
- * parameter, and it terminates the media type's parameter list — so the
- * split is positional: everything before `q` is the media type handed to
- * effect-jsonapi's §5 rule, `q` itself and anything after it belong to the
- * header field. (effect-jsonapi 0.14.0 read a `q` as a media-type
- * parameter; 0.16.1, the current peer floor, makes this split itself, so
- * this copy can go: effect-web#35.)
+ * Splits an `Accept` header into its instances. The media-type / `q` split
+ * (RFC 9110 §12.4.2: `q` ends the media type's parameter list, so what
+ * follows it is an accept-extension, never a media-type parameter) is
+ * effect-jsonapi's: the whole entry goes to `Middleware.contentTypeIsAcceptable`,
+ * which splits positionally at `q` (since 0.16.1, the peer floor). Only the
+ * weight is read here — see `weightOf`. Empty `;` parts (a trailing `;`) are
+ * dropped first, as the applications did: effect-jsonapi would read one as a
+ * nameless media-type parameter and refuse the instance.
  */
 const parseAccept = (header: Option.Option<string>): ReadonlyArray<AcceptInstance> =>
   Option.match(header, {
@@ -289,13 +295,10 @@ const parseAccept = (header: Option.Option<string>): ReadonlyArray<AcceptInstanc
             .filter((part) => part !== "");
           const [type, ...params] = parts;
           if (type === undefined) return Option.none();
-          const qIndex = params.findIndex((param) => paramName(param) === "q");
-          const mediaTypeParams = qIndex === -1 ? params : params.slice(0, qIndex);
-          const q = qIndex === -1 ? Option.none() : Option.fromNullishOr(params[qIndex]);
           return Option.some({
             base: type.toLowerCase(),
-            mediaType: [type, ...mediaTypeParams].join(";"),
-            weight: weightOf(q),
+            entry: parts.join(";"),
+            weight: weightOf(params),
           });
         }),
       ),
@@ -352,10 +355,11 @@ const negotiateRead = (
   const jsonapi = accept.filter((instance) => instance.base === JSONAPI_MEDIA_TYPE);
   if (Arr.isReadonlyArrayEmpty(jsonapi) || !options.isApiPath(path)) return HTML;
   // §6.3.2 through effect-jsonapi: an instance is clean iff its media-type
-  // parameters (positionally before `q`, see `parseAccept`) are only `ext` /
-  // `profile` with supported extension URIs — the same rule for both headers.
+  // parameters (the ones before `q`; effect-jsonapi makes that split) are
+  // only `ext` / `profile` with supported extension URIs — the same rule for
+  // both headers.
   const isClean = (instance: AcceptInstance): boolean =>
-    Middleware.contentTypeIsAcceptable(instance.mediaType, {
+    Middleware.contentTypeIsAcceptable(instance.entry, {
       extensions: options.extensions ?? [],
     });
   if (!jsonapi.some(isClean)) {
