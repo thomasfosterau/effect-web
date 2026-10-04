@@ -1,10 +1,10 @@
 /**
- * What a degraded (fail-open) session resolution reports, ported from
- * `apps/web/src/lib/server/session-degraded-report.ts` (website /
- * gardeneria, identical): the applications resolve the session fail-open —
- * a database outage or a missing auth binding degrades the request to
- * anonymous rather than failing it — and that degradation must never be
- * silent.
+ * What a degraded (fail-open) session resolution reports. A front door that
+ * resolves the session fail-open — a database outage or a missing auth
+ * binding degrades the request to anonymous rather than failing it — must
+ * never degrade silently.
+ *
+ * Ported from the website / gardeneria `session-degraded-report.ts`.
  *
  * @since 0.1.0
  */

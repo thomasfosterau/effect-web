@@ -8,8 +8,7 @@
  *
  * `fetch()`-sourced responses (service bindings included) have immutable
  * headers in the Workers runtime, so a stamp clones the response only when
- * the policy actually changed something (`ensureCacheControl`'s "cheap
- * no-op path" in the applications).
+ * the policy actually changed something.
  *
  * @since 0.1.0
  */
@@ -65,8 +64,7 @@ export const updateWebHeaders = (
 
 /**
  * Applies a header policy in place to a mutable Web `Headers` — a
- * SvelteKit `resolve()` response's headers, which the applications' hooks
- * mutate directly.
+ * SvelteKit `resolve()` response's headers, which a hook mutates directly.
  *
  * @example
  * ```ts

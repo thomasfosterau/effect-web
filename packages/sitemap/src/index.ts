@@ -4,18 +4,15 @@
  * (rendered whole, or streamed), a sitemap index, `feed.json` (JSON Feed
  * 1.1), and the `Cache-Tag` purge that keeps the edge copies fresh.
  *
- * Ported from preferenceflow's `apps/web/src/lib/server/sitemap.ts` (the
- * `renderUrl` / `renderSitemap` / `lastmodOf` factoring), website's
- * streaming `routes/sitemap.xml/+server.ts`, `packages/models/src/feed.ts`
- * (`buildJsonFeed`) and `apps/web/src/lib/server/cache-purge.ts`. What is
- * application vocabulary — the `core.searchable` type → route-segment map,
- * `sitemapPath` / `feedPath` — stays in the application; everything here
- * takes a site-root-relative `path`.
+ * Everything here takes a site-root-relative `path`; mapping a resource to
+ * its route stays in the application.
  *
  * No XML escaping is applied to `<loc>`: every location is the canonical
  * origin plus a path an application derives from validated ids or a
  * hand-maintained list. If authored text (a title) is ever emitted it MUST
  * be escaped first; {@link escapeXml} is here for that.
+ *
+ * Ported from the preferenceflow / website sitemap, feed and cache-purge modules.
  *
  * @since 0.1.0
  */
@@ -206,10 +203,10 @@ export const renderSitemap = (base: string, entries: Iterable<SitemapUrl>): stri
 /**
  * The `sitemap.xml` as a `Stream` of text chunks — the opening, one chunk
  * per entry as the source yields it, the closing — so a large enumeration
- * is never materialised in the isolate before the first byte goes out
- * (website's `routes/sitemap.xml/+server.ts`). Run the enumeration before
- * the response is constructed when it needs a database: the body stream
- * must not touch a per-request runtime that is tearing down.
+ * is never materialised in the isolate before the first byte goes out. Run
+ * the enumeration before the response is constructed when it needs a
+ * database: the body stream must not touch a per-request runtime that is
+ * tearing down.
  *
  * @example
  * ```ts
@@ -349,7 +346,7 @@ export interface JsonFeed {
 /**
  * One feed entry: a site-root-relative path, its timestamps and its text.
  * `title` / `summary` are `null` when the row has none (the SQL wire shape
- * the applications' enumerations produce) and omitted from the item.
+ * an enumeration produces) and omitted from the item.
  *
  * @since 0.1.0
  * @category models
@@ -373,7 +370,7 @@ export interface FeedEntry {
  * @category models
  */
 export interface JsonFeedOptions {
-  /** The canonical origin (`PUBLIC_SITE_URL`), never the request origin (CANON-001 / DISC-011). */
+  /** The canonical origin, never the request origin (CANON-001). */
   readonly base: string;
   readonly title: string;
   readonly description: string;
@@ -384,8 +381,8 @@ export interface JsonFeedOptions {
 }
 
 /**
- * The bound the applications put on their change-discovery feeds: "latest
- * changes", not a complete listing (DISC-010).
+ * The item bound for a change-discovery feed: "latest changes", not a
+ * complete listing (DISC-010).
  *
  * @since 0.1.0
  * @category constants
@@ -459,8 +456,8 @@ export const JSON_FEED_CONTENT_TYPE = "application/feed+json";
 
 /**
  * A JSON Feed as an `HttpServerResponse`: 2-space pretty-printed (a
- * hand-readable discovery document — the applications' bytes on the wire,
- * and in every cached copy), `application/feed+json`,
+ * hand-readable discovery document; changing the indent changes the bytes on
+ * the wire and in every cached copy), `application/feed+json`,
  * {@link LOW_CHURN_CACHE_CONTROL} and, when given, the `Cache-Tag`.
  *
  * @example
@@ -507,14 +504,13 @@ export const FEED_CACHE_TAG = "feed";
 export const SITEMAP_CACHE_TAG = "sitemap";
 
 /**
- * Builds the applications' `purgeTagsForResourceType`: the tags a mutation
- * to one resource of `type` may have staled — both aggregate documents when
- * the type can appear in them, nothing otherwise. Deliberately decided from
- * the type alone, with no per-request visibility check: a write to an
- * always-private resource of an eligible type still purges — a wasted
- * purge, not a missed one. `eligibleTypes` are the resource-type segments
- * the documents enumerate against (the values of the app's route-segment
- * map).
+ * Builds a `purgeTagsForResourceType`: the tags a mutation to one resource
+ * of `type` may have staled — both aggregate documents when the type can
+ * appear in them, nothing otherwise. Deliberately decided from the type
+ * alone, with no per-request visibility check: a write to an always-private
+ * resource of an eligible type still purges — a wasted purge, not a missed
+ * one. `eligibleTypes` are the resource-type segments the documents
+ * enumerate against (the values of the application's route-segment map).
  *
  * @example
  * ```ts

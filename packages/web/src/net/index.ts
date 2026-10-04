@@ -1,20 +1,20 @@
 /**
  * Outbound-request safety primitives shared by every Worker: the lexical
  * SSRF host block list and the redirect-revalidating fetch built on it
- * (SEC-SSRF / SEC-SSRF-003), ported from `packages/bindings/src/net.ts` of
- * the website / gardeneria applications (identical bar comments).
+ * (SEC-SSRF-003).
  *
- * The applications kept this module Effect-free so a SvelteKit route or a
- * queue consumer could import the guard without an Effect runtime graph.
- * Here the core is an `Effect` with tagged failures ({@link UnsafeUrl},
- * {@link RedirectRejected}, {@link FetchFailed}), and the applications'
- * plain-`Promise` / plain-`Error` surface ({@link assertAllowedUrl},
+ * The core is an `Effect` with tagged failures ({@link UnsafeUrl},
+ * {@link RedirectRejected}, {@link FetchFailed}). A plain-`Promise` /
+ * plain-`Error` surface ({@link assertAllowedUrl},
  * {@link fetchFollowingRedirects}) is kept as an adapter over it with the
- * same messages, so their tests port unchanged.
+ * same messages, so a SvelteKit route or a queue consumer can use the guard
+ * without an Effect runtime.
  *
  * DNS rebinding to a private IP is moot: Workers' outbound `fetch` runs on
  * Cloudflare's edge with no private network behind it, so the lexical block
  * list is the operative guard.
+ *
+ * Ported from the website / gardeneria `packages/bindings/src/net.ts`.
  *
  * @since 0.1.0
  */
@@ -160,9 +160,9 @@ export type UnsafeUrlReason = "invalid" | "scheme" | "credentials" | "blocked-ho
 
 /**
  * A URL that fails the outbound-request safety policy ({@link checkUrl}).
- * `message` carries the applications' wording (`invalid URL '…'`,
- * `unsupported scheme '…'`, `embedded credentials in '…'`, `blocked host
- * '…'`), which their tests pin.
+ * `message` carries fixed wording (`invalid URL '…'`, `unsupported scheme
+ * '…'`, `embedded credentials in '…'`, `blocked host '…'`), kept stable
+ * because callers' tests pin it.
  *
  * @since 0.1.0
  * @category errors
@@ -219,7 +219,7 @@ export const checkUrl = (url: string): Result.Result<URL, UnsafeUrl> => {
 /**
  * {@link checkUrl} for plain (non-Effect) callers: returns the parsed URL or
  * throws a plain `Error` (not a typed failure) so it composes into whichever
- * failure channel the caller uses — the applications' `assertAllowedUrl`.
+ * failure channel the caller uses.
  *
  * @example
  * ```ts
@@ -400,10 +400,10 @@ export const followRedirects = (
 };
 
 /**
- * {@link followRedirects} for plain (non-Effect) callers — the applications'
- * `fetchFollowingRedirects`: rejects with a plain `Error` carrying the
- * failure's message (or, for a `fetch` failure, the original cause) so it
- * composes into whichever failure channel the caller uses.
+ * {@link followRedirects} for plain (non-Effect) callers: rejects with a
+ * plain `Error` carrying the failure's message (or, for a `fetch` failure,
+ * the original cause) so it composes into whichever failure channel the
+ * caller uses.
  *
  * @example
  * ```ts

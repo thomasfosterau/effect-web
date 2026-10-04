@@ -1,11 +1,10 @@
 /**
- * The SEC-CSRF-001 cross-origin mutation guard, in the two shapes the
- * applications carry: gardeneria's centralised predicate
- * (`apps/api/src/cross-origin.ts` — one module, one explanation, because a
- * CSRF guard that differs subtly between routes is a CSRF guard nobody can
- * audit; website repeats the two lines inline in `apps/api/src/session.ts`
- * and `uploads.ts`) and the web front door's rejection response
- * (`apps/web/src/lib/server/cross-origin-guard.ts`).
+ * The SEC-CSRF-001 cross-origin mutation guard, in two shapes: the
+ * predicate an API applies per route, and the rejection response a web front
+ * door returns. One module, one explanation, because a CSRF guard that
+ * differs subtly between routes is a CSRF guard nobody can audit.
+ *
+ * Ported from gardeneria's `cross-origin.ts` and the `cross-origin-guard.ts` hook.
  *
  * ## What it relies on
  *
@@ -64,9 +63,8 @@ export const isCrossOrigin = (origin: Option.Option<string>, expectedOrigin: str
   Option.isSome(origin) && origin.value !== expectedOrigin;
 
 /**
- * Whether `request` must be refused as cross-origin (gardeneria's
- * `isCrossOriginRejected`): it carries an `Origin` other than
- * `expectedOrigin`.
+ * Whether `request` must be refused as cross-origin: it carries an `Origin`
+ * other than `expectedOrigin`.
  *
  * `expectedOrigin` is explicit rather than derived: an `HttpServerRequest`'s
  * `url` is its path, and `HttpServerRequest.toURL` reconstructs the origin
@@ -127,9 +125,8 @@ export const crossOriginMutationRejection = (
     : Option.none();
 
 /**
- * {@link crossOriginMutationRejection} over Fetch types, with the expected
- * origin defaulting to the request URL's own (the form both applications'
- * hooks use).
+ * {@link crossOriginMutationRejection} over Fetch types, for a framework
+ * hook, with the expected origin defaulting to the request URL's own.
  *
  * @example
  * ```ts

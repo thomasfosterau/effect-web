@@ -1,7 +1,8 @@
 /**
- * The trusted client address for an outbound `x-forwarded-for` (the
- * applications' `/ingest` analytics reverse proxy), ported from
- * `apps/web/src/lib/server/client-ip.ts` (website / gardeneria, identical).
+ * The trusted client address for an outbound `x-forwarded-for` (an analytics
+ * reverse proxy, say).
+ *
+ * Ported from the website / gardeneria `client-ip.ts`.
  *
  * @since 0.1.0
  */
