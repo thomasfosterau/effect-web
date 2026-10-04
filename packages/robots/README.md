@@ -1,8 +1,8 @@
 # @thomasfosterau/effect-web-robots
 
-The Robots Exclusion Protocol (RFC 9309) for Effect: parse, encode and match robots.txt, evaluate a crawl decision with the §2.3.1 failure posture over a pluggable cache, and build the robots.txt a site serves. The parser is the `effect-robots.txt` library ported to `effect@4` with its API kept; the **crawler side** and the **serving side** are the ones the `thomasfosterau/website`, `thomasfosterau/gardeneria` and `thomasfosterau/preferenceflow` applications built on it.
+The Robots Exclusion Protocol (RFC 9309) for Effect: parse, encode and match robots.txt, evaluate a crawl decision with the §2.3.1 failure posture over a pluggable cache, and build the robots.txt a site serves. The parser is the `effect-robots.txt` library ported to `effect@4` with its API kept; on top of it sit the **crawler side** (fetch, cache and evaluate another site's robots.txt) and the **serving side** (the robots.txt your own site serves, by stage).
 
-Invariant ids in doc comments (`ROBOTS-005`, `PERF-CACHE-002`, …) name rules from the source applications' specs; `#NNN` citations are issues in those applications.
+Invariant ids in doc comments and below (`ROBOTS-005`, `PERF-CACHE-002`, …) name the rule an export enforces; [`SECURITY.md`](https://github.com/thomasfosterau/effect-web/blob/main/SECURITY.md#invariant-ids) states each rule and the exports that enforce it.
 
 ## Install
 
@@ -50,7 +50,7 @@ encode(robotsTxt); // the canonical text
 | `isAllowed(robotsTxt, userAgent, path)` | Group selection by the longest matching product token (exact or prefix, case-insensitive; `*` matches everything, last); rule selection by the longest matching pattern, `Allow` winning a tie; `*` wildcards and `$` anchors; a query string or fragment on `path` is stripped. No group or no matching rule means allowed. |
 | `getCrawlDelay`, `getSitemaps` | The selected group's `Crawl-delay` as an `Option`; every `Sitemap:` line. |
 
-Matching is the library's, not the applications': the apps selected a group by **substring** (`userAgent.includes(token)`); the library, following RFC 9309 §2.2.1, matches the **product token** exactly or as a prefix. A `User-agent: Google` group binds `Googlebot`; a `User-agent: bot` group does not bind `Googlebot`.
+Group selection follows RFC 9309 §2.2.1: the **product token** matches exactly or as a prefix, never as a **substring** (`userAgent.includes(token)`). A `User-agent: Google` group binds `Googlebot`; a `User-agent: bot` group does not bind `Googlebot`.
 
 ### The crawler side
 
@@ -64,8 +64,8 @@ class CrawlSkipped extends Schema.TaggedError<CrawlSkipped>()("CrawlSkipped", {
 }) {}
 
 const check = makeRobotsChecker({
-  userAgent: "PreferenceFlowBot/1.0 (+https://preferenceflow.com/bot)", // the request header
-  userAgentToken: "PreferenceFlowBot", // the product token robots.txt names
+  userAgent: "ExampleBot/1.0 (+https://example.com/bot)", // the request header
+  userAgentToken: "ExampleBot", // the product token robots.txt names
   cache: memoryRobotsCache(), // or your own KV-backed adapter
 });
 
@@ -113,8 +113,8 @@ export const GET = () =>
 | Export | What it is |
 | --- | --- |
 | `NON_PRODUCTION_BODY` | `User-agent: *` / `Disallow: /` — every non-production stage is invisible to crawlers, whatever the policy says (ROBOTS-005). |
-| `productionBody({ disallow, sitemapUrl, comments? })` | The production document: the comment lines, a `User-agent: *` group with each `disallow` prefix, the `Sitemap:` line. Rendered through `encode`, so it round-trips through `parse`. |
-| `robotsBody(production, policy)` | The stage switch. |
+| `productionBody({ disallow, sitemapUrl, comments? })` | The production document: the comment lines, a `User-agent: *` group with each `disallow` prefix, the `Sitemap:` line. Rendered through `encode`, so it round-trips through `parse`. Open to every crawler, the listed prefixes disallowed, an absolute sitemap URL (ROBOTS-002 … -004). |
+| `robotsBody(production, policy)` | The stage switch: `productionBody(policy)` in production, `NON_PRODUCTION_BODY` on every other stage (ROBOTS-005). |
 | `LOW_CHURN_CACHE_CONTROL` | `public, max-age=3600, s-maxage=3600, stale-while-revalidate=86400` — the edge caches the document an hour (PERF-CACHE-002). |
 | `isRobotsBody(value)` | A refinement for a test or a handler. |
 
