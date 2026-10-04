@@ -60,7 +60,12 @@
           "preferSchemaOverJson": "warning",
           "processEnv": "warning",
           "processEnvInEffect": "warning",
-          "unsafeEffectTypeAssertion": "warning"
+          "unsafeEffectTypeAssertion": "warning",
+          // Effect 4 marks most of `effect/http*` `@stability unstable`, the
+          // surface these packages exist to wrap, so as a warning this fires
+          // on nearly every use and buries the warnings above. As a
+          // suggestion it is still reported, just not at warning level.
+          "unstableApiUsage": "suggestion"
         }
       }
     ]
