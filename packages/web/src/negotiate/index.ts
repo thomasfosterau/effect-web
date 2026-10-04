@@ -5,12 +5,11 @@
  * alternate Markdown representation (DISC-009) — decided from the request
  * line and headers alone, and nowhere else.
  *
- * Ported from `packages/api/src/negotiate.ts` of the website (420 LoC),
- * gardeneria (367) and preferenceflow (288) applications, keeping only the
- * verdict. The JSON:API §5/§6 media-type rules (which parameters a JSON:API
- * instance may carry, which `ext` URIs are supported) are **adopted** from
- * `@thomasfosterau/effect-jsonapi`'s `Middleware` rather than re-extracted:
- * a write negotiates through `Middleware.negotiate` directly, and each
+ * Only the verdict lives here. The JSON:API §5/§6 media-type rules (which
+ * parameters a JSON:API instance may carry, which `ext` URIs are supported)
+ * are **adopted** from `@thomasfosterau/effect-jsonapi`'s `Middleware`
+ * rather than re-implemented: a write negotiates through
+ * `Middleware.negotiate` directly, and each
  * `Accept` instance's cleanliness through `Middleware.contentTypeIsAcceptable`
  * (the positional media-type-parameter rule is the same for both headers).
  * What stays local is the *ranking* — whether the JSON:API (or Markdown)
@@ -18,12 +17,12 @@
  * `Middleware.negotiate` has no notion of, because a JSON:API-only server
  * never has to choose between representations.
  *
- * Two behaviours therefore differ from the applications' hand-rolled parser,
- * both spec-correct: an `ext` URI the api does not declare in
- * `options.extensions` makes the instance unacceptable (JSON:API §5), where
- * the applications accepted any `ext`; and the §6 error documents carry
- * effect-jsonapi's `code` values (`not_acceptable`, `unsupported_media_type`)
- * rather than the applications' hyphenated ones.
+ * Two consequences, both spec-correct: an `ext` URI the api does not
+ * declare in `options.extensions` makes the instance unacceptable (JSON:API
+ * §5); and the §6 error documents carry effect-jsonapi's `code` values
+ * (`not_acceptable`, `unsupported_media_type`).
+ *
+ * Ported from the applications' `packages/api/src/negotiate.ts`.
  *
  * @since 0.1.0
  */
@@ -36,8 +35,8 @@ import { Middleware } from "@thomasfosterau/effect-jsonapi";
 import { isMutatingMethod, JSONAPI_MEDIA_TYPE, type NegotiationError } from "../jsonapi-error.ts";
 
 /**
- * The Markdown representation served to agents on `Accept: text/markdown`
- * (DISC-009).
+ * The media type of the Markdown representation served to agents on
+ * `Accept: text/markdown`.
  *
  * @since 0.1.0
  * @category constants
@@ -67,7 +66,7 @@ export interface Negotiation {
   readonly representation: Representation;
   /** `true` → serve this request from the JSON:API. */
   readonly dispatch: boolean;
-  /** `true` → serve this request as the Markdown representation (DISC-009). */
+  /** `true` → serve this request as the Markdown representation. */
   readonly markdown?: boolean | undefined;
   /** A JSON:API §6 negotiation error to emit instead of dispatching. */
   readonly error?: NegotiationError | undefined;
@@ -103,8 +102,8 @@ const MARKDOWN: Negotiation = {
  * media type but every instance was modified with media-type parameters
  * other than `ext` / `profile` (or an unsupported `ext`) — JSON:API §6.3.2.
  * `status` / `code` / `title` are effect-jsonapi's `ApiError.NotAcceptable`
- * wire values (pinned by a test against `ApiError.toDocument`); `detail` is
- * the explanation the applications attach.
+ * wire values (pinned by a test against `ApiError.toDocument`); `detail`
+ * names the rule the instance broke.
  *
  * @since 0.1.0
  * @category constants
@@ -162,9 +161,9 @@ const routePatternToRegExp = (path: string): Option.Option<RegExp> => {
  * `/posts/:id`, `/lists/:id/items`, …): a request path matches when it
  * matches any of them, so adding an endpoint updates the predicate with no
  * second list of paths to maintain. Derive the list from the served `HttpApi`
- * itself (see {@link endpointPaths}) — the applications learnt the hard way
- * (#1206) that a group served but unmatched 404s every browser-issued request
- * for it at the front door while the server-side path keeps working.
+ * itself (see {@link endpointPaths}): a group that is served but unmatched
+ * 404s every browser-issued request for it at the front door while the
+ * server-side path keeps working.
  *
  * @example
  * ```ts

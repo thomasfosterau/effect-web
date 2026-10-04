@@ -1,11 +1,11 @@
 /**
  * The JSON:API error responses a web front door emits at its seam — the
- * guard statuses (403 cross-origin, 503 no runtime) and their serialiser —
- * ported from `packages/api/src/negotiate.ts` of the three applications
- * (`NegotiationError`, `CROSS_ORIGIN_REJECTED`, `SERVICE_UNAVAILABLE`,
- * `jsonApiErrorResponse`, `isMutatingMethod`). Dependency-free: the §6
- * negotiation errors themselves come from `@thomasfosterau/effect-jsonapi`
- * through the `./negotiate` entry, which builds on this module.
+ * guard statuses (403 cross-origin, 503 no runtime) and their serialiser.
+ * Dependency-free: the §6 negotiation errors themselves come from
+ * `@thomasfosterau/effect-jsonapi` through the `./negotiate` entry, which
+ * builds on this module.
+ *
+ * Ported from the applications' `packages/api/src/negotiate.ts`.
  *
  * @since 0.1.0
  */
@@ -36,7 +36,8 @@ export interface NegotiationError {
 }
 
 /**
- * The cross-origin mutation guard rejection (SEC-CSRF-001).
+ * The 403 error the cross-origin mutation guard
+ * (`crossOriginMutationRejection`) answers with.
  *
  * @since 0.1.0
  * @category constants
@@ -49,7 +50,8 @@ export const CROSS_ORIGIN_REJECTED: NegotiationError = {
 };
 
 /**
- * No per-request runtime — the API cannot serve without its services.
+ * The 503 error a front door answers with when it has no per-request
+ * runtime — the API cannot serve without its services.
  *
  * @since 0.1.0
  * @category constants

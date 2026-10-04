@@ -1,16 +1,16 @@
 /**
- * The read-path observability signals the applications emit on Cloudflare
- * Workers observability — which captures a Worker's `console.log` output as
- * a queryable invocation log with no exporter, no binding and no bundle
- * weight — re-expressed on Effect's own `Logger` and `Tracer` seams:
+ * The read-path observability signals a Worker emits on Cloudflare Workers
+ * observability — which captures a Worker's `console.log` output as a
+ * queryable invocation log with no exporter, no binding and no bundle
+ * weight — on Effect's own `Logger` and `Tracer` seams:
  *
- * - {@link logStructured} — the JSON-line sink (`packages/bindings/src/structured-log.ts`).
- * - {@link spanTracer} — the allow-listed span logger (`packages/bindings/src/tracing.ts`).
+ * - {@link logStructured} — the JSON-line sink.
+ * - {@link spanTracer} — the allow-listed span logger.
  * - {@link logEvent} / {@link logWarningEvent} / {@link logErrorEvent} /
- *   {@link describeError} — the event trio on `Effect.annotateLogs`
- *   (preferenceflow's `packages/jobs/src/log.ts`, duplicated in its worker).
- * - {@link deriveAuthOutcome} / {@link logAuthOutcome} — the auth-tax signal
- *   (`packages/database/src/session-resolution.ts`, #538).
+ *   {@link describeError} — the event trio on `Effect.annotateLogs`.
+ * - {@link deriveAuthOutcome} / {@link logAuthOutcome} — the auth-tax signal.
+ *
+ * Ported from the applications' `packages/bindings` and `packages/jobs` loggers.
  *
  * @since 0.1.0
  */
@@ -76,9 +76,9 @@ const jsonLoggerLayer = Logger.layer([jsonLogger]);
  * `Effect.runSync` always returns immediately.
  *
  * Also pins `References.MinimumLogLevel` to `"All"` for this one call, so
- * these signals stay unconditional — the way the `console.log` they replace
- * always was — even if an ambient `Logger.withMinimumLogLevel` raises the
- * threshold for ordinary `Effect.log` call sites.
+ * these signals stay unconditional, like a bare `console.log`, even if an
+ * ambient `Logger.withMinimumLogLevel` raises the threshold for ordinary
+ * `Effect.log` call sites.
  *
  * @example
  * ```ts
@@ -118,14 +118,13 @@ const NO_ATTRIBUTES: ReadonlyMap<string, unknown> = new Map();
  *
  * Effect's default tracer times every span but has no exporter, so a
  * span's duration never leaves the process without this. The allow-list is
- * load-bearing (the applications' performance rule): this tracer replaces
- * `Tracer.Tracer` for the *whole* per-request `Layer`, and `Effect.withSpan`
- * has 100+ call sites in a single request's Effect graph, so without it
- * every one would emit a line on every request — unbounded per-request cost
- * the read-path audit (#538) never asked for. Extend the set deliberately
- * when a new span is worth observing; the set differs per application
- * (website tracks five search-phase spans, preferenceflow three), which is
- * why it is a constructor parameter here and not a constant.
+ * load-bearing: this tracer replaces `Tracer.Tracer` for the *whole*
+ * per-request `Layer`, and `Effect.withSpan` can have 100+ call sites in a
+ * single request's Effect graph, so without it every one would emit a line
+ * on every request — unbounded per-request cost for spans nobody queries.
+ * Extend the set deliberately when a new span is worth observing; the set
+ * differs per application, which is why it is a constructor parameter here
+ * and not a constant.
  *
  * Every span stays a lean value object — one shared empty attributes `Map`
  * and `crypto.randomUUID()` ids — rather than paying `Tracer.NativeSpan`'s
@@ -294,7 +293,8 @@ export const describeError = (error: unknown): string => {
 };
 
 /**
- * The read-path auth-tax outcome (#538) — see {@link deriveAuthOutcome}.
+ * The label the read-path auth-tax signal gives a request's session
+ * resolution — see {@link deriveAuthOutcome}.
  *
  * @since 0.1.0
  * @category models
@@ -313,9 +313,9 @@ export interface AuthOutcomeFacts {
   /** The request carried a session cookie. */
   readonly hasCookie: boolean;
   /**
-   * Whether the request carried a machine-auth API key (bearer / `x-api-key`,
-   * #561). A key is a credential just like a cookie: its presence takes the
-   * request off the cookieless fast path. Defaults to `false`.
+   * Whether the request carried a machine-auth API key (bearer /
+   * `x-api-key`). A key is a credential just like a cookie: its presence
+   * takes the request off the cookieless fast path. Defaults to `false`.
    */
   readonly hasApiKey?: boolean | undefined;
   /** The session call threw or failed. */
@@ -361,7 +361,7 @@ export const deriveAuthOutcome = (input: AuthOutcomeFacts): AuthOutcome => {
 };
 
 /**
- * The structured `read-path.auth` line (#538): how long session resolution
+ * Logs the structured `read-path.auth` line: how long session resolution
  * took and which {@link AuthOutcome} it reached.
  *
  * @example

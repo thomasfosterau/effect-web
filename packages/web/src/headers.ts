@@ -1,18 +1,12 @@
 /**
- * Response-header policies shared by every web surface the applications
- * serve — the security baseline, the stage `noindex`, the `Vary` discipline
- * and the `Cache-Control` safety net — as pure functions over
- * `effect/http`'s immutable `Headers`, so the same policy applies
- * to an `HttpServerResponse`, to a Fetch `Response` (through `./web`) or to
- * a SvelteKit hook's `response.headers`.
+ * Response-header policies shared by every web surface a site serves — the
+ * security baseline, the stage `noindex`, the `Vary` discipline and the
+ * `Cache-Control` safety net — as pure functions over `effect/http`'s
+ * immutable `Headers`, so the same policy applies to an
+ * `HttpServerResponse`, to a Fetch `Response` (through `./web`) or to a
+ * SvelteKit hook's `response.headers`.
  *
- * Ported from `apps/web/src/hooks.server.ts` (`applySecurityHeaders`,
- * `applyStageNoindex`, `appendVary`, `applyResponseVary`,
- * `isLocaleInvariantAsset`) and `apps/web/src/lib/server/cache-control.ts`
- * (`ensureCacheControl`) of the website / gardeneria applications, which are
- * byte-identical bar gardeneria's `LOCALE_INVARIANT_ASSET_PATHS` set (the
- * nicer form, taken here). Comments citing `#NNN` or an invariant id point at
- * those applications' evidence.
+ * Ported from the website / gardeneria `hooks.server.ts` and `cache-control.ts`.
  *
  * @since 0.1.0
  */
@@ -53,9 +47,9 @@ export const SECURITY_HEADER_DEFAULTS = {
 
 /**
  * Adds the baseline security response headers ({@link SECURITY_HEADER_DEFAULTS})
- * to `headers`, leaving any the route already set untouched. The
- * `applySecurityHeaders` policy of the applications' web front door, applied
- * to every rendered page and to the analytics ingest proxy alike (SEC-HDR-001).
+ * to `headers`, leaving any the route already set untouched. Apply it to
+ * every response a front door returns, rendered pages and proxied responses
+ * alike (SEC-HDR-001).
  *
  * @example
  * ```ts
@@ -80,13 +74,12 @@ export const securityHeaders = (headers: Headers.Headers): Headers.Headers =>
  * Marks a non-production response non-indexable with `X-Robots-Tag: noindex`
  * (CANON-003): a `dev-<branch>`, `ci-<run_id>` or PR-preview deployment
  * leaking into a search index would duplicate production. Complements the
- * full-disallow `robots.txt` those stages serve (ROBOTS-005) as the
- * index-time backstop. An indexable stage (production) is left untouched, as
- * is a response that already declares its own `X-Robots-Tag`.
+ * full-disallow `robots.txt` those stages serve as the index-time backstop.
+ * An indexable stage (production) is left untouched, as is a response that
+ * already declares its own `X-Robots-Tag`.
  *
  * The stage decision is the caller's (`indexable: PUBLIC_STAGE ===
- * "production"` in the applications); this package never reads an
- * environment.
+ * "production"`, say); this package never reads an environment.
  *
  * @example
  * ```ts
@@ -108,9 +101,8 @@ export const stageNoindex = (
 
 /**
  * Idempotently appends header names to a response `Vary`, skipping any
- * already present (case-insensitively). The single place that mutates
- * `Vary` — the applications' front-door `Vary` handling is deliberately
- * frozen around it.
+ * already present (case-insensitively). The single place the policies here
+ * mutate `Vary`, so a front door's `Vary` handling stays in one function.
  *
  * @example
  * ```ts
@@ -166,12 +158,12 @@ export const appendVary = (
  * Workers Caching keys a stored response on the URL plus every header it
  * `Vary`s on, taken verbatim, so a `Vary` dimension on a storable response
  * is a cache-key dimension: a `Cookie` entry on a shareable route fragments
- * it per visitor (PERF-CACHE-001). It costs the negotiated surface nothing,
- * because the cache-control policy forces every response there to
- * `private, no-store` unless the route declared its own (CACHE-AUTH-003),
- * so their `Vary` only keeps browsers honest. The raw-`Accept` keying on the
- * routes that ARE stored is the PERF-CACHE-005 trade-off, bounded there and
- * not on HTML.
+ * it per visitor. It costs the negotiated surface nothing, because the
+ * cache-control policy ({@link cacheControlForViewer}) forces every response
+ * there to `private, no-store` unless the route declared its own, so their
+ * `Vary` only keeps browsers honest. Keying the `format-negotiated` routes
+ * that ARE stored on the raw `Accept` is a deliberate trade-off, bounded to
+ * those routes and never applied to HTML.
  *
  * @since 0.1.0
  * @category models
@@ -198,9 +190,10 @@ export const VARY_BY_ROUTE_CLASS: Readonly<Record<RouteVaryClass, ReadonlyArray<
 };
 
 /**
- * Appends the response `Vary` dimensions for a route class — the
- * applications' `applyResponseVary`, with the classification handed in by
- * the caller (see {@link classifyRoute}).
+ * Appends the response `Vary` dimensions for a route class, so a
+ * locale-invariant route carries no `Vary: Cookie` / `Accept-Language`
+ * (PERF-CACHE-001). The classification is handed in by the caller (see
+ * {@link classifyRoute}).
  *
  * @example
  * ```ts
@@ -228,9 +221,7 @@ export const responseVary = (
  * cookie string (every distinct analytics / locale cookie becomes a separate
  * cache entry), collapsing the hit rate for assets that should cache
  * near-universally, and defeating the `s-maxage` the documents declare.
- * They set their own `Cache-Control`. PERF-CACHE-001/002.
- *
- * Gardeneria's set (the superset: it adds the PWA icons).
+ * They set their own `Cache-Control`. PERF-CACHE-001.
  *
  * @example
  * ```ts
@@ -306,7 +297,7 @@ export const makeLocaleInvariantAssetMatcher = (
 };
 
 /**
- * The applications' locale-invariant asset predicate:
+ * The default locale-invariant asset predicate {@link classifyRoute} uses:
  * {@link LOCALE_INVARIANT_ASSET_PATHS} plus {@link isOpenGraphCard}.
  *
  * @example
@@ -326,8 +317,8 @@ export const isLocaleInvariantAsset: (pathname: string) => boolean =
 
 /**
  * The two route predicates {@link classifyRoute} needs. `isFormatNegotiatedAsset`
- * is application-specific (website's is `GET /images/<uuid>`, #1237 / #1722)
- * and defaults to "none"; `isLocaleInvariantAsset` defaults to
+ * is application-specific (an image endpoint serving AVIF or WebP from one
+ * URL, say) and defaults to "none"; `isLocaleInvariantAsset` defaults to
  * {@link isLocaleInvariantAsset}.
  *
  * @since 0.1.0
@@ -365,8 +356,8 @@ export const classifyRoute = (
 };
 
 /**
- * The `Cache-Control` no response may leave the Worker without: private, and
- * never stored (CACHE-AUTH-003).
+ * The `Cache-Control` value {@link ensureCacheControl} defaults to and
+ * {@link cacheControlForViewer} forces: private, and never stored.
  *
  * @since 0.1.0
  * @category constants
@@ -403,8 +394,7 @@ export const ensureCacheControl = (headers: Headers.Headers): Headers.Headers =>
   setIfAbsent(headers, "Cache-Control", PRIVATE_NO_STORE);
 
 /**
- * The viewer-aware `Cache-Control` policy of the applications' `cacheControl`
- * handle (CACHE-AUTH-003, gardeneria's multi-tenant reading): a response
+ * The viewer-aware `Cache-Control` policy (CACHE-AUTH-003): a response
  * rendered for a **resolved viewer** is always forced to
  * {@link PRIVATE_NO_STORE}, overriding whatever a downstream handler set —
  * Workers Caching sits in front of the Worker, so on a hit the viewer check

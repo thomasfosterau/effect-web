@@ -8,17 +8,14 @@
  *    v4 with its API intact: the `Rule` / `RobotGroup` / `RobotsTxt` data
  *    classes, the `RobotsTxtFromString` schema, `parse` / `encode`, and the
  *    matcher `isAllowed` / `getCrawlDelay` / `getSitemaps`.
- * 2. **The consumer side** the applications' crawlers share (website's
- *    `packages/jobs/src/web-archive/robots.ts`, preferenceflow's
- *    `packages/jobs/src/crawl/robots.ts`): {@link evaluateRobots} (the
+ * 2. **The consumer side** a crawler needs: {@link evaluateRobots} (the
  *    decision with its diagnostics), {@link fetchRobots} (RFC 9309 §2.3.1's
  *    failure posture over an `HttpClient`), {@link RobotsCache} (the
  *    pluggable per-origin cache; a persistent adapter, such as Workers KV,
  *    lives in the consuming application) and
  *    {@link makeRobotsChecker} (the cached `checkRobots` decision).
- * 3. **The serving side** (`apps/web/src/lib/server/robots.ts` in all three
- *    applications): {@link robotsBody}, the stage-aware `robots.txt` a site
- *    serves.
+ * 3. **The serving side**: {@link robotsBody}, the stage-aware `robots.txt`
+ *    a site serves.
  *
  * Peer: `effect` only.
  *
@@ -389,7 +386,7 @@ const normalizePath = (path: string): string => {
  * ties; no matching group or rule means allowed. The query string and
  * fragment are stripped before matching (the library's documented
  * behaviour; {@link evaluateRobots} matches the query too, as RFC 9309
- * §2.2.2 and the applications' crawlers do).
+ * §2.2.2 does).
  *
  * @example
  * ```ts
@@ -450,7 +447,7 @@ export const getSitemaps = (robotsTxt: RobotsTxt): ReadonlyArray<string> => robo
 
 /**
  * Upper bound applied to `Crawl-delay` so a hostile value cannot stall a
- * batch — the applications' cap.
+ * batch.
  *
  * @since 0.1.0
  * @category constants
@@ -561,8 +558,7 @@ export const ROBOTS_UNAVAILABLE_TTL_SECONDS = 60 * 60;
  * byte — it can never collide with a real body. Written as the `\0` escape
  * rather than an embedded raw NUL byte: same runtime string, but a raw NUL
  * in the source makes tools that binary-sniff stop treating the file as
- * text. Changing the value orphans entries already cached by the
- * applications.
+ * text. Changing the value orphans entries already in a persistent cache.
  *
  * @since 0.1.0
  * @category constants
@@ -677,9 +673,8 @@ export interface FetchRobotsOptions {
  * failure, a timeout or a body that cannot be read — the crawler must
  * assume it is not permitted until it can read the rules. Never fails.
  *
- * Redirect policy is the client's: the applications provide a client whose
- * redirects are revalidated against the SSRF block list
- * (`@thomasfosterau/effect-web/net`).
+ * Redirect policy is the client's: provide one whose redirects are
+ * revalidated against the SSRF block list (`@thomasfosterau/effect-web/net`).
  *
  * @example
  * ```ts
@@ -749,8 +744,8 @@ export interface RobotsCheckerOptions<R = never> extends FetchRobotsOptions, Eva
   readonly unavailableTtlSeconds?: number | undefined;
   /**
    * Whether the query string takes part in matching. Defaults to `true`
-   * (website's archiver matches `pathname + search`); preferenceflow's
-   * feed crawl matches the pathname alone.
+   * (`pathname + search`, as RFC 9309 §2.2.2 matches); `false` matches the
+   * pathname alone.
    */
   readonly matchQuery?: boolean | undefined;
 }
@@ -847,12 +842,12 @@ export const makeRobotsChecker = <R = never>(
  */
 export interface RobotsPolicy {
   /**
-   * Non-content URL spaces kept out of the crawl to preserve budget
-   * (ROBOTS-003). A `*` wildcard matches across path segments
-   * (RFC 9309 §2.2.3), so `/*\/edit` covers `/posts/<uuid>/edit`.
+   * Non-content URL spaces kept out of the crawl to preserve budget. A `*`
+   * wildcard matches across path segments (RFC 9309 §2.2.3), so `/*\/edit`
+   * covers `/posts/<uuid>/edit`.
    */
   readonly disallow: ReadonlyArray<string>;
-  /** The absolute, production-canonical sitemap URL (ROBOTS-004 / CANON-001). */
+  /** The absolute, production-canonical sitemap URL. */
   readonly sitemapUrl: string;
   /** Comment lines emitted first, without the `# ` prefix. */
   readonly comments?: ReadonlyArray<string> | undefined;
@@ -869,7 +864,8 @@ export const NON_PRODUCTION_BODY = ["User-agent: *", "Disallow: /", ""].join("\n
 
 /**
  * The production body: open to all crawlers (`User-agent: *`, AI crawlers
- * included — ROBOTS-002), the hygiene disallows, then the sitemap.
+ * included), the hygiene disallows, then the absolute sitemap URL
+ * (ROBOTS-002 … -004).
  *
  * @example
  * ```ts
