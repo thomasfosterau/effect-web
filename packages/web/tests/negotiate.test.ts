@@ -161,8 +161,9 @@ describe("negotiateRepresentation — reads (Accept)", () => {
   });
 
   it("never matches application/json or the wildcard range", () => {
-    expect(negotiate(get("/posts", "application/json")).dispatch).toBe(false);
-    expect(negotiate(get("/posts", "*/*")).dispatch).toBe(false);
+    // Neither names the JSON:API media type, so neither is a §6 refusal.
+    expectHtmlFallthrough(negotiate(get("/posts", "application/json")));
+    expectHtmlFallthrough(negotiate(get("/posts", "*/*")));
   });
 
   it("falls through to HTML when the path is not an API resource", () => {
@@ -224,8 +225,11 @@ describe("negotiateRepresentation — writes (Content-Type)", () => {
     expect(negotiate(write("DELETE", `/posts/${UUID}`, JSONAPI_MEDIA_TYPE)).dispatch).toBe(true);
   });
 
-  it("does not dispatch an application/json write", () => {
-    expect(negotiate(write("POST", "/posts", "application/json")).dispatch).toBe(false);
+  it("falls through to HTML for an application/json write (no 415)", () => {
+    // The surface is selected by its media type (JSONAPI-NEG-001): a write
+    // that does not carry it is outside the JSON:API, not refused by it. The
+    // 415 is only for a JSON:API Content-Type with a disallowed parameter.
+    expectHtmlFallthrough(negotiate(write("POST", "/posts", "application/json")));
   });
 
   it("§6: 415 when the write Content-Type carries a disallowed parameter", () => {
@@ -246,7 +250,7 @@ describe("negotiateRepresentation — writes (Content-Type)", () => {
   });
 
   it("falls through for a JSON:API write to a non-API path", () => {
-    expect(negotiate(write("POST", "/about", JSONAPI_MEDIA_TYPE)).dispatch).toBe(false);
+    expectHtmlFallthrough(negotiate(write("POST", "/about", JSONAPI_MEDIA_TYPE)));
   });
 });
 
@@ -367,9 +371,7 @@ describe("Markdown negotiation (DISC-009)", () => {
 
 describe("negotiateRepresentation — non-read, non-write methods", () => {
   it("falls through to HTML for OPTIONS even on an API path", () => {
-    const n = negotiate(new Request(`${ORIGIN}/posts`, { method: "OPTIONS" }));
-    expect(n.dispatch).toBe(false);
-    expect(n.representation).toBe("text/html");
+    expectHtmlFallthrough(negotiate(new Request(`${ORIGIN}/posts`, { method: "OPTIONS" })));
   });
 });
 
