@@ -386,6 +386,37 @@ describe("quality parsing — malformed q values", () => {
   });
 });
 
+describe("the Accept q split is positional (RFC 9110 §12.4.2)", () => {
+  it("ignores accept-extension parameters after q (;q=…;foo=bar is clean)", () => {
+    expect(negotiate(get("/posts", `${JSONAPI_MEDIA_TYPE};q=0.8;foo=bar`)).dispatch).toBe(true);
+    expect(
+      negotiate(
+        get("/posts", `${JSONAPI_MEDIA_TYPE};profile="https://x";q=0.9;foo=bar, text/html;q=0.5`),
+      ).dispatch,
+    ).toBe(true);
+  });
+
+  it("still 406s a disallowed media-type parameter positioned before q", () => {
+    const n = negotiate(get("/posts", `${JSONAPI_MEDIA_TYPE};version=1;q=0.9`));
+    expect(n.dispatch).toBe(false);
+    expect(n.error).toBe(NOT_ACCEPTABLE);
+  });
+
+  it("reads the weight from q, not from what follows it", () => {
+    expect(
+      negotiate(get("/posts", `${JSONAPI_MEDIA_TYPE};q=0.5;foo=bar, text/html;q=0.9`)).dispatch,
+    ).toBe(false);
+    expectHtmlFallthrough(negotiate(get("/posts", `${JSONAPI_MEDIA_TYPE};q=0;foo=bar, text/html`)));
+  });
+
+  it("tolerates whitespace and empty parts around the parameters", () => {
+    expect(negotiate(get("/posts", `${JSONAPI_MEDIA_TYPE};`)).dispatch).toBe(true);
+    expect(negotiate(get("/posts", ` ${JSONAPI_MEDIA_TYPE} ; ; q=0.8 ; foo=bar`)).dispatch).toBe(
+      true,
+    );
+  });
+});
+
 describe("the §6 errors are effect-jsonapi's, on the wire", () => {
   it("carries ApiError.NotAcceptable's and ApiError.UnsupportedMediaType's status / code / title", () => {
     const [notAcceptable] = ApiError.toDocument(new ApiError.NotAcceptable()).errors;
