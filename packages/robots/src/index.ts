@@ -897,10 +897,10 @@ export const productionBody = (policy: RobotsPolicy): string =>
 
 /**
  * The `robots.txt` body for a stage: the production policy when
- * `production`, else {@link NON_PRODUCTION_BODY}. Pure, so the stage branch
- * is unit-testable without a runtime; the caller decides the stage
- * (`PUBLIC_STAGE === "production"`) and builds the sitemap URL from the
- * canonical base, never the request origin.
+ * `production`, else {@link NON_PRODUCTION_BODY} (ROBOTS-005). Pure, so the
+ * stage branch is unit-testable without a runtime; the caller decides the
+ * stage (`PUBLIC_STAGE === "production"`, say) and builds the sitemap URL
+ * from the canonical base, never the request origin.
  *
  * @example
  * ```ts

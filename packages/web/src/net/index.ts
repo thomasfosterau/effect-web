@@ -6,9 +6,9 @@
  * The core is an `Effect` with tagged failures ({@link UnsafeUrl},
  * {@link RedirectRejected}, {@link FetchFailed}). A plain-`Promise` /
  * plain-`Error` surface ({@link assertAllowedUrl},
- * {@link fetchFollowingRedirects}) is kept as an adapter over it with the
- * same messages, so a SvelteKit route or a queue consumer can use the guard
- * without an Effect runtime.
+ * {@link fetchFollowingRedirects}) is kept as an adapter over it, throwing
+ * or rejecting with the tagged failures' messages, so a SvelteKit route or a
+ * queue consumer can use the guard without running Effect itself.
  *
  * DNS rebinding to a private IP is moot: Workers' outbound `fetch` runs on
  * Cloudflare's edge with no private network behind it, so the lexical block
@@ -400,10 +400,10 @@ export const followRedirects = (
 };
 
 /**
- * {@link followRedirects} for plain (non-Effect) callers: rejects with a
- * plain `Error` carrying the failure's message (or, for a `fetch` failure,
- * the original cause) so it composes into whichever failure channel the
- * caller uses.
+ * {@link followRedirects} for plain (non-Effect) callers, with the same
+ * per-hop revalidation (SEC-SSRF-003): rejects with a plain `Error`
+ * carrying the failure's message (or, for a `fetch` failure, the original
+ * cause) so it composes into whichever failure channel the caller uses.
  *
  * @example
  * ```ts

@@ -139,7 +139,7 @@ export const lastmodOf = (value: unknown): string | undefined => {
 
 /**
  * One `<url>` element on `base` (the canonical origin, never the request
- * origin — CANON-001).
+ * origin).
  *
  * @example
  * ```ts
@@ -178,9 +178,10 @@ export const URLSET_OPEN = `<?xml version="1.0" encoding="UTF-8"?><urlset xmlns=
 export const URLSET_CLOSE = `</urlset>`;
 
 /**
- * The whole `sitemap.xml` on `base`, materialised. For a bounded set
- * (static shells plus a `LIMIT`ed enumeration); {@link sitemapStream} for a
- * large one.
+ * The whole `sitemap.xml` on `base`, materialised: every `<loc>` is absolute
+ * on that canonical origin, never the request origin (CANON-001). For a
+ * bounded set (static shells plus a `LIMIT`ed enumeration);
+ * {@link sitemapStream} for a large one.
  *
  * @example
  * ```ts
@@ -203,7 +204,8 @@ export const renderSitemap = (base: string, entries: Iterable<SitemapUrl>): stri
 /**
  * The `sitemap.xml` as a `Stream` of text chunks — the opening, one chunk
  * per entry as the source yields it, the closing — so a large enumeration
- * is never materialised in the isolate before the first byte goes out. Run
+ * is never materialised in the isolate before the first byte goes out. Every
+ * `<loc>` is absolute on `base`, the canonical origin (CANON-001). Run
  * the enumeration before the response is constructed when it needs a
  * database: the body stream must not touch a per-request runtime that is
  * tearing down.
@@ -370,7 +372,7 @@ export interface FeedEntry {
  * @category models
  */
 export interface JsonFeedOptions {
-  /** The canonical origin, never the request origin (CANON-001). */
+  /** The canonical origin, never the request origin. */
   readonly base: string;
   readonly title: string;
   readonly description: string;
@@ -391,9 +393,10 @@ export const FEED_ITEM_LIMIT = 50;
 
 /**
  * Serialises feed entries into a JSON Feed 1.1 document. Pure. Item `id`
- * and `url` are the canonical absolute URL; `title` / `summary` are
- * omitted, never `null`-valued keys, when absent; entry order is preserved
- * (the caller is responsible for newest-first).
+ * and `url` are the canonical absolute URL on `options.base`, never the
+ * request origin (CANON-001); `title` / `summary` are omitted, never
+ * `null`-valued keys, when absent; entry order is preserved (the caller is
+ * responsible for newest-first).
  *
  * @example
  * ```ts
@@ -558,7 +561,9 @@ export interface CachePurgeContext {
  * for an empty tag list or an absent `ctx.cache`; a logged, never failing,
  * outcome otherwise — the purge call rejecting, or *resolving* with
  * `success: false` (a Cloudflare-side failure resolves rather than rejects).
- * A dropped purge must never surface on the mutation that triggered it: the
+ * This is the purge half of PERF-CACHE-002: a mutation purges by
+ * `Cache-Tag` rather than waiting out the TTL. A dropped purge must never
+ * surface on the mutation that triggered it: the
  * surface serves stale content until its own `s-maxage` elapses, the
  * accepted failure mode.
  *

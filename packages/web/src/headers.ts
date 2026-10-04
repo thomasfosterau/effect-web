@@ -215,13 +215,13 @@ export const responseVary = (
 /**
  * Routes that serve identical bytes to every visitor regardless of locale
  * or cookies — the favicon, apple-touch-icon and PWA install icons, the
- * default share card, and the public edge-cached documents (`sitemap.xml`,
- * `feed.json`, `robots.txt`). They must NOT carry `Vary: Cookie,
+ * default share card (OG-IMG-001), and the public edge-cached documents
+ * (`sitemap.xml`, `feed.json`, `robots.txt`). They must NOT carry `Vary: Cookie,
  * Accept-Language`: that header fragments the Cloudflare Cache API by exact
  * cookie string (every distinct analytics / locale cookie becomes a separate
  * cache entry), collapsing the hit rate for assets that should cache
  * near-universally, and defeating the `s-maxage` the documents declare.
- * They set their own `Cache-Control`. PERF-CACHE-001.
+ * They set their own `Cache-Control`.
  *
  * @example
  * ```ts
@@ -254,7 +254,7 @@ export const LOCALE_INVARIANT_ASSET_PATHS: ReadonlySet<string> = new Set([
  * text rides in the query, not the cookie or `Accept-Language`. A locale
  * `Vary` would fragment the Cache API by cookie string and defeat the
  * immutable cache that OG-IMG-001 depends on (the "MastoDDoS" fan-out
- * defence). PERF-CACHE-001.
+ * defence).
  *
  * @example
  * ```ts
@@ -331,7 +331,9 @@ export interface RouteClassifier {
 
 /**
  * Classifies a request path into its {@link RouteVaryClass}, narrowest
- * class first.
+ * class first, so a locale- and cookie-invariant asset is never classed as
+ * negotiated and {@link responseVary} gives it no `Vary: Cookie` /
+ * `Accept-Language` (PERF-CACHE-001).
  *
  * @example
  * ```ts

@@ -64,7 +64,7 @@ export const isCrossOrigin = (origin: Option.Option<string>, expectedOrigin: str
 
 /**
  * Whether `request` must be refused as cross-origin: it carries an `Origin`
- * other than `expectedOrigin`.
+ * other than `expectedOrigin` (SEC-CSRF-001).
  *
  * `expectedOrigin` is explicit rather than derived: an `HttpServerRequest`'s
  * `url` is its path, and `HttpServerRequest.toURL` reconstructs the origin
@@ -91,12 +91,13 @@ export const isCrossOriginRejected = (
 ): boolean => isCrossOrigin(Headers.get(request.headers, "origin"), expectedOrigin);
 
 /**
- * The web front door's guard for a dispatched JSON:API request before it is
- * forwarded to the API Worker: a 403 {@link CROSS_ORIGIN_REJECTED} response
- * (already stamped `private, no-store`) when `request` uses a mutating
- * method and carries an `Origin` that doesn't match `expectedOrigin`, and
- * `None` when the request should proceed (same-origin, a non-mutating
- * method, or no `Origin` header at all — a non-browser client).
+ * The web front door's SEC-CSRF-001 guard for a dispatched JSON:API request
+ * before it is forwarded to the API Worker: a 403
+ * {@link CROSS_ORIGIN_REJECTED} response (already stamped `private,
+ * no-store`) when `request` uses a mutating method and carries an `Origin`
+ * that doesn't match `expectedOrigin`, and `None` when the request should
+ * proceed (same-origin, a non-mutating method, or no `Origin` header at all
+ * — a non-browser client).
  *
  * @example
  * ```ts
