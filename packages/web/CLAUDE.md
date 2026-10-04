@@ -12,7 +12,7 @@ Imports nothing from this workspace (`.fallowrc.json` zone `web`, no outbound ru
 - **Allow-lists and predicates are parameters**: no viewer or session shape beyond "a viewer was resolved", no route names, no span names. `spanTracer` takes its allow-list; it is never a constant.
 - **The stage is the caller's**: nothing here reads an environment (`stageNoindex` takes `indexable`).
 - **`logStructured` keeps the flat line shape** (`{"event":…}`), never Effect's logger envelope: the applications' dashboards read it.
-- **The `Accept` `q` split is effect-jsonapi's; the weight is local.** Each `Accept` entry goes whole to `Middleware.contentTypeIsAcceptable`, which ends the media type at `q` (RFC 9110 §12.4.2) from the `>=0.16.1` peer floor on. `q` itself is read locally, because effect-jsonapi exports no per-entry weight and its `acceptIsAcceptable` reads an unparsable `q` as a refusal where the applications read it as `1`. Empty `;` parts are dropped before the hand-off.
+- **The `Accept` `q` split is effect-jsonapi's; the weight is local.** Each `Accept` entry, trimmed and with empty `;` parts dropped, goes to `Middleware.contentTypeIsAcceptable`, which ends the media type at the first `q` (RFC 9110 §12.4.2) from the `>=0.16.1` peer floor on. The weight (the first `q`) is read locally, because effect-jsonapi exports no per-entry weight and its `acceptIsAcceptable` reads an unparsable `q` as a refusal where the applications read it as `1`. The local weight goes once effect-jsonapi exports a per-entry weight, or under #58 (whether `./negotiate` defers to effect-jsonapi's `Negotiation`).
 - **The plain-`Promise` / plain-`Error` forms** (`assertAllowedUrl`, `fetchFollowingRedirects`) keep the applications' message wording; their tests pin it.
 
 ## Terms
