@@ -404,8 +404,8 @@ const negotiateWrite = (
  * Negotiates a single request into a {@link Negotiation}. Pure and
  * dependency-free beyond `options` (it reads only the request line and
  * headers), so a cache handle and a dispatch handle can share one verdict.
- * Reads (`GET` / `HEAD`) negotiate on `Accept`, a Markdown path's
- * `text/markdown` first, served from the page's own URL (DISC-009);
+ * Reads (`GET` / `HEAD`) negotiate on `Accept`, trying `text/markdown`
+ * first on a Markdown path so the page's own URL serves it (DISC-009);
  * mutating methods negotiate on `Content-Type`; anything else (`OPTIONS`,
  * …) is HTML. The JSON:API surface is chosen by its media type, never a
  * path prefix, and a disallowed media-type parameter answers 406 / 415
