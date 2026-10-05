@@ -401,6 +401,9 @@ describe("fetchFollowingRedirects (SEC-SSRF-003)", () => {
     // `toStrictEqual` against a bare `Error` checks the prototype as well as
     // the message, so a rethrown `UnsafeUrl` / `RedirectRejected` (an `Error`
     // subclass with the same message) fails it.
+    // oxlint-disable-next-line effect/avoid-untagged-errors -- the expected value of the plain-Promise contract under test: the adapter's documented rejection IS a bare `Error`.
+    const plainError = (message: string): Error => new Error(message);
+
     it("rejects with a plain Error carrying UnsafeUrl's message for a blocked host", async () => {
       let called = false;
       const recording: typeof fetch = () => {
@@ -409,7 +412,7 @@ describe("fetchFollowingRedirects (SEC-SSRF-003)", () => {
       };
       await expect(
         fetchFollowingRedirects("http://127.0.0.1/", {}, 5, recording),
-      ).rejects.toStrictEqual(new Error("blocked host '127.0.0.1'"));
+      ).rejects.toStrictEqual(plainError("blocked host '127.0.0.1'"));
       expect(called).toBe(false);
     });
 
@@ -417,7 +420,7 @@ describe("fetchFollowingRedirects (SEC-SSRF-003)", () => {
       const locationless: typeof fetch = () => Promise.resolve(new Response(null, { status: 302 }));
       await expect(
         fetchFollowingRedirects("https://example.com/", {}, 5, locationless),
-      ).rejects.toStrictEqual(new Error("redirect with no Location from 'https://example.com/'"));
+      ).rejects.toStrictEqual(plainError("redirect with no Location from 'https://example.com/'"));
     });
   });
 });
