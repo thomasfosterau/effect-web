@@ -7,8 +7,9 @@
  * {@link RedirectRejected}, {@link FetchFailed}). A plain-`Promise` /
  * plain-`Error` surface ({@link assertAllowedUrl},
  * {@link fetchFollowingRedirects}) is kept as an adapter over it, throwing
- * or rejecting with the tagged failures' messages, so a SvelteKit route or a
- * queue consumer can use the guard without running Effect itself.
+ * or rejecting with a plain `Error` carrying the failure's message (a
+ * `fetch` failure rejects with its original cause), so a SvelteKit route or
+ * a queue consumer can use the guard without running Effect itself.
  *
  * DNS rebinding to a private IP is moot: Workers' outbound `fetch` runs on
  * Cloudflare's edge with no private network behind it, so the lexical block

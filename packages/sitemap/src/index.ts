@@ -563,9 +563,8 @@ export interface CachePurgeContext {
  * `success: false` (a Cloudflare-side failure resolves rather than rejects).
  * This is the purge half of PERF-CACHE-002: a mutation purges by
  * `Cache-Tag` rather than waiting out the TTL. A dropped purge must never
- * surface on the mutation that triggered it: the
- * surface serves stale content until its own `s-maxage` elapses, the
- * accepted failure mode.
+ * surface on the mutation that triggered it: the surface serves stale
+ * content until its own `s-maxage` elapses, the accepted failure mode.
  *
  * @example
  * ```ts
