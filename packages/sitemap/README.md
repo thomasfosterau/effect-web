@@ -28,7 +28,7 @@ import {
   type SitemapUrl,
 } from "@thomasfosterau/effect-web-sitemap";
 
-// `base` is the canonical origin (`PUBLIC_SITE_URL`); the rows are the application's.
+// `base` is the canonical origin (the configured production origin); the rows are the application's.
 const STATIC_PAGES: ReadonlyArray<SitemapUrl> = [{ path: "/" }, { path: "/about" }];
 
 // Whole, for a bounded set:
@@ -47,7 +47,8 @@ const streamedSitemap = (base: string, entries: ReadonlyArray<SitemapUrl>) =>
 | --- | --- |
 | `SitemapUrl` | `{ path, lastmod?: "YYYY-MM-DD" }`. |
 | `lastmodOf(value)` | The day of a `Date` or an ISO string; `undefined` (omit `<lastmod>`) otherwise. A parse, never a clock read. |
-| `renderUrl(base, entry)`, `renderSitemap(base, entries)` | One `<url>`; the whole `<urlset>` with the XML declaration, every `<loc>` absolute on `base` (CANON-001). |
+| `renderUrl(base, entry)` | One `<url>`, its `<loc>` absolute on `base`. |
+| `renderSitemap(base, entries)` | The whole `<urlset>` with the XML declaration, every `<loc>` absolute on `base` (CANON-001). |
 | `sitemapStream(base, Stream<SitemapUrl>)` | The document as a `Stream<string>`: opening, one chunk per entry, closing — never materialised in the isolate. Every `<loc>` is absolute on `base` (CANON-001). |
 | `sitemapResponse(base, stream, { cacheTag?, cacheControl? })` | The stream as an `HttpServerResponse`: `application/xml`, `LOW_CHURN_CACHE_CONTROL`, the `Cache-Tag`. |
 | `chunkSitemap(entries, size = SITEMAP_MAX_URLS)`, `renderSitemapIndex(base, sitemaps)` | Past 50,000 URLs: split into files and index them. |
