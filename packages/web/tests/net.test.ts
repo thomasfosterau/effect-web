@@ -381,11 +381,44 @@ describe("fetchFollowingRedirects (SEC-SSRF-003)", () => {
     );
   });
 
-  it("surfaces a fetch rejection as-is", async () => {
-    const failing: typeof fetch = () => Promise.reject(new Error("socket hang up"));
-    await expect(fetchFollowingRedirects("https://example.com/", {}, 5, failing)).rejects.toThrow(
-      "socket hang up",
-    );
+  /**
+   * The adapter's rejection value is the contract its doc comment and the
+   * `effect-web/net` module header describe: the original `fetch` cause for
+   * a `FetchFailed`, a plain `Error` carrying the message for `UnsafeUrl` /
+   * `RedirectRejected`. Message substrings alone
+   * would pass with the cause wrapped or the tagged error rethrown, so these
+   * pin the identity, the prototype and the exact wording.
+   */
+  describe("rejection values", () => {
+    it("rejects with the identical object fetch threw", async () => {
+      const cause = new TypeError("network down");
+      const failing: typeof fetch = () => Promise.reject(cause);
+      await expect(fetchFollowingRedirects("https://example.com/", {}, 5, failing)).rejects.toBe(
+        cause,
+      );
+    });
+
+    // `toStrictEqual` against a bare `Error` checks the prototype as well as
+    // the message, so a rethrown `UnsafeUrl` / `RedirectRejected` (an `Error`
+    // subclass with the same message) fails it.
+    it("rejects with a plain Error carrying UnsafeUrl's message for a blocked host", async () => {
+      let called = false;
+      const recording: typeof fetch = () => {
+        called = true;
+        return Promise.resolve(new Response("nope", { status: 200 }));
+      };
+      await expect(
+        fetchFollowingRedirects("http://127.0.0.1/", {}, 5, recording),
+      ).rejects.toStrictEqual(new Error("blocked host '127.0.0.1'"));
+      expect(called).toBe(false);
+    });
+
+    it("rejects with a plain Error carrying RedirectRejected's message for a missing Location", async () => {
+      const locationless: typeof fetch = () => Promise.resolve(new Response(null, { status: 302 }));
+      await expect(
+        fetchFollowingRedirects("https://example.com/", {}, 5, locationless),
+      ).rejects.toStrictEqual(new Error("redirect with no Location from 'https://example.com/'"));
+    });
   });
 });
 
