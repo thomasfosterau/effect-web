@@ -92,12 +92,21 @@ const expectHtmlFallthrough = (n: Negotiation): void => {
   expect(n.error).toBeUndefined();
 };
 
-/** Assert a verdict dispatches to the JSON:API (no Markdown, no §6 error). */
-const expectDispatch = (n: Negotiation): void => {
+/**
+ * Assert a write verdict dispatches to the JSON:API (no Markdown, no §6
+ * error). `representation` is not pinned: `Negotiation` documents the token
+ * as meaningful for `GET`/`HEAD` only.
+ */
+const expectWriteDispatch = (n: Negotiation): void => {
   expect(n.dispatch).toBe(true);
-  expect(n.representation).toBe(JSONAPI_MEDIA_TYPE);
   expect(n.markdown ?? false).toBe(false);
   expect(n.error).toBeUndefined();
+};
+
+/** Assert a read verdict dispatches to the JSON:API, keyed under its media type. */
+const expectDispatch = (n: Negotiation): void => {
+  expectWriteDispatch(n);
+  expect(n.representation).toBe(JSONAPI_MEDIA_TYPE);
 };
 
 /** Assert a verdict serves the Markdown representation (no dispatch, no §6 error). */
@@ -108,12 +117,22 @@ const expectMarkdown = (n: Negotiation): void => {
   expect(n.error).toBeUndefined();
 };
 
-/** Assert a verdict is the given §6 refusal: no dispatch, keyed as HTML, no Markdown. */
-const expectRefusal = (n: Negotiation, error: Negotiation["error"]): void => {
+/**
+ * Assert a write verdict is the given §6 refusal: no dispatch, no Markdown.
+ * `representation` is not pinned, as for {@link expectWriteDispatch}. The
+ * error is compared structurally: no doc comment promises that the verdict
+ * carries the exported constant itself.
+ */
+const expectWriteRefusal = (n: Negotiation, error: NonNullable<Negotiation["error"]>): void => {
   expect(n.dispatch).toBe(false);
-  expect(n.representation).toBe("text/html");
   expect(n.markdown ?? false).toBe(false);
-  expect(n.error).toBe(error);
+  expect(n.error).toStrictEqual(error);
+};
+
+/** Assert a read verdict is the given §6 refusal, keyed as HTML. */
+const expectRefusal = (n: Negotiation, error: NonNullable<Negotiation["error"]>): void => {
+  expectWriteRefusal(n, error);
+  expect(n.representation).toBe("text/html");
 };
 
 describe("makeApiPathMatcher / endpointPaths", () => {
@@ -233,11 +252,11 @@ describe("negotiateRepresentation — reads (Accept)", () => {
 
 describe("negotiateRepresentation — writes (Content-Type)", () => {
   it("dispatches a JSON:API write on an API path", () => {
-    expectDispatch(negotiate(write("POST", "/posts", JSONAPI_MEDIA_TYPE)));
+    expectWriteDispatch(negotiate(write("POST", "/posts", JSONAPI_MEDIA_TYPE)));
   });
 
   it("dispatches a bodyless DELETE carrying the media type", () => {
-    expectDispatch(negotiate(write("DELETE", `/posts/${UUID}`, JSONAPI_MEDIA_TYPE)));
+    expectWriteDispatch(negotiate(write("DELETE", `/posts/${UUID}`, JSONAPI_MEDIA_TYPE)));
   });
 
   it("falls through to HTML for an application/json write (no 415)", () => {
@@ -249,14 +268,16 @@ describe("negotiateRepresentation — writes (Content-Type)", () => {
 
   it("§6: 415 when the write Content-Type carries a disallowed parameter", () => {
     const n = negotiate(write("PATCH", `/posts/${UUID}`, `${JSONAPI_MEDIA_TYPE};charset=utf-8`));
-    expectRefusal(n, UNSUPPORTED_MEDIA_TYPE);
+    expectWriteRefusal(n, UNSUPPORTED_MEDIA_TYPE);
     expect(n.error?.status).toBe(415);
     expect(UNSUPPORTED_MEDIA_TYPE.code).toBe("unsupported_media_type");
   });
 
   it("allows profile and a supported ext on a write Content-Type", () => {
-    expectDispatch(negotiate(write("POST", "/posts", `${JSONAPI_MEDIA_TYPE};ext="atomic"`)));
-    expectDispatch(negotiate(write("POST", "/posts", `${JSONAPI_MEDIA_TYPE};profile="https://x"`)));
+    expectWriteDispatch(negotiate(write("POST", "/posts", `${JSONAPI_MEDIA_TYPE};ext="atomic"`)));
+    expectWriteDispatch(
+      negotiate(write("POST", "/posts", `${JSONAPI_MEDIA_TYPE};profile="https://x"`)),
+    );
   });
 
   it("falls through for a JSON:API write to a non-API path", () => {
@@ -357,7 +378,6 @@ describe("Markdown negotiation (DISC-009)", () => {
   it("falls through to HTML for a browser Accept (html outranks markdown)", () => {
     const n = negotiate(get(`/posts/${UUID}`, "text/html,application/xhtml+xml,*/*;q=0.8"));
     expectHtmlFallthrough(n);
-    expect(n.markdown).toBeUndefined();
   });
 
   it("falls through to HTML when markdown is offered below html", () => {
