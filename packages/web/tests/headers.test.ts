@@ -81,7 +81,7 @@ describe("appendVary", () => {
   });
 });
 
-describe("responseVary / classifyRoute (PERF-CACHE-001 / PERF-CACHE-005)", () => {
+describe("responseVary / classifyRoute (PERF-CACHE-001)", () => {
   it("gives locale-invariant assets no Vary at all", () => {
     expect(Headers.has(responseVary(Headers.empty, "locale-invariant"), "vary")).toBe(false);
     expect(VARY_BY_ROUTE_CLASS["locale-invariant"]).toStrictEqual([]);
