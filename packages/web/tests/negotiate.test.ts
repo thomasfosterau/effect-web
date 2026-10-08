@@ -84,12 +84,22 @@ const write = (method: string, path: string, contentType?: string): Request =>
 
 const negotiate = (request: Request): Negotiation => negotiateWebRequest(request, options);
 
-/** Assert a verdict is a clean HTML fall-through (no dispatch, no Markdown, no §6 error). */
-const expectHtmlFallthrough = (n: Negotiation): void => {
+/**
+ * Assert a non-read verdict (a write, `OPTIONS`, …) is a clean fall-through:
+ * no dispatch, no Markdown, no §6 error. `representation` is not pinned, as
+ * for {@link expectWriteDispatch}: `Negotiation` documents the token as
+ * meaningful for `GET`/`HEAD` only.
+ */
+const expectFallthrough = (n: Negotiation): void => {
   expect(n.dispatch).toBe(false);
-  expect(n.representation).toBe("text/html");
   expect(n.markdown ?? false).toBe(false);
   expect(n.error).toBeUndefined();
+};
+
+/** Assert a read verdict is a clean fall-through, keyed as HTML. */
+const expectHtmlFallthrough = (n: Negotiation): void => {
+  expectFallthrough(n);
+  expect(n.representation).toBe("text/html");
 };
 
 /**
@@ -259,11 +269,11 @@ describe("negotiateRepresentation — writes (Content-Type)", () => {
     expectWriteDispatch(negotiate(write("DELETE", `/posts/${UUID}`, JSONAPI_MEDIA_TYPE)));
   });
 
-  it("falls through to HTML for an application/json write (no 415)", () => {
+  it("falls through for an application/json write (no 415)", () => {
     // The surface is selected by its media type (JSONAPI-NEG-001): a write
     // that does not carry it is outside the JSON:API, not refused by it. The
     // 415 is only for a JSON:API Content-Type with a disallowed parameter.
-    expectHtmlFallthrough(negotiate(write("POST", "/posts", "application/json")));
+    expectFallthrough(negotiate(write("POST", "/posts", "application/json")));
   });
 
   it("§6: 415 when the write Content-Type carries a disallowed parameter", () => {
@@ -281,7 +291,7 @@ describe("negotiateRepresentation — writes (Content-Type)", () => {
   });
 
   it("falls through for a JSON:API write to a non-API path", () => {
-    expectHtmlFallthrough(negotiate(write("POST", "/about", JSONAPI_MEDIA_TYPE)));
+    expectFallthrough(negotiate(write("POST", "/about", JSONAPI_MEDIA_TYPE)));
   });
 });
 
@@ -395,13 +405,13 @@ describe("Markdown negotiation (DISC-009)", () => {
   });
 
   it("ignores text/markdown on writes (negotiates on Content-Type only)", () => {
-    expectHtmlFallthrough(negotiate(write("POST", `/posts/${UUID}`, "text/markdown")));
+    expectFallthrough(negotiate(write("POST", `/posts/${UUID}`, "text/markdown")));
   });
 });
 
 describe("negotiateRepresentation — non-read, non-write methods", () => {
-  it("falls through to HTML for OPTIONS even on an API path", () => {
-    expectHtmlFallthrough(negotiate(new Request(`${ORIGIN}/posts`, { method: "OPTIONS" })));
+  it("falls through for OPTIONS even on an API path", () => {
+    expectFallthrough(negotiate(new Request(`${ORIGIN}/posts`, { method: "OPTIONS" })));
   });
 });
 
