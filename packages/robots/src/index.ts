@@ -4,9 +4,11 @@
  *
  * Three layers, in one entry:
  *
- * 1. **The library** — the `Rule` / `RobotGroup` / `RobotsTxt` data
- *    classes, the `RobotsTxtFromString` schema, `parse` / `encode`, and the
- *    matcher `isAllowed` / `getCrawlDelay` / `getSitemaps`.
+ * 1. **The library**, its API and behaviour held fixed by the verbatim
+ *    suite in `tests/library.test.ts`: the `Rule` / `RobotGroup` /
+ *    `RobotsTxt` data classes, the `RobotsTxtFromString` schema,
+ *    `parse` / `encode`, and the matcher `isAllowed` / `getCrawlDelay` /
+ *    `getSitemaps`.
  * 2. **The consumer side** a crawler needs: {@link evaluateRobots} (the
  *    decision with its diagnostics), {@link fetchRobots} (RFC 9309 §2.3.1's
  *    failure posture over an `HttpClient`), {@link RobotsCache} (the
