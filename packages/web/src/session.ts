@@ -4,8 +4,6 @@
  * binding degrades the request to anonymous rather than failing it — must
  * never degrade silently.
  *
- * Ported from the website / gardeneria `session-degraded-report.ts`.
- *
  * @since 0.1.0
  */
 

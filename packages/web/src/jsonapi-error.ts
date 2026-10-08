@@ -5,8 +5,6 @@
  * `@thomasfosterau/effect-jsonapi` through the `./negotiate` entry, which
  * builds on this module.
  *
- * Ported from the applications' `packages/api/src/negotiate.ts`.
- *
  * @since 0.1.0
  */
 import * as HashSet from "effect/HashSet";

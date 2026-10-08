@@ -12,8 +12,6 @@
  * hand-maintained list. If authored text (a title) is ever emitted it MUST
  * be escaped first; {@link escapeXml} is here for that.
  *
- * Ported from the preferenceflow / website sitemap, feed and cache-purge modules.
- *
  * @since 0.1.0
  */
 import * as Arr from "effect/Array";

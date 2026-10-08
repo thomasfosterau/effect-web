@@ -4,8 +4,7 @@
  *
  * Three layers, in one entry:
  *
- * 1. **The library** — `thomasfosterau/effect-robots.txt` ported to Effect
- *    v4 with its API intact: the `Rule` / `RobotGroup` / `RobotsTxt` data
+ * 1. **The library** — the `Rule` / `RobotGroup` / `RobotsTxt` data
  *    classes, the `RobotsTxtFromString` schema, `parse` / `encode`, and the
  *    matcher `isAllowed` / `getCrawlDelay` / `getSitemaps`.
  * 2. **The consumer side** a crawler needs: {@link evaluateRobots} (the

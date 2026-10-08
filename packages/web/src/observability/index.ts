@@ -10,8 +10,6 @@
  *   {@link describeError} — the event trio on `Effect.annotateLogs`.
  * - {@link deriveAuthOutcome} / {@link logAuthOutcome} — the auth-tax signal.
  *
- * Ported from the applications' `packages/bindings` and `packages/jobs` loggers.
- *
  * @since 0.1.0
  */
 import * as Effect from "effect/Effect";

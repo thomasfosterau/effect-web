@@ -4,8 +4,6 @@
  * door returns. One module, one explanation, because a CSRF guard that
  * differs subtly between routes is a CSRF guard nobody can audit.
  *
- * Ported from gardeneria's `cross-origin.ts` and the `cross-origin-guard.ts` hook.
- *
  * ## What it relies on
  *
  * A browser always sends `Origin` on a cross-origin request, so a present

@@ -15,8 +15,6 @@
  * Cloudflare's edge with no private network behind it, so the lexical block
  * list is the operative guard.
  *
- * Ported from the website / gardeneria `packages/bindings/src/net.ts`.
- *
  * @since 0.1.0
  */
 import * as Effect from "effect/Effect";

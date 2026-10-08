@@ -6,8 +6,6 @@
  * `HttpServerResponse`, to a Fetch `Response` (through `./web`) or to a
  * SvelteKit hook's `response.headers`.
  *
- * Ported from the website / gardeneria `hooks.server.ts` and `cache-control.ts`.
- *
  * @since 0.1.0
  */
 import * as Arr from "effect/Array";

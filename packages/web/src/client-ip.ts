@@ -2,8 +2,6 @@
  * The trusted client address for an outbound `x-forwarded-for` (an analytics
  * reverse proxy, say).
  *
- * Ported from the website / gardeneria `client-ip.ts`.
- *
  * @since 0.1.0
  */
 import * as Option from "effect/Option";

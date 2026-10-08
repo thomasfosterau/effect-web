@@ -1,7 +1,6 @@
 /**
  * `@thomasfosterau/effect-web` — framework-neutral web request/response
- * utilities on `effect/http`, extracted from the website,
- * gardeneria and preferenceflow applications: response-header policies
+ * utilities on `effect/http`: response-header policies
  * (security baseline, stage `noindex`, `Vary` discipline, the
  * `Cache-Control` safety net), the cross-origin mutation guard, the trusted
  * client address, the degraded-session report and the JSON:API guard

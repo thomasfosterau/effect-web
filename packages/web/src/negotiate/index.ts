@@ -22,8 +22,6 @@
  * §5); and the §6 error documents carry effect-jsonapi's `code` values
  * (`not_acceptable`, `unsupported_media_type`).
  *
- * Ported from the applications' `packages/api/src/negotiate.ts`.
- *
  * @since 0.1.0
  */
 import * as Arr from "effect/Array";
