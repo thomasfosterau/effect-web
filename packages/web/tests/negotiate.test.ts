@@ -1,14 +1,13 @@
 /**
- * Unit tests for the content-negotiation dispatch verdict, ported from
- * website's `packages/api/tests/negotiate.test.ts`: which requests dispatch
- * to the JSON:API surface, the normalized cache-key representation token
- * (PERF-CACHE-005), the JSON:API §6 negotiation statuses
+ * Unit tests for the content-negotiation dispatch verdict: which requests
+ * dispatch to the JSON:API surface, the normalized cache-key representation
+ * token (PERF-CACHE-005), the JSON:API §6 negotiation statuses
  * (JSONAPI-NEG-001/002), the path-match that keeps a page-only URL out of
  * the JSON:API namespace, and the Markdown representation (DISC-009).
  *
- * The route table the application derived from its `HttpApi` groups is a
- * literal path list here (the same shapes: collections, `:id`, the §7.4
- * related-resource fetches); the Markdown segments are website's.
+ * The route table a consuming application derives from its `HttpApi` groups
+ * is a literal path list here (collections, `:id`, the §7.4 related-resource
+ * fetches), and the Markdown segments are a fixed fixture list.
  */
 import { describe, expect, it } from "vite-plus/test";
 import * as Option from "effect/Option";
@@ -55,7 +54,7 @@ const groups = [
     endpoints: {
       list: { path: "/web-pages" },
       get: { path: "/web-pages/:id" },
-      website: { path: "/web-pages/:id/website" },
+      site: { path: "/web-pages/:id/site" },
     },
   },
   { endpoints: { root: { path: "/" } } },
@@ -167,7 +166,7 @@ describe("makeApiPathMatcher / endpointPaths", () => {
   it("matches a family under its advertised segment only (#1423)", () => {
     expect(isApiPath("/web-pages")).toBe(true);
     expect(isApiPath(`/web-pages/${UUID}`)).toBe(true);
-    expect(isApiPath(`/web-pages/${UUID}/website`)).toBe(true);
+    expect(isApiPath(`/web-pages/${UUID}/site`)).toBe(true);
     expect(isApiPath("/webpages")).toBe(false);
     expect(isApiPath(`/webpages/${UUID}`)).toBe(false);
   });
@@ -230,8 +229,8 @@ describe("negotiateRepresentation — reads (Accept)", () => {
   });
 
   it("§5 (adopted from effect-jsonapi): an ext the api does not declare is not a clean instance", () => {
-    // The applications' parser accepted any `ext`; effect-jsonapi checks the
-    // URIs against `options.extensions`, per the spec.
+    // effect-jsonapi checks the `ext` URIs against `options.extensions`, per
+    // the spec, so an undeclared extension is refused rather than accepted.
     expectRefusal(
       negotiate(get("/posts", `${JSONAPI_MEDIA_TYPE};ext="https://example.com/unknown"`)),
       NOT_ACCEPTABLE,
@@ -365,7 +364,7 @@ describe("makeMarkdownPathMatcher", () => {
     expect(isMarkdownPath(`/posts/${UUID}/edit`)).toBe(false);
   });
 
-  it("matches nothing while the segment list is empty (gardeneria's Phase 0b)", () => {
+  it("matches nothing while the segment list is empty (no Markdown routes yet)", () => {
     expect(makeMarkdownPathMatcher([])(`/posts/${UUID}`)).toBe(false);
   });
 });

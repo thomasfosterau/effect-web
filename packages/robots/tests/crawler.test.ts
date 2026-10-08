@@ -1,9 +1,7 @@
 /**
- * The crawlers' side: `evaluateRobots` over the parsed file (website's
- * `packages/jobs/tests/web-archive-robots.test.ts` and preferenceflow's
- * `packages/jobs/tests/robots.test.ts`, whose parser cases are restated
- * against the library's `RobotsTxt` shape), and the cached `checkRobots`
- * decision over a stub `HttpClient` and the in-memory cache.
+ * The crawlers' side: `evaluateRobots` over the parsed file (crawler cases
+ * stated against the library's `RobotsTxt` shape), and the cached
+ * `checkRobots` decision over a stub `HttpClient` and the in-memory cache.
  */
 
 /* oxlint-disable effect/effect-run-in-body */

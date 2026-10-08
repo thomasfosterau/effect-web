@@ -84,7 +84,8 @@ export const isMutatingMethod = (method: string): boolean =>
 /**
  * Encode a JSON:API document to its wire string. `Schema.fromJsonString` is
  * `JSON.stringify` in the encode direction, so the emitted bytes — key order
- * included — are identical to the hand-rolled call the applications had.
+ * included — are exactly `JSON.stringify(document)`'s, and the wire form is
+ * byte-stable: the same document always encodes to the same string.
  */
 const encodeJsonDocument = Schema.encodeSync(Schema.fromJsonString(Schema.Unknown));
 

@@ -1,7 +1,7 @@
 /**
  * Unit tests for `resolveClientIp` — the client-address decision an
  * analytics reverse proxy uses to pick an `x-forwarded-for` value
- * (SEC-SSRF-005). Ported from website's `apps/web/tests/unit/client-ip.test.ts`.
+ * (SEC-SSRF-005).
  */
 import { describe, expect, it } from "vite-plus/test";
 import * as Option from "effect/Option";

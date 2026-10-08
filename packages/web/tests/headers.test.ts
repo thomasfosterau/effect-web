@@ -1,9 +1,8 @@
 /**
- * Unit tests for the response-header policies ported from the applications'
- * `hooks.server.ts` (`applySecurityHeaders`, `applyStageNoindex`,
- * `appendVary`, `applyResponseVary`, `isLocaleInvariantAsset`), which had
- * no unit coverage there (the hook's import graph could not load under the
- * unit environment — see website's `hooks-handle-order.test.ts`).
+ * Unit tests for the response-header policies (`securityHeaders`,
+ * `stageNoindex`, `appendVary`, `responseVary`) and the route predicates
+ * (`isLocaleInvariantAsset`, `classifyRoute`). Each is a pure function, so it
+ * is tested directly, without a request handler's import graph.
  */
 import { describe, expect, it } from "vite-plus/test";
 import * as Option from "effect/Option";

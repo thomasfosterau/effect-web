@@ -1,6 +1,6 @@
 /**
- * The JSON Feed 1.1 builder — website's `packages/models/tests/feed.test.ts`
- * over the path-taking entry shape — and the feed response.
+ * The JSON Feed 1.1 builder, over the path-taking entry shape, and the feed
+ * response.
  */
 
 import { describe, expect, it } from "vite-plus/test";

@@ -1,11 +1,9 @@
 /**
  * Unit tests for the shared outbound-request safety primitives — the lexical
  * SSRF host block list and the redirect-revalidating fetch built on it
- * (SEC-SSRF / SEC-SSRF-003). Ported from website's
- * `packages/bindings/tests/net.test.ts` (itself moved there from the
- * web-archive pipeline's `url.test.ts` with the code, #559), plus the
- * Effect-native surface (`checkUrl`, `followRedirects`) the plain API now
- * wraps.
+ * (SEC-SSRF / SEC-SSRF-003): the plain API (`assertAllowedUrl`,
+ * `fetchFollowingRedirects`) and the Effect-native surface (`checkUrl`,
+ * `followRedirects`) it wraps.
  */
 
 /*

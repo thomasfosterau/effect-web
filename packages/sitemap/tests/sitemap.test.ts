@@ -1,7 +1,6 @@
 /**
- * The sitemap renderers (preferenceflow's `lib/server/sitemap.ts`, whose
- * static-shell list is the fixture here), the stream form (website's
- * `routes/sitemap.xml`), the index, and `lastmodOf`.
+ * The sitemap renderers (a static-shell page list is the fixture), the
+ * stream form, the index, and `lastmodOf`.
  */
 
 /* oxlint-disable effect/effect-run-in-body */
@@ -27,7 +26,7 @@ import {
   URLSET_OPEN,
 } from "@thomasfosterau/effect-web-sitemap";
 
-const BASE = "https://preferenceflow.com";
+const BASE = "https://example.com";
 const STATIC_PAGES: ReadonlyArray<SitemapUrl> = [
   { path: "/" },
   { path: "/election-events" },
