@@ -25,7 +25,37 @@ import {
   fetchFollowingRedirects,
   followRedirects,
   isBlockedHost,
+  RedirectRejected,
+  UnsafeUrl,
 } from "@thomasfosterau/effect-web/net";
+
+// `toStrictEqual` against a bare `Error` checks the prototype as well as the
+// message, so a rethrown `UnsafeUrl` / `RedirectRejected` (an `Error` subclass
+// with the same message) fails it.
+// oxlint-disable-next-line effect/avoid-untagged-errors -- the expected value of the plain-Promise contract under test: the adapter's documented rejection IS a bare `Error`.
+const plainError = (message: string): Error => new Error(message);
+
+/**
+ * Asserts the plain adapters' failure shape: `failure` rejects with exactly a
+ * plain `Error` carrying the tagged failure's message, whose `cause` is an
+ * instance of the tagged class with the expected fields. `toStrictEqual`
+ * against `new Error(message)` passes whatever `cause` holds, so the cause
+ * is pinned explicitly.
+ */
+const expectPlainErrorCausedBy = async (
+  failure: Promise<unknown>,
+  tagged: typeof UnsafeUrl | typeof RedirectRejected,
+  expected: {
+    readonly _tag: "UnsafeUrl" | "RedirectRejected";
+    readonly url: string;
+    readonly reason: string;
+    readonly message: string;
+  },
+): Promise<void> => {
+  await expect(failure).rejects.toStrictEqual(plainError(expected.message));
+  await expect(failure).rejects.toHaveProperty("cause", expect.any(tagged));
+  await expect(failure).rejects.toHaveProperty("cause", expect.objectContaining(expected));
+};
 
 describe("isBlockedHost", () => {
   it("blocks loopback, private, link-local, CGNAT, and internal hosts", () => {
@@ -160,6 +190,28 @@ describe("assertAllowedUrl", () => {
   it("rejects a blocked host", () => {
     expect(() => assertAllowedUrl("http://127.0.0.1/")).toThrow("blocked host");
   });
+
+  it.each([
+    ["not a url at all", "invalid", "invalid URL 'not a url at all'"],
+    ["ftp://example.com/file", "scheme", "unsupported scheme 'ftp:'"],
+    [
+      "https://user:pass@example.com/",
+      "credentials",
+      "embedded credentials in 'https://user:pass@example.com/'",
+    ],
+    ["http://127.0.0.1/", "blocked-host", "blocked host '127.0.0.1'"],
+  ] as const)(
+    "throws a plain Error whose cause is the UnsafeUrl for %s",
+    async (url, reason, message) => {
+      // The `then` turns the synchronous throw into the rejection the helper
+      // reads; the `toThrow` tests above pin that it is synchronous.
+      await expectPlainErrorCausedBy(
+        Promise.resolve().then(() => assertAllowedUrl(url)),
+        UnsafeUrl,
+        { _tag: "UnsafeUrl", url, reason, message },
+      );
+    },
+  );
 });
 
 describe("checkUrl (the Result form)", () => {
@@ -385,9 +437,10 @@ describe("fetchFollowingRedirects (SEC-SSRF-003)", () => {
    * The adapter's rejection value is the contract its doc comment and the
    * `effect-web/net` module header describe: the original `fetch` cause for
    * a `FetchFailed`, a plain `Error` carrying the message for `UnsafeUrl` /
-   * `RedirectRejected`. Message substrings alone
-   * would pass with the cause wrapped or the tagged error rethrown, so these
-   * pin the identity, the prototype and the exact wording.
+   * `RedirectRejected`, with the tagged failure as its `cause`. Message
+   * substrings alone would pass with the cause wrapped, dropped or the tagged
+   * error rethrown, so these pin the identity, the prototype, the exact
+   * wording and the cause's class and fields.
    */
   describe("rejection values", () => {
     it("rejects with the identical object fetch threw", async () => {
@@ -397,12 +450,6 @@ describe("fetchFollowingRedirects (SEC-SSRF-003)", () => {
         cause,
       );
     });
-
-    // `toStrictEqual` against a bare `Error` checks the prototype as well as
-    // the message, so a rethrown `UnsafeUrl` / `RedirectRejected` (an `Error`
-    // subclass with the same message) fails it.
-    // oxlint-disable-next-line effect/avoid-untagged-errors -- the expected value of the plain-Promise contract under test: the adapter's documented rejection IS a bare `Error`.
-    const plainError = (message: string): Error => new Error(message);
 
     it("rejects with a plain Error carrying UnsafeUrl's message for a blocked host", async () => {
       let called = false;
@@ -421,6 +468,78 @@ describe("fetchFollowingRedirects (SEC-SSRF-003)", () => {
       await expect(
         fetchFollowingRedirects("https://example.com/", {}, 5, locationless),
       ).rejects.toStrictEqual(plainError("redirect with no Location from 'https://example.com/'"));
+    });
+
+    it("carries the UnsafeUrl as cause for a blocked initial host", async () => {
+      const unreached: typeof fetch = () => expect.unreachable("fetch was called");
+      await expectPlainErrorCausedBy(
+        fetchFollowingRedirects("http://127.0.0.1/", {}, 5, unreached),
+        UnsafeUrl,
+        {
+          _tag: "UnsafeUrl",
+          url: "http://127.0.0.1/",
+          reason: "blocked-host",
+          message: "blocked host '127.0.0.1'",
+        },
+      );
+    });
+
+    it("carries the UnsafeUrl for the redirect target as cause for a redirect into a blocked host", async () => {
+      const redirecting: typeof fetch = () =>
+        Promise.resolve(redirectTo("http://169.254.169.254/latest/meta-data"));
+      await expectPlainErrorCausedBy(
+        fetchFollowingRedirects("https://example.com/", {}, 5, redirecting),
+        UnsafeUrl,
+        {
+          _tag: "UnsafeUrl",
+          url: "http://169.254.169.254/latest/meta-data",
+          reason: "blocked-host",
+          message: "blocked host '169.254.169.254'",
+        },
+      );
+    });
+
+    it("carries the RedirectRejected as cause for a missing Location", async () => {
+      const locationless: typeof fetch = () => Promise.resolve(new Response(null, { status: 302 }));
+      await expectPlainErrorCausedBy(
+        fetchFollowingRedirects("https://example.com/", {}, 5, locationless),
+        RedirectRejected,
+        {
+          _tag: "RedirectRejected",
+          url: "https://example.com/",
+          reason: "no-location",
+          message: "redirect with no Location from 'https://example.com/'",
+        },
+      );
+    });
+
+    it("carries the RedirectRejected as cause for an unresolvable Location", async () => {
+      const unresolvable: typeof fetch = () => Promise.resolve(redirectTo("http://"));
+      await expectPlainErrorCausedBy(
+        fetchFollowingRedirects("https://example.com/", {}, 5, unresolvable),
+        RedirectRejected,
+        {
+          _tag: "RedirectRejected",
+          url: "https://example.com/",
+          reason: "invalid-target",
+          message: "invalid redirect target 'http://'",
+        },
+      );
+    });
+
+    it("carries the RedirectRejected as cause past the hop limit", async () => {
+      const redirecting: typeof fetch = () =>
+        Promise.resolve(redirectTo("https://example.org/elsewhere"));
+      await expectPlainErrorCausedBy(
+        fetchFollowingRedirects("https://example.com/", {}, 0, redirecting),
+        RedirectRejected,
+        {
+          _tag: "RedirectRejected",
+          url: "https://example.com/",
+          reason: "too-many-hops",
+          message: "too many redirects (> 0) from 'https://example.com/'",
+        },
+      );
     });
   });
 });
