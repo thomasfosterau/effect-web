@@ -7,9 +7,11 @@
  * {@link RedirectRejected}, {@link FetchFailed}). A plain-`Promise` /
  * plain-`Error` surface ({@link assertAllowedUrl},
  * {@link fetchFollowingRedirects}) is kept as an adapter over it, throwing
- * or rejecting with a plain `Error` carrying the failure's message (a
- * `fetch` failure rejects with its original cause), so a SvelteKit route or
- * a queue consumer can use the guard without running Effect itself.
+ * or rejecting with a plain `Error` carrying the failure's message, with the
+ * tagged {@link UnsafeUrl} / {@link RedirectRejected} as its `cause` (a
+ * `fetch` failure rejects with its original cause instead), so a SvelteKit
+ * route or a queue consumer can use the guard without running Effect itself
+ * and still read the structured failure (`reason`, `url`).
  *
  * DNS rebinding to a private IP is moot: Workers' outbound `fetch` runs on
  * Cloudflare's edge with no private network behind it, so the lexical block
@@ -220,23 +222,26 @@ export const checkUrl = (url: string): Result.Result<URL, UnsafeUrl> => {
 /**
  * {@link checkUrl} for plain (non-Effect) callers: returns the parsed URL or
  * throws a plain `Error` (not a typed failure) so it composes into whichever
- * failure channel the caller uses.
+ * failure channel the caller uses. The thrown `Error` carries the
+ * {@link UnsafeUrl}'s message, and its `cause` is that `UnsafeUrl`, so a
+ * caller can read `reason` and `url` without running Effect.
  *
  * @example
  * ```ts
- * import { assertAllowedUrl } from "@thomasfosterau/effect-web/net"
+ * import { assertAllowedUrl, UnsafeUrl } from "@thomasfosterau/effect-web/net"
  *
  * assertAllowedUrl("https://example.com/page").href // "https://example.com/page"
- * let thrown = ""
- * try { assertAllowedUrl("ftp://example.com/") } catch (e) { thrown = (e as Error).message }
- * thrown // "unsupported scheme 'ftp:'"
+ * let thrown: Error | undefined
+ * try { assertAllowedUrl("ftp://example.com/") } catch (e) { thrown = e as Error }
+ * thrown?.message // "unsupported scheme 'ftp:'"
+ * thrown?.cause instanceof UnsafeUrl // true
  * ```
  *
  * @since 0.1.0
  * @category validation
  */
 export const assertAllowedUrl = (url: string): URL =>
-  Result.getOrThrowWith(checkUrl(url), (error) => new Error(error.message));
+  Result.getOrThrowWith(checkUrl(url), (error) => new Error(error.message, { cause: error }));
 
 /**
  * Why a redirect chain was refused.
@@ -402,18 +407,28 @@ export const followRedirects = (
 
 /**
  * {@link followRedirects} for plain (non-Effect) callers, with the same
- * per-hop revalidation (SEC-SSRF-003): rejects with a plain `Error`
- * carrying the failure's message (or, for a `fetch` failure, the original
- * cause) so it composes into whichever failure channel the caller uses.
+ * per-hop revalidation (SEC-SSRF-003), so it composes into whichever failure
+ * channel the caller uses. An {@link UnsafeUrl} or {@link RedirectRejected}
+ * rejects with a plain `Error` carrying the failure's message, whose `cause`
+ * is that tagged failure (read `reason` and `url` from it without running
+ * Effect). A `fetch` failure ({@link FetchFailed}) rejects with the original
+ * value `fetch` rejected with, unwrapped.
  *
  * @example
  * ```ts
- * import { fetchFollowingRedirects } from "@thomasfosterau/effect-web/net"
+ * import { fetchFollowingRedirects, UnsafeUrl } from "@thomasfosterau/effect-web/net"
  *
  * const stub: typeof fetch = async () => new Response("ok")
  * const { response, finalUrl } = await fetchFollowingRedirects("https://example.com/page", {}, 5, stub)
  * finalUrl // "https://example.com/page"
  * response.status // 200
+ *
+ * const refused = await fetchFollowingRedirects("http://127.0.0.1/", {}, 5, stub).then(
+ *   () => undefined,
+ *   (error: Error) => error,
+ * )
+ * refused?.message // "blocked host '127.0.0.1'"
+ * refused?.cause instanceof UnsafeUrl // true
  * ```
  *
  * @since 0.1.0
@@ -428,6 +443,6 @@ export const fetchFollowingRedirects = (
   Effect.runPromise(
     followRedirects(url, init, { maxHops, fetch: fetchImpl }).pipe(
       Effect.catchTag("FetchFailed", (error) => Effect.die(error.cause)),
-      Effect.catch((error) => Effect.die(new Error(error.message))),
+      Effect.catch((error) => Effect.die(new Error(error.message, { cause: error }))),
     ),
   );
