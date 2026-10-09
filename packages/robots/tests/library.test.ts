@@ -1,6 +1,6 @@
 /**
- * The library's own acceptance suite, verbatim on `vite-plus/test`: it holds
- * the API and behaviour of `parse` / `encode` and the matcher fixed.
+ * The library's acceptance suite, run on `vite-plus/test`: it holds the API
+ * and behaviour of `parse` / `encode` and the matcher fixed.
  */
 
 import { describe, expect, it as test } from "vite-plus/test";
