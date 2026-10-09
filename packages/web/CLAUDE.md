@@ -13,7 +13,7 @@ Imports nothing from this workspace (`.fallowrc.json` zone `web`, no outbound ru
 - **The stage is the caller's**: nothing here reads an environment (`stageNoindex` takes `indexable`).
 - **`logStructured` keeps the flat line shape** (`{"event":…}`), never Effect's logger envelope: the line shape is a stable output contract that log dashboards and queries key on.
 - **The `Accept` `q` split is effect-jsonapi's; the weight is local.** Each `Accept` entry, trimmed and with empty `;` parts dropped, goes to `Middleware.contentTypeIsAcceptable`, which ends the media type at the first `q` (RFC 9110 §12.4.2) from the `>=0.16.1` peer floor on. The weight (the first `q`) is read locally, because effect-jsonapi exports no per-entry weight and its `acceptIsAcceptable` reads an unparsable `q` as a refusal, where `./negotiate` reads it as `1` (a malformed weight is a client bug, not a refusal). The local weight goes once effect-jsonapi exports a per-entry weight, or under #58 (whether `./negotiate` defers to effect-jsonapi's `Negotiation`).
-- **The plain-`Promise` / plain-`Error` forms** (`assertAllowedUrl`, `fetchFollowingRedirects`) keep fixed message wording (listed on `UnsafeUrl`), stable because callers' tests pin it; the tests here pin it too. The tagged `cause` they carry is readable in the same realm only.
+- **The plain-`Promise` / plain-`Error` forms** (`assertAllowedUrl`, `fetchFollowingRedirects`) keep fixed message wording (the `UnsafeUrl` and `RedirectRejected` messages), stable because callers' tests pin it; the tests here pin it too. The tagged `cause` they carry is readable in the same realm only.
 
 ## Terms
 
