@@ -11,7 +11,9 @@
  * tagged {@link UnsafeUrl} / {@link RedirectRejected} as its `cause` (a
  * `fetch` failure rejects with its original cause instead), so a SvelteKit
  * route or a queue consumer can use the guard without running Effect itself
- * and still read the structured failure (`reason`, `url`).
+ * and still read the structured failure (`reason`, `url`). That `cause` can
+ * be read in the same realm only: across `structuredClone` / `postMessage` /
+ * Workers RPC it arrives as a plain `Error` that keeps only its message.
  *
  * DNS rebinding to a private IP is moot: Workers' outbound `fetch` runs on
  * Cloudflare's edge with no private network behind it, so the lexical block
@@ -410,7 +412,9 @@ export const followRedirects = (
  * rejects with a plain `Error` carrying the failure's message, whose `cause`
  * is that tagged failure (read `reason` and `url` from it without running
  * Effect). A `fetch` failure ({@link FetchFailed}) rejects with the original
- * value `fetch` rejected with, unwrapped.
+ * value `fetch` rejected with, unwrapped. The structured `cause` can be read
+ * in the same realm only: across `structuredClone` / `postMessage` / Workers
+ * RPC it arrives as a plain `Error` that keeps only its message.
  *
  * @example
  * ```ts

@@ -1,7 +1,6 @@
 /**
- * The served `robots.txt` body builders — website's
- * `apps/web/tests/unit/robots-txt.test.ts` over the policy-as-parameter
- * form (website's disallow list is the fixture).
+ * The served `robots.txt` body builders, over the policy-as-parameter form
+ * (a representative disallow list is the fixture).
  *
  * ROBOTS-002 production opens to all crawlers; ROBOTS-003 it disallows the
  * non-content URL spaces; ROBOTS-004 it declares an absolute `Sitemap:`;
@@ -70,7 +69,7 @@ describe("productionBody (ROBOTS-002/003/004)", () => {
     expect(body.endsWith("\n")).toBe(true);
   });
 
-  it("is byte-identical to the applications' hand-joined body", () => {
+  it("is byte-identical to the hand-joined body", () => {
     expect(body).toBe(
       [
         "# Public knowledge base — all crawlers welcome, including AI.",

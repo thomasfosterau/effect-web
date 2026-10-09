@@ -1,7 +1,7 @@
 /**
- * Unit tests for the degraded-session report (website's
- * `session-degraded-report.ts`; gardeneria pins the message in its degraded
- * session unit test).
+ * Unit tests for the degraded-session report. `SESSION_DEGRADED_LOG_MESSAGE`
+ * is pinned verbatim: it is a fixed string that a consumer's log queries and
+ * tests match on.
  */
 import { describe, expect, it } from "vite-plus/test";
 import { describeSessionDegraded, SESSION_DEGRADED_LOG_MESSAGE } from "@thomasfosterau/effect-web";

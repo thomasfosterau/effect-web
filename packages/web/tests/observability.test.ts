@@ -1,7 +1,6 @@
 /**
- * Unit tests for `./observability`: the structured span logger ported from
- * website's `packages/bindings/tests/tracing.test.ts` (#538, #955), plus
- * the JSON-line sink, the event trio and the auth-outcome signal.
+ * Unit tests for `./observability`: the structured span logger, the
+ * JSON-line sink, the event trio and the auth-outcome signal.
  *
  * `spanTracer` is a plain `Tracer.Tracer` implementation (built via
  * `Tracer.make`, Effect's own tracer extension point) whose completion
@@ -44,8 +43,9 @@ const decodeLine = Schema.decodeUnknownSync(
 );
 
 /**
- * Website's tracked set — the tests use real tracked names rather than
- * arbitrary ones because the allow-list is the property under test.
+ * A realistic tracked set (dotted operation names, parents and their
+ * children) — the tests use it rather than arbitrary names because the
+ * allow-list is the property under test.
  */
 const tracer = spanTracer([
   "operations.search",
@@ -200,7 +200,7 @@ describe("logStructured", () => {
   });
 });
 
-describe("logAuthOutcome / deriveAuthOutcome (#538)", () => {
+describe("logAuthOutcome / deriveAuthOutcome", () => {
   it("emits the read-path.auth line", () => {
     const log = vi.spyOn(console, "log").mockImplementation(() => {});
     logAuthOutcome(12.5, "resolved");

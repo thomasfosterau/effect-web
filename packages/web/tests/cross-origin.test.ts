@@ -1,8 +1,7 @@
 /**
- * Unit tests for the SEC-CSRF-001 cross-origin mutation guard, ported from
- * website's `apps/web/tests/unit/cross-origin-guard.test.ts` (the Web
- * adapter, exactly as the front door applies it) and extended with the
- * `HttpServerRequest` form and gardeneria's centralised predicate.
+ * Unit tests for the SEC-CSRF-001 cross-origin mutation guard: the Web
+ * adapter, exactly as a front door applies it, the `HttpServerRequest` form,
+ * and the centralised predicate an API applies to every route alike.
  *
  * `Origin` is a forbidden header name per the Fetch spec, so the test
  * environment's `Request`/`Headers` polyfill silently drops it when passed
@@ -125,7 +124,7 @@ describe("crossOriginMutationRejection (HttpServerRequest)", () => {
   });
 });
 
-describe("isCrossOriginRejected (gardeneria's centralised predicate)", () => {
+describe("isCrossOriginRejected (the centralised per-route predicate)", () => {
   it("refuses a present, foreign Origin and passes an absent or own one", () => {
     expect(
       isCrossOriginRejected(

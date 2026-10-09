@@ -8,7 +8,7 @@ Peer: `effect`. Depends on `@thomasfosterau/effect-web` and may import from it (
 
 ## Invariants
 
-- **The rendered bytes are the applications' bytes.** `renderSitemap` joins with `""` after the XML declaration; `jsonFeedResponse` pretty-prints with two spaces; an absent `title` / `summary` is an omitted key, never `null`. The cached copies at the edge are those bytes, so a change here is a visible change in every consumer.
+- **The rendered bytes are a stable contract.** `renderSitemap` joins with `""` after the XML declaration; `jsonFeedResponse` pretty-prints with two spaces; an absent `title` / `summary` is an omitted key, never `null`. The cached copies at the edge are those bytes, so a change here is a visible change in every consumer.
 - **No XML escaping on `<loc>`**: every location is the canonical origin plus a path derived from validated ids or a hand-written list. `escapeXml` exists for authored text a consumer emits; nothing here emits any.
 - **`lastmodOf` is a parse, never a clock read**; `undefined` means omit the element.
 - **`purgeCacheTags` never fails**: a rejection or a `success: false` is one error-level event (`cache-purge.failed` / `cache-purge.rejected`), and the mutation that triggered it completes.

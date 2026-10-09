@@ -1,7 +1,6 @@
 /**
- * The Cache-Tag purge-on-mutation helpers — website's
- * `apps/web/tests/unit/cache-purge.test.ts`, with the eligible-type set as
- * a parameter and the log lines read off Effect's logger.
+ * The Cache-Tag purge-on-mutation helpers, with the eligible-type set as a
+ * parameter and the log lines read off Effect's logger.
  */
 
 /* oxlint-disable effect/effect-run-in-body */

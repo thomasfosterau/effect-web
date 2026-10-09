@@ -1,7 +1,6 @@
 /**
- * The `thomasfosterau/effect-robots.txt` suite (`src/index.test.ts`),
- * verbatim on `vite-plus/test`: the acceptance criterion that the ported
- * library keeps its behaviour.
+ * The library's own acceptance suite, verbatim on `vite-plus/test`: it holds
+ * the API and behaviour of `parse` / `encode` and the matcher fixed.
  */
 
 import { describe, expect, it as test } from "vite-plus/test";

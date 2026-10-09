@@ -96,10 +96,10 @@ export class RobotsTxt extends Data.Class<{
 // ── Schemas ────────────────────────────────────────────────────────────
 
 /*
- * The `*Schema` names are effect-robots.txt's published API, kept verbatim
- * (the domain names are taken by the `Data.Class` constructors above, and
- * each schema's `Type` IS that class, so a same-named alias would add
- * nothing).
+ * The `*Schema` names are the library's published API, held fixed by its
+ * acceptance suite (the domain names are taken by the `Data.Class`
+ * constructors above, and each schema's `Type` IS that class, so a
+ * same-named alias would add nothing).
  */
 /* oxlint-disable effect/avoid-schema-suffix, effect/require-schema-type-alias */
 

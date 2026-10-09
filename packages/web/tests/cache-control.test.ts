@@ -1,9 +1,9 @@
 /**
  * Unit tests for the CACHE-AUTH-003 safety net — `ensureCacheControl`
- * applied to a Web `Response` through `updateWebHeaders` — ported from
- * website's `apps/web/tests/unit/cache-control.test.ts` (the safety net for
- * hooks.server.ts response paths that bypass the `cacheControl` handle),
- * plus the viewer-aware policy the handle itself applies.
+ * applied to a Web `Response` through `updateWebHeaders`, which covers the
+ * response paths that bypass a request handler's own cache-control policy —
+ * plus the viewer-aware policy (`cacheControlForViewer`) such a handler
+ * applies.
  */
 import { describe, expect, it } from "vite-plus/test";
 import * as Headers from "effect/http/Headers";

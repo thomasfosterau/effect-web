@@ -255,11 +255,12 @@ const paramName = (param: string): string => (param.split("=")[0] ?? "").trim().
 
 /**
  * The weight of an `Accept` instance: its first `q`, which defaults to `1`
- * when absent AND when unparsable — the applications' choice, pinned by their
- * tests, so a client that mangles its `q` still ties rather than being read
- * as refusing. Local because effect-jsonapi exports no per-entry weight: its
- * entry parser is `@internal`, and `Middleware.acceptIsAcceptable` reads an
- * unparsable `q` as a refusal.
+ * when absent AND when unparsable. This module's choice, pinned by its tests:
+ * a client that mangles its `q` still ties rather than being read as
+ * refusing, because a malformed weight is a client bug, not a statement that
+ * the representation is unacceptable. Local because effect-jsonapi exports no
+ * per-entry weight: its entry parser is `@internal`, and
+ * `Middleware.acceptIsAcceptable` reads an unparsable `q` as a refusal.
  */
 const weightOf = (params: ReadonlyArray<string>): number =>
   Option.match(
@@ -280,9 +281,9 @@ const weightOf = (params: ReadonlyArray<string>): number =>
  * effect-jsonapi's: the entry goes to `Middleware.contentTypeIsAcceptable`,
  * which splits positionally at `q` (since 0.16.1, the peer floor). Only the
  * weight is read here — see `weightOf`. Each part is trimmed and empty `;`
- * parts (a trailing `;`) are dropped first, as the applications did:
- * effect-jsonapi would read one as a nameless media-type parameter and refuse
- * the instance.
+ * parts (a trailing `;`) are dropped first, so a stray separator is
+ * harmless: effect-jsonapi would read one as a nameless media-type parameter
+ * and refuse the instance.
  */
 const parseAccept = (header: Option.Option<string>): ReadonlyArray<AcceptInstance> =>
   Option.match(header, {

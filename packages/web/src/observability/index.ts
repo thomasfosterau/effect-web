@@ -39,10 +39,10 @@ const encodeJsonLine = Schema.encodeSync(Schema.fromJsonString(Schema.Unknown));
  * **Not `Logger.consoleJson` / `Logger.formatJson`.** Effect's built-in
  * structured formatters wrap the logged value in an envelope
  * (`{"message":<value>,"level":…,"timestamp":…,"fiberId":…}`), not the flat
- * `{"event":"read-path.db",…}` / `{"event":"span",…}` shape the
- * applications' dashboards and docs established (#538, #955). This sink
- * keeps that exact output contract while routing the emission through
- * `effect/Logger`.
+ * `{"event":"read-path.db",…}` / `{"event":"span",…}` shape this module
+ * emits. That flat line shape is a stable output contract: log dashboards and
+ * queries key on its top-level fields, so it never changes shape. This sink
+ * keeps it exactly while routing the emission through `effect/Logger`.
  *
  * A `Logger` is a stateless value object, so building this once at module
  * scope is not a per-request construction.
