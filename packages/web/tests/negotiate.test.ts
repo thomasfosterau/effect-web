@@ -151,8 +151,8 @@ describe("makeApiPathMatcher / endpointPaths", () => {
     expect(isApiPath(`/posts/${UUID}`)).toBe(true);
     expect(isApiPath(`/notes/${UUID}`)).toBe(true);
     expect(isApiPath("/search")).toBe(true);
-    // #1206: these two families were served but unmatched, so every
-    // browser-issued request for them 404'd at the web front door.
+    // Every served endpoint family must match: a family the matcher misses
+    // never dispatches, so its JSON:API requests fall through to HTML.
     expect(isApiPath("/consumption-log-entries")).toBe(true);
     expect(isApiPath(`/consumption-log-entries/${UUID}`)).toBe(true);
     expect(isApiPath("/comments")).toBe(true);
@@ -163,7 +163,7 @@ describe("makeApiPathMatcher / endpointPaths", () => {
     expect(isApiPath(`/list-items/${UUID}/list`)).toBe(true);
   });
 
-  it("matches a family under its advertised segment only (#1423)", () => {
+  it("matches a family under its advertised segment only", () => {
     expect(isApiPath("/web-pages")).toBe(true);
     expect(isApiPath(`/web-pages/${UUID}`)).toBe(true);
     expect(isApiPath(`/web-pages/${UUID}/site`)).toBe(true);
@@ -191,7 +191,7 @@ describe("negotiateRepresentation — reads (Accept)", () => {
     expectDispatch(negotiate(get("/posts", JSONAPI_MEDIA_TYPE)));
   });
 
-  it("dispatches a vnd.api+json request to a resource's advertised self URL (#1423)", () => {
+  it("dispatches a vnd.api+json request to a resource's self URL under its advertised segment", () => {
     expectDispatch(negotiate(get(`/web-pages/${UUID}`, JSONAPI_MEDIA_TYPE)));
   });
 
@@ -352,7 +352,7 @@ describe("makeMarkdownPathMatcher", () => {
     expect(isMarkdownPath(`/books/${UUID}`)).toBe(true);
   });
 
-  it("matches a hand-built route segment that diverges from the JSON:API type (#1574)", () => {
+  it("matches a hand-built route segment that diverges from the JSON:API type", () => {
     expect(isMarkdownPath(`/consumption-log/${UUID}`)).toBe(true);
     expect(isMarkdownPath(`/consumption-log-entries/${UUID}`)).toBe(false);
   });

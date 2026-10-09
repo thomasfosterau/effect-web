@@ -2,7 +2,7 @@
 
 `CLAUDE.md` is a symlink to this file. Project conventions live here; personal style preferences live in user memory.
 
-This repo publishes the `@thomasfosterau/effect-web` package family, extracted from the `website`, `gardeneria` and `preferenceflow` applications. Those apps are the behavioural spec and test corpus, not code to transplant: port their tests and write the idiomatic Effect shape; where the apps diverge, the issue names the reference copy. A `#NNN` in a ported comment is an issue in the source app (website unless stated); an invariant id (`CACHE-AUTH-003`) names a rule from the apps' specs, defined for this repo in [SECURITY.md](SECURITY.md#invariant-ids).
+This repo publishes the `@thomasfosterau/effect-web` package family, extracted from the `website`, `gardeneria` and `preferenceflow` applications. Those apps are the behavioural spec and test corpus, not code to transplant: port their tests and write the idiomatic Effect shape; where the apps diverge, the issue names the reference copy. An invariant id (`CACHE-AUTH-003`) names a rule from the apps' specs, defined for this repo in [SECURITY.md](SECURITY.md#invariant-ids).
 
 | Package | Directory | Entries |
 | --- | --- | --- |
