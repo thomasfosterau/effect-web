@@ -1,6 +1,6 @@
 /**
  * Import guard for the packages that publish on Effect rc.118 (effect-web#31):
- * the built `dist/` of effect-web, effect-web-robots and effect-web-sitemap
+ * the built `dist/` of effect-web, effect-robots and effect-sitemap
  * must import no removed `effect/unstable/*` path. Run after `vp run -r build`
  * (`vp run check:dist`).
  */

@@ -1,5 +1,5 @@
 ---
-"@thomasfosterau/effect-web-sitemap": minor
+"@thomasfosterau/effect-sitemap": minor
 ---
 
 Initial release: the discovery documents a site serves (`sitemap.xml`, `feed.json`) and the cache they live behind, generic over each application's route map.

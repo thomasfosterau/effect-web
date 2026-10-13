@@ -7,8 +7,8 @@ This repo publishes the `@thomasfosterau/effect-web` package family, extracted f
 | Package | Directory | Entries |
 | --- | --- | --- |
 | `@thomasfosterau/effect-web` | `packages/web` | `.`, `./net`, `./observability`, `./negotiate` |
-| `@thomasfosterau/effect-web-robots` | `packages/robots` | `.` |
-| `@thomasfosterau/effect-web-sitemap` | `packages/sitemap` | `.` |
+| `@thomasfosterau/effect-robots` | `packages/robots` | `.` |
+| `@thomasfosterau/effect-sitemap` | `packages/sitemap` | `.` |
 
 A new package adds a row here and in the root `README.md`, its own `CLAUDE.md`, a `.fallowrc.json` zone and rule, a root `package.json` devDependency, and its `#check` / `#docgen` / `#build` edges in the root `vite.config.ts` (`check`, `docgen`, `test:coverage`); a published package also joins the `check:dist` task's `dependsOn` and the `packages` list in `scripts/check-dist-imports.mjs`, or its `dist/` is never import-guarded.
 

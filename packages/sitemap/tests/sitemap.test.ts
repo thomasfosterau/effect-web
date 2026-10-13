@@ -24,7 +24,7 @@ import {
   sitemapStream,
   URLSET_CLOSE,
   URLSET_OPEN,
-} from "@thomasfosterau/effect-web-sitemap";
+} from "@thomasfosterau/effect-sitemap";
 
 const BASE = "https://example.com";
 const STATIC_PAGES: ReadonlyArray<SitemapUrl> = [

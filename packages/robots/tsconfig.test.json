@@ -8,7 +8,7 @@
     // package's `dist/` first (the sibling's `dist/` it does need — the
     // `check` task's build edge). Relative to this file.
     "paths": {
-      "@thomasfosterau/effect-web-robots": ["./src/index.ts"]
+      "@thomasfosterau/effect-robots": ["./src/index.ts"]
     }
   },
   "include": ["src", "tests"]

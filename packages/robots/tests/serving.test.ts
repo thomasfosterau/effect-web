@@ -14,7 +14,7 @@ import {
   productionBody,
   robotsBody,
   type RobotsPolicy,
-} from "@thomasfosterau/effect-web-robots";
+} from "@thomasfosterau/effect-robots";
 
 const SITEMAP_URL = "https://thomasfoster.au/sitemap.xml";
 const DISALLOW = ["/login", "/signup", "/api/", "/search", "/*/search", "/*/create", "/*/edit"];
