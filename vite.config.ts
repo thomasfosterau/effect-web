@@ -183,8 +183,8 @@ export default defineConfig({
         command: "echo 'check: every type gate green'",
         dependsOn: [
           "@thomasfosterau/effect-web#check",
-          "@thomasfosterau/effect-web-robots#check",
-          "@thomasfosterau/effect-web-sitemap#check",
+          "@thomasfosterau/effect-robots#check",
+          "@thomasfosterau/effect-sitemap#check",
         ],
         cache: false,
       },
@@ -195,8 +195,8 @@ export default defineConfig({
         command: "echo 'docgen: every example compiled and ran'",
         dependsOn: [
           "@thomasfosterau/effect-web#docgen",
-          "@thomasfosterau/effect-web-robots#docgen",
-          "@thomasfosterau/effect-web-sitemap#docgen",
+          "@thomasfosterau/effect-robots#docgen",
+          "@thomasfosterau/effect-sitemap#docgen",
         ],
         cache: false,
       },
@@ -207,8 +207,8 @@ export default defineConfig({
         command: "node scripts/check-dist-imports.mjs",
         dependsOn: [
           "@thomasfosterau/effect-web#build",
-          "@thomasfosterau/effect-web-robots#build",
-          "@thomasfosterau/effect-web-sitemap#build",
+          "@thomasfosterau/effect-robots#build",
+          "@thomasfosterau/effect-sitemap#build",
         ],
         cache: false,
       },
@@ -230,8 +230,8 @@ export default defineConfig({
         command: "vp test run --coverage",
         dependsOn: [
           "@thomasfosterau/effect-web#build",
-          "@thomasfosterau/effect-web-robots#build",
-          "@thomasfosterau/effect-web-sitemap#build",
+          "@thomasfosterau/effect-robots#build",
+          "@thomasfosterau/effect-sitemap#build",
         ],
         cache: false,
       },
