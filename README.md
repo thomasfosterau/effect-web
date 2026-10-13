@@ -1,6 +1,8 @@
-# effect-web
+# Effect Web
 
-The `@thomasfosterau/effect-web` package family: web-facing utilities on Effect 4, extracted from the `thomasfosterau/website`, `thomasfosterau/gardeneria` and `thomasfosterau/preferenceflow` applications.
+A collection of (experimental) utility libraries for using Effect with a variety of web platform standards and related technologies.
+
+**Disclaimer:** this repository and its packages have been created using Claude Code. The API is in flux; expect churn and breaking changes.
 
 | Package | What it is | Peers |
 | --- | --- | --- |
@@ -8,9 +10,6 @@ The `@thomasfosterau/effect-web` package family: web-facing utilities on Effect 
 | [`@thomasfosterau/effect-web-robots`](packages/robots/README.md) | RFC 9309: parse, encode and match robots.txt (an API held stable by its acceptance suite), the crawler side (`fetchRobots`, the cache seam, `makeRobotsChecker`) and the served `robots.txt` body. | `effect` |
 | [`@thomasfosterau/effect-web-sitemap`](packages/sitemap/README.md) | `sitemap.xml` whole or streamed, the sitemap index, the JSON Feed 1.1 builder and the `Cache-Tag` purge helper. | `effect`; depends on `@thomasfosterau/effect-web` |
 
-Every package requires `effect@>=4.0.0-rc.118` (rc.118 moved every `effect/unstable/*` path to `effect/*`), publishes ESM with declarations, and declares `sideEffects: false`.
-
-**Disclaimer:** this repository and its packages have been created using Claude Code. The API is in flux; expect churn and breaking changes.
 
 ## Development
 
