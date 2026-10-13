@@ -16,7 +16,7 @@ import {
   purgeCacheTags,
   purgeCacheTagsPromise,
   SITEMAP_CACHE_TAG,
-} from "@thomasfosterau/effect-web-sitemap";
+} from "@thomasfosterau/effect-sitemap";
 
 class TestFailure extends Schema.TaggedError<TestFailure>()("TestFailure", {
   message: Schema.String,

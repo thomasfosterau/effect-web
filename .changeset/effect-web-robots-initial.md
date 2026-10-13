@@ -1,5 +1,5 @@
 ---
-"@thomasfosterau/effect-web-robots": minor
+"@thomasfosterau/effect-robots": minor
 ---
 
 Initial release: RFC 9309 on Effect 4.

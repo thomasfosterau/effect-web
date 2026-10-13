@@ -1,16 +1,12 @@
 {
   "$schema": "https://www.schemastore.org/package",
-  "name": "@thomasfosterau/effect-web-sitemap",
+  "name": "@thomasfosterau/effect-sitemap",
   "version": "0.0.0",
   "description": "Sitemap, sitemap index and JSON Feed 1.1 builders for Effect web applications (rendered or streamed), the low-churn edge cache policy they share, and the Cache-Tag purge-on-mutation seam.",
   "keywords": [
-    "cache-tag",
-    "cloudflare-workers",
     "effect",
-    "json-feed",
     "sitemap",
-    "sitemap-index",
-    "typescript"
+    "sitemap-index"
   ],
   "homepage": "https://github.com/thomasfosterau/effect-web#readme",
   "bugs": {

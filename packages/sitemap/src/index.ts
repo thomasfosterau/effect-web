@@ -1,5 +1,5 @@
 /**
- * `@thomasfosterau/effect-web-sitemap` — the discovery documents an
+ * `@thomasfosterau/effect-sitemap` — the discovery documents an
  * application serves and the cache they live behind: `sitemap.xml`
  * (rendered whole, or streamed), a sitemap index, `feed.json` (JSON Feed
  * 1.1), and the `Cache-Tag` purge that keeps the edge copies fresh.
@@ -94,7 +94,7 @@ const documentHeaders = (options: DocumentCacheOptions): DocumentHeaders => {
  *
  * @example
  * ```ts
- * import { escapeXml } from "@thomasfosterau/effect-web-sitemap"
+ * import { escapeXml } from "@thomasfosterau/effect-sitemap"
  *
  * escapeXml(`a & b < "c"`) // "a &amp; b &lt; &quot;c&quot;"
  * ```
@@ -117,7 +117,7 @@ export const escapeXml = (value: string): string =>
  *
  * @example
  * ```ts
- * import { lastmodOf } from "@thomasfosterau/effect-web-sitemap"
+ * import { lastmodOf } from "@thomasfosterau/effect-sitemap"
  *
  * lastmodOf("2026-03-04T05:06:07.000Z") // "2026-03-04"
  * lastmodOf(new Date("2026-03-04T23:59:59Z")) // "2026-03-04"
@@ -141,7 +141,7 @@ export const lastmodOf = (value: unknown): string | undefined => {
  *
  * @example
  * ```ts
- * import { renderUrl } from "@thomasfosterau/effect-web-sitemap"
+ * import { renderUrl } from "@thomasfosterau/effect-sitemap"
  *
  * renderUrl("https://example.com", { path: "/posts/1", lastmod: "2026-03-04" })
  * // "<url><loc>https://example.com/posts/1</loc><lastmod>2026-03-04</lastmod></url>"
@@ -183,7 +183,7 @@ export const URLSET_CLOSE = `</urlset>`;
  *
  * @example
  * ```ts
- * import { renderSitemap } from "@thomasfosterau/effect-web-sitemap"
+ * import { renderSitemap } from "@thomasfosterau/effect-sitemap"
  *
  * renderSitemap("https://example.com", [{ path: "/" }, { path: "/posts/1", lastmod: "2026-03-04" }])
  * // '<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"><url><loc>https://example.com/</loc></url><url><loc>https://example.com/posts/1</loc><lastmod>2026-03-04</lastmod></url></urlset>'
@@ -212,7 +212,7 @@ export const renderSitemap = (base: string, entries: Iterable<SitemapUrl>): stri
  * ```ts
  * import * as Effect from "effect/Effect"
  * import * as Stream from "effect/Stream"
- * import { sitemapStream } from "@thomasfosterau/effect-web-sitemap"
+ * import { sitemapStream } from "@thomasfosterau/effect-sitemap"
  *
  * const chunks = await Effect.runPromise(
  *   Stream.runCollect(sitemapStream("https://example.com", Stream.fromIterable([{ path: "/a" }, { path: "/b" }]))),
@@ -245,7 +245,7 @@ export const sitemapStream = <E, R>(
  * import * as Effect from "effect/Effect"
  * import * as Stream from "effect/Stream"
  * import * as HttpServerResponse from "effect/http/HttpServerResponse"
- * import { SITEMAP_CACHE_TAG, sitemapResponse } from "@thomasfosterau/effect-web-sitemap"
+ * import { SITEMAP_CACHE_TAG, sitemapResponse } from "@thomasfosterau/effect-sitemap"
  *
  * const response = sitemapResponse("https://example.com", Stream.fromIterable([{ path: "/" }]), { cacheTag: SITEMAP_CACHE_TAG })
  * response.headers["cache-tag"] // "sitemap"
@@ -271,7 +271,7 @@ export const sitemapResponse = <E>(
  *
  * @example
  * ```ts
- * import { chunkSitemap } from "@thomasfosterau/effect-web-sitemap"
+ * import { chunkSitemap } from "@thomasfosterau/effect-sitemap"
  *
  * chunkSitemap([{ path: "/a" }, { path: "/b" }, { path: "/c" }], 2).map((chunk) => chunk.length) // [2, 1]
  * ```
@@ -291,7 +291,7 @@ export const chunkSitemap = (
  *
  * @example
  * ```ts
- * import { renderSitemapIndex } from "@thomasfosterau/effect-web-sitemap"
+ * import { renderSitemapIndex } from "@thomasfosterau/effect-sitemap"
  *
  * renderSitemapIndex("https://example.com", [{ path: "/sitemap-1.xml", lastmod: "2026-03-04" }, { path: "/sitemap-2.xml" }])
  * // '<?xml version="1.0" encoding="UTF-8"?><sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"><sitemap><loc>https://example.com/sitemap-1.xml</loc><lastmod>2026-03-04</lastmod></sitemap><sitemap><loc>https://example.com/sitemap-2.xml</loc></sitemap></sitemapindex>'
@@ -398,7 +398,7 @@ export const FEED_ITEM_LIMIT = 50;
  *
  * @example
  * ```ts
- * import { buildJsonFeed } from "@thomasfosterau/effect-web-sitemap"
+ * import { buildJsonFeed } from "@thomasfosterau/effect-sitemap"
  *
  * const feed = buildJsonFeed(
  *   { base: "https://example.com", title: "Example — Latest changes", description: "The 50 most recent changes." },
@@ -464,7 +464,7 @@ export const JSON_FEED_CONTENT_TYPE = "application/feed+json";
  * @example
  * ```ts
  * import * as HttpServerResponse from "effect/http/HttpServerResponse"
- * import { buildJsonFeed, FEED_CACHE_TAG, jsonFeedResponse } from "@thomasfosterau/effect-web-sitemap"
+ * import { buildJsonFeed, FEED_CACHE_TAG, jsonFeedResponse } from "@thomasfosterau/effect-sitemap"
  *
  * const feed = buildJsonFeed({ base: "https://example.com", title: "t", description: "d" }, [])
  * const response = jsonFeedResponse(feed, { cacheTag: FEED_CACHE_TAG })
@@ -515,7 +515,7 @@ export const SITEMAP_CACHE_TAG = "sitemap";
  *
  * @example
  * ```ts
- * import { FEED_CACHE_TAG, makePurgeTagsForResourceType, SITEMAP_CACHE_TAG } from "@thomasfosterau/effect-web-sitemap"
+ * import { FEED_CACHE_TAG, makePurgeTagsForResourceType, SITEMAP_CACHE_TAG } from "@thomasfosterau/effect-sitemap"
  *
  * const purgeTagsForResourceType = makePurgeTagsForResourceType(["posts", "people"])
  * purgeTagsForResourceType("posts") // [SITEMAP_CACHE_TAG, FEED_CACHE_TAG]
@@ -567,7 +567,7 @@ export interface CachePurgeContext {
  * @example
  * ```ts
  * import * as Effect from "effect/Effect"
- * import { purgeCacheTags } from "@thomasfosterau/effect-web-sitemap"
+ * import { purgeCacheTags } from "@thomasfosterau/effect-sitemap"
  *
  * const purged: Array<ReadonlyArray<string>> = []
  * const ctx = { cache: { purge: async ({ tags }: { tags: Array<string> }) => { purged.push(tags); return { success: true, errors: [] } } } }
@@ -605,7 +605,7 @@ export const purgeCacheTags = (
  *
  * @example
  * ```ts
- * import { purgeCacheTagsPromise } from "@thomasfosterau/effect-web-sitemap"
+ * import { purgeCacheTagsPromise } from "@thomasfosterau/effect-sitemap"
  *
  * await purgeCacheTagsPromise(undefined, ["sitemap"]) // resolves; nothing to purge against
  * ```

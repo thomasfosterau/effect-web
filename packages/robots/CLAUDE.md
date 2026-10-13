@@ -1,4 +1,4 @@
-# @thomasfosterau/effect-web-robots
+# @thomasfosterau/effect-robots
 
 RFC 9309 on Effect 4: the library (`parse` / `encode`, the data classes and schemas, `isAllowed` / `getCrawlDelay` / `getSitemaps`), whose API and behaviour are held fixed by its acceptance suite in `tests/library.test.ts`, plus the crawler side (`fetchRobots`, `RobotsCache`, `evaluateRobots`, `makeRobotsChecker`) and the serving side (`robotsBody`) built on it.
 

@@ -11,7 +11,7 @@ import { defineConfig } from "vite-plus";
 export interface PackageConfigOptions {
   /** The package's `import.meta.url`, so paths resolve relative to it. */
   readonly url: string;
-  /** The published name (`@thomasfosterau/effect-web-robots`), for the test alias. */
+  /** The published name (`@thomasfosterau/effect-robots`), for the test alias. */
   readonly name: string;
   /** `pack.entry`: `index` → `src/index.ts`, every other key → `src/<key>/index.ts`. */
   readonly entries: ReadonlyArray<string>;

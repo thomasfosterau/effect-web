@@ -25,7 +25,7 @@ import {
   ROBOTS_UNAVAILABLE_SENTINEL,
   ROBOTS_UNAVAILABLE_TTL_SECONDS,
   type RobotsCache,
-} from "@thomasfosterau/effect-web-robots";
+} from "@thomasfosterau/effect-robots";
 
 const UA = "thomasfoster-archiver";
 const evaluate = (body: string, path: string) => evaluateRobots(parse(body), UA, path);

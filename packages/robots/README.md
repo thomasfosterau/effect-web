@@ -1,4 +1,4 @@
-# @thomasfosterau/effect-web-robots
+# @thomasfosterau/effect-robots
 
 The Robots Exclusion Protocol (RFC 9309) for Effect: parse, encode and match robots.txt, evaluate a crawl decision with the §2.3.1 failure posture over a pluggable cache, and build the robots.txt a site serves. At its core is the **library**, whose API and behaviour are held stable by its acceptance suite; on top of it sit the **crawler side** (fetch, cache and evaluate another site's robots.txt) and the **serving side** (the robots.txt your own site serves, by stage).
 
@@ -7,7 +7,7 @@ Invariant ids in doc comments and below (`ROBOTS-005`, `PERF-CACHE-002`, …) na
 ## Install
 
 ```sh
-pnpm add @thomasfosterau/effect-web-robots effect
+pnpm add @thomasfosterau/effect-robots effect
 ```
 
 Peer: `effect` (>= 4.0.0-rc.118). One entry, `sideEffects: false`, no top-level statements in `dist/`.
@@ -23,7 +23,7 @@ import {
   getSitemaps,
   isAllowed,
   parse,
-} from "@thomasfosterau/effect-web-robots";
+} from "@thomasfosterau/effect-robots";
 
 const robotsTxt = parse(`
   User-agent: *
@@ -57,7 +57,7 @@ Group selection follows RFC 9309 §2.2.1: the **product token** matches exactly 
 ```ts
 import * as Effect from "effect/Effect";
 import * as Schema from "effect/Schema";
-import { makeRobotsChecker, memoryRobotsCache } from "@thomasfosterau/effect-web-robots";
+import { makeRobotsChecker, memoryRobotsCache } from "@thomasfosterau/effect-robots";
 
 class CrawlSkipped extends Schema.TaggedError<CrawlSkipped>()("CrawlSkipped", {
   reason: Schema.String,
@@ -92,7 +92,7 @@ The checker runs one `HttpClient` request per origin per cache lifetime; that `H
 
 ```ts
 // routes/robots.txt/+server.ts
-import { LOW_CHURN_CACHE_CONTROL, robotsBody } from "@thomasfosterau/effect-web-robots";
+import { LOW_CHURN_CACHE_CONTROL, robotsBody } from "@thomasfosterau/effect-robots";
 import { PUBLIC_SITE_URL, PUBLIC_STAGE } from "$env/static/public";
 
 export const GET = () =>

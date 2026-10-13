@@ -1,4 +1,4 @@
-# @thomasfosterau/effect-web-sitemap
+# @thomasfosterau/effect-sitemap
 
 `sitemap.xml` (whole or streamed), the sitemap index, `feed.json` (JSON Feed 1.1) and the `Cache-Tag` purge a mutation issues.
 

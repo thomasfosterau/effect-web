@@ -1,4 +1,4 @@
-# @thomasfosterau/effect-web-sitemap
+# @thomasfosterau/effect-sitemap
 
 Sitemap, sitemap index and JSON Feed 1.1 builders for Effect web applications (rendered or streamed), the low-churn edge cache policy they share, and the `Cache-Tag` purge-on-mutation seam.
 
@@ -7,7 +7,7 @@ Invariant ids in doc comments and below (`CANON-001`, `PERF-CACHE-002`, …) nam
 ## Install
 
 ```sh
-pnpm add @thomasfosterau/effect-web-sitemap @thomasfosterau/effect-web effect
+pnpm add @thomasfosterau/effect-sitemap @thomasfosterau/effect-web effect
 ```
 
 Peer: `effect` (>= 4.0.0-rc.118). `@thomasfosterau/effect-web` is a dependency (the purge logs through its event logger). One entry, `sideEffects: false`, no top-level statements in `dist/`.
@@ -26,7 +26,7 @@ import {
   SITEMAP_CACHE_TAG,
   sitemapResponse,
   type SitemapUrl,
-} from "@thomasfosterau/effect-web-sitemap";
+} from "@thomasfosterau/effect-sitemap";
 
 // `base` is the canonical origin (the configured production origin); the rows are the application's.
 const STATIC_PAGES: ReadonlyArray<SitemapUrl> = [{ path: "/" }, { path: "/about" }];
@@ -63,7 +63,7 @@ import {
   FEED_ITEM_LIMIT,
   jsonFeedResponse,
   type FeedEntry,
-} from "@thomasfosterau/effect-web-sitemap";
+} from "@thomasfosterau/effect-sitemap";
 
 // `rows` are the newest FEED_ITEM_LIMIT changes, newest first.
 const feedResponse = (base: string, rows: ReadonlyArray<FeedEntry>) =>
@@ -95,7 +95,7 @@ import {
   makePurgeTagsForResourceType,
   purgeCacheTags,
   type CachePurgeContext,
-} from "@thomasfosterau/effect-web-sitemap";
+} from "@thomasfosterau/effect-sitemap";
 
 // The resource types the sitemap and feed enumerate.
 const purgeTagsForResourceType = makePurgeTagsForResourceType(["posts", "people"]);

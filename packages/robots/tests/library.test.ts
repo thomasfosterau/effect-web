@@ -13,7 +13,7 @@ import {
   RobotGroup,
   RobotsTxt,
   Rule,
-} from "@thomasfosterau/effect-web-robots";
+} from "@thomasfosterau/effect-robots";
 
 describe("Parser", () => {
   test("should parse basic robots.txt", () => {
