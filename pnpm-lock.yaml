@@ -80,15 +80,15 @@ importers:
       '@mpsuesser/oxlint-plugin-effect':
         specifier: 'catalog:'
         version: 0.5.0
+      '@thomasfosterau/effect-robots':
+        specifier: workspace:*
+        version: link:packages/robots
+      '@thomasfosterau/effect-sitemap':
+        specifier: workspace:*
+        version: link:packages/sitemap
       '@thomasfosterau/effect-web':
         specifier: workspace:*
         version: link:packages/web
-      '@thomasfosterau/effect-web-robots':
-        specifier: workspace:*
-        version: link:packages/robots
-      '@thomasfosterau/effect-web-sitemap':
-        specifier: workspace:*
-        version: link:packages/sitemap
       '@types/node':
         specifier: 'catalog:'
         version: 26.6.4
