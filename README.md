@@ -10,7 +10,6 @@ A collection of (experimental) utility libraries for using Effect with a variety
 | [`@thomasfosterau/effect-web-robots`](packages/robots/README.md) | RFC 9309: parse, encode and match robots.txt (an API held stable by its acceptance suite), the crawler side (`fetchRobots`, the cache seam, `makeRobotsChecker`) and the served `robots.txt` body. | `effect` |
 | [`@thomasfosterau/effect-web-sitemap`](packages/sitemap/README.md) | `sitemap.xml` whole or streamed, the sitemap index, the JSON Feed 1.1 builder and the `Cache-Tag` purge helper. | `effect`; depends on `@thomasfosterau/effect-web` |
 
-
 ## Development
 
 See [CONTRIBUTING.md](CONTRIBUTING.md). Repository conventions are in [AGENTS.md](AGENTS.md), the release pipeline in [PUBLISHING.md](PUBLISHING.md) and the vulnerability-reporting policy in [SECURITY.md](SECURITY.md).
