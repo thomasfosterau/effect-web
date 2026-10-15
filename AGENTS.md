@@ -6,7 +6,7 @@ This repo publishes the `@thomasfosterau/effect-web` package family, extracted f
 
 | Package | Directory | Entries |
 | --- | --- | --- |
-| `@thomasfosterau/effect-web` | `packages/web` | `.`, `./net`, `./observability`, `./negotiate`, `./service-worker` |
+| `@thomasfosterau/effect-web` | `packages/web` | `.`, `./net`, `./observability`, `./negotiate`, `./service-worker`, `./browser`, `./testing` |
 | `@thomasfosterau/effect-robots` | `packages/robots` | `.` |
 | `@thomasfosterau/effect-sitemap` | `packages/sitemap` | `.` |
 | `@thomasfosterau/effect-rss-feed` | `packages/rss-feed` | `.` |

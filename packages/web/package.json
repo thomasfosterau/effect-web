@@ -2,17 +2,21 @@
   "$schema": "https://www.schemastore.org/package",
   "name": "@thomasfosterau/effect-web",
   "version": "0.1.0",
-  "description": "Framework-neutral web request/response utilities on effect/http: cache-control and security headers, Vary, the cross-origin guard, client IP, an SSRF-guarded fetch, structured logging, an allow-listed span tracer and Service Worker caching strategies.",
+  "description": "Framework-neutral web request/response utilities on effect/http (cache-control and security headers, Vary, the cross-origin guard, client IP, an SSRF-guarded fetch, structured logging, an allow-listed span tracer), Service Worker caching strategies, and browser platform APIs as Effect services (Web Locks, navigator, page visibility, media queries, wake lock, BroadcastChannel, permission state) with in-memory test doubles.",
   "keywords": [
+    "browser",
     "cloudflare-workers",
     "content-negotiation",
     "effect",
     "fetch",
     "http",
+    "navigator",
     "service-worker",
     "ssrf",
     "sveltekit",
-    "typescript"
+    "testing",
+    "typescript",
+    "web-locks"
   ],
   "homepage": "https://github.com/thomasfosterau/effect-web#readme",
   "bugs": {
@@ -53,6 +57,14 @@
     "./service-worker": {
       "types": "./dist/service-worker.d.ts",
       "default": "./dist/service-worker.js"
+    },
+    "./browser": {
+      "types": "./dist/browser.d.ts",
+      "default": "./dist/browser.js"
+    },
+    "./testing": {
+      "types": "./dist/testing.d.ts",
+      "default": "./dist/testing.js"
     }
   },
   "publishConfig": {
@@ -60,16 +72,21 @@
   },
   "devDependencies": {
     "@effect/language-service": "catalog:",
+    "@effect/platform-browser": "catalog:",
     "@thomasfosterau/effect-jsonapi": "catalog:",
     "@types/node": "catalog:",
     "@vitest/coverage-istanbul": "catalog:",
     "effect": "catalog:"
   },
   "peerDependencies": {
+    "@effect/platform-browser": "catalog:peers",
     "@thomasfosterau/effect-jsonapi": "catalog:peers",
     "effect": "catalog:peers"
   },
   "peerDependenciesMeta": {
+    "@effect/platform-browser": {
+      "optional": true
+    },
     "@thomasfosterau/effect-jsonapi": {
       "optional": true
     }

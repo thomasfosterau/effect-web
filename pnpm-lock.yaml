@@ -18,6 +18,9 @@ catalogs:
     '@effect/language-service':
       specifier: ^0.87.4
       version: 0.87.4
+    '@effect/platform-browser':
+      specifier: 4.0.3
+      version: 4.0.3
     '@effect/tsgo':
       specifier: 0.47.2
       version: 0.47.2
@@ -213,6 +216,9 @@ importers:
       '@effect/language-service':
         specifier: 'catalog:'
         version: 0.87.4
+      '@effect/platform-browser':
+        specifier: 'catalog:'
+        version: 4.0.3(effect@4.0.3)
       '@thomasfosterau/effect-jsonapi':
         specifier: 'catalog:'
         version: 0.16.3(effect@4.0.3)
@@ -403,6 +409,11 @@ packages:
     resolution: {integrity: sha512-IRfvvwqQLabVTIw9hhIj4scOGIYPfa13QuEFv+dBWE6p47R+RR0J8jQvfDINFf0Vn80XXVjNRtZxkZpkKXLx2A==}
     engines: {node: '>=0.10.0'}
     hasBin: true
+
+  '@effect/platform-browser@4.0.3':
+    resolution: {integrity: sha512-1heMTrwHkghTN2DWRb+Os+YdeowMFaxTbBqPzmqJDGU8DlBCKPGr+f4BIjWmnANxlnsIlKUqzr3gKqfR1ueicw==}
+    peerDependencies:
+      effect: 4.0.3
 
   '@effect/platform-bun@4.0.0-beta.59':
     resolution: {integrity: sha512-1jXCIx34X80ojiK9ACO9Q7RST9CXudRmlAbsP4kPqjUo6aqOuGSWXq9ueBO4LbaIZiioRxtTciom35U9ldfTkQ==}
@@ -2667,6 +2678,10 @@ snapshots:
       remarkable: 1.7.4
       repeat-string: 1.6.1
       strip-color: 0.1.0
+
+  '@effect/platform-browser@4.0.3(effect@4.0.3)':
+    dependencies:
+      effect: 4.0.3
 
   '@effect/platform-bun@4.0.0-beta.59(effect@4.0.3)':
     dependencies:

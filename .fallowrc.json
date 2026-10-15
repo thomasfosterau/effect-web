@@ -6,6 +6,8 @@
     "packages/web/src/observability/index.ts",
     "packages/web/src/negotiate/index.ts",
     "packages/web/src/service-worker/index.ts",
+    "packages/web/src/browser/index.ts",
+    "packages/web/src/testing/index.ts",
     "packages/robots/src/index.ts",
     "packages/sitemap/src/index.ts",
     "packages/rss-feed/src/index.ts",
@@ -34,6 +36,16 @@
     "@changesets/changelog-github",
     "@vitest/coverage-istanbul",
     "fallow"
+  ],
+  "ignoreExports": [
+    {
+      "file": "packages/web/src/browser/*.ts",
+      "exports": ["make", "layer", "changes"]
+    },
+    {
+      "file": "packages/web/src/testing/*.ts",
+      "exports": ["make", "layer", "Control", "Fixture", "Options"]
+    }
   ],
   "rules": {
     "unused-files": "error",
