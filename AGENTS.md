@@ -9,6 +9,9 @@ This repo publishes the `@thomasfosterau/effect-web` package family, extracted f
 | `@thomasfosterau/effect-web` | `packages/web` | `.`, `./net`, `./observability`, `./negotiate` |
 | `@thomasfosterau/effect-robots` | `packages/robots` | `.` |
 | `@thomasfosterau/effect-sitemap` | `packages/sitemap` | `.` |
+| `@thomasfosterau/effect-rss-feed` | `packages/rss-feed` | `.` |
+| `@thomasfosterau/effect-atom-feed` | `packages/atom-feed` | `.` |
+| `@thomasfosterau/effect-json-feed` | `packages/json-feed` | `.` |
 
 A new package adds a row here and in the root `README.md`, its own `CLAUDE.md`, a `.fallowrc.json` zone and rule, a root `package.json` devDependency, and its `#check` / `#docgen` / `#build` edges in the root `vite.config.ts` (`check`, `docgen`, `test:coverage`); a published package also joins the `check:dist` task's `dependsOn` and the `packages` list in `scripts/check-dist-imports.mjs`, or its `dist/` is never import-guarded.
 
@@ -39,7 +42,7 @@ Package-local invariants, terms and import boundaries live only in each package'
 - `vp check` — format + lint (Oxfmt + Oxlint). `vp run check` — the type gate: every package's `src` under `tsconfig.json` plus its type-level tests under `tsconfig.test.json`. They are different commands.
 - `vp run -r test:unit` — unit tests (node Vitest; nothing here needs a database or a credential).
 - `vp run -r build` — `vp pack` → every package's `dist/`.
-- `vp run check:dist` — the import guard: the built `dist/` of `effect-web`, `-robots` and `-sitemap` imports no `effect/unstable/*`. Run after the build.
+- `vp run check:dist` — the import guard: the built `dist/` of every published package imports no `effect/unstable/*`. Run after the build.
 - `vp run docgen` — every public package's docgen: compiles and runs each `@example` against `dist/`, writes the (git-ignored) API reference under `packages/*/docs/`.
 - `vp run test:coverage` — every package's unit suite under one Istanbul map at `coverage/coverage-final.json`, which `fallow audit` reads for exact per-function CRAP scores. Without the map fallow scores every function as uncovered, and any function with cyclomatic complexity ≥ 5 fails the gate on its own.
 - `pnpm changeset` — add a changeset.

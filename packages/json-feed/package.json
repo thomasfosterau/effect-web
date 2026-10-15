@@ -1,0 +1,54 @@
+{
+  "$schema": "https://www.schemastore.org/package",
+  "name": "@thomasfosterau/effect-json-feed",
+  "version": "0.0.0",
+  "description": "JSON Feed 1.1 builder for Effect web applications: the typed feed document, with canonical absolute URLs and omitted absent members, and the served HttpServerResponse.",
+  "keywords": [
+    "effect",
+    "feed",
+    "json-feed",
+    "jsonfeed",
+    "syndication",
+    "typescript"
+  ],
+  "homepage": "https://github.com/thomasfosterau/effect-web#readme",
+  "bugs": {
+    "url": "https://github.com/thomasfosterau/effect-web/issues"
+  },
+  "license": "MIT",
+  "author": "Thomas Foster <me@thomasfoster.au>",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/thomasfosterau/effect-web.git",
+    "directory": "packages/json-feed"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "type": "module",
+  "sideEffects": false,
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "devDependencies": {
+    "@effect/language-service": "catalog:",
+    "@types/node": "catalog:",
+    "@vitest/coverage-istanbul": "catalog:",
+    "effect": "catalog:"
+  },
+  "peerDependencies": {
+    "effect": "catalog:peers"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}

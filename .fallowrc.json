@@ -7,6 +7,9 @@
     "packages/web/src/negotiate/index.ts",
     "packages/robots/src/index.ts",
     "packages/sitemap/src/index.ts",
+    "packages/rss-feed/src/index.ts",
+    "packages/atom-feed/src/index.ts",
+    "packages/json-feed/src/index.ts",
     "packages/*/tests/**/*.test.ts",
     "packages/*/tests/**/*.types.ts",
     "**/vite.config.ts",
@@ -59,6 +62,18 @@
       {
         "name": "sitemap",
         "patterns": ["packages/sitemap/**"]
+      },
+      {
+        "name": "rss-feed",
+        "patterns": ["packages/rss-feed/**"]
+      },
+      {
+        "name": "atom-feed",
+        "patterns": ["packages/atom-feed/**"]
+      },
+      {
+        "name": "json-feed",
+        "patterns": ["packages/json-feed/**"]
       }
     ],
     "rules": [
@@ -73,6 +88,18 @@
       {
         "from": "sitemap",
         "allow": ["web"]
+      },
+      {
+        "from": "rss-feed",
+        "allow": []
+      },
+      {
+        "from": "atom-feed",
+        "allow": []
+      },
+      {
+        "from": "json-feed",
+        "allow": []
       }
     ]
   },

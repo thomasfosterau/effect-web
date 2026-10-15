@@ -1,13 +1,13 @@
 /**
  * Import guard for the packages that publish on Effect rc.118 (effect-web#31):
- * the built `dist/` of effect-web, effect-robots and effect-sitemap
+ * the built `dist/` of every published package
  * must import no removed `effect/unstable/*` path. Run after `vp run -r build`
  * (`vp run check:dist`).
  */
 import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 
-const packages = ["web", "robots", "sitemap"];
+const packages = ["web", "robots", "sitemap", "rss-feed", "atom-feed", "json-feed"];
 const forbidden = [/["'`]effect\/(?:unstable|httpapi)(?:\/[^"'`]*)?["'`]/];
 
 const failures = [];
