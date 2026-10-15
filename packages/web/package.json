@@ -2,13 +2,14 @@
   "$schema": "https://www.schemastore.org/package",
   "name": "@thomasfosterau/effect-web",
   "version": "0.1.0",
-  "description": "Framework-neutral web request/response utilities on effect/http: cache-control and security headers, Vary, the cross-origin guard, client IP, an SSRF-guarded fetch, structured logging and an allow-listed span tracer.",
+  "description": "Framework-neutral web request/response utilities on effect/http: cache-control and security headers, Vary, the cross-origin guard, client IP, an SSRF-guarded fetch, structured logging, an allow-listed span tracer and Service Worker caching strategies.",
   "keywords": [
     "cloudflare-workers",
     "content-negotiation",
     "effect",
     "fetch",
     "http",
+    "service-worker",
     "ssrf",
     "sveltekit",
     "typescript"
@@ -48,6 +49,10 @@
     "./negotiate": {
       "types": "./dist/negotiate.d.ts",
       "default": "./dist/negotiate.js"
+    },
+    "./service-worker": {
+      "types": "./dist/service-worker.d.ts",
+      "default": "./dist/service-worker.js"
     }
   },
   "publishConfig": {

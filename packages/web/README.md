@@ -18,6 +18,7 @@ pnpm add @thomasfosterau/effect-web effect
 | `./net` | The SSRF host block list, the URL safety check (as a `Result`, as a throw) and the redirect-revalidating fetch (as an `Effect` with tagged failures, as a `Promise`). | `effect` |
 | `./observability` | The structured JSON-line sink on `effect/Logger`, the allow-listed span tracer on `effect/Tracer`, the `logEvent` trio, `describeError`, and the `read-path.auth` signal. | `effect` |
 | `./negotiate` | The content-negotiation dispatch verdict (HTML / JSON:API / Markdown) for a URL space shared between pages and a JSON:API, over effect-jsonapi's §5/§6 rules. | `effect`, `@thomasfosterau/effect-jsonapi` |
+| `./service-worker` | Service Worker primitives: Cache Storage as typed effects, the five caching strategies, a route table that becomes a `fetch` listener, and `install` / `activate` / `message` listeners whose work runs inside `waitUntil`. | `effect` |
 
 Every entry is `sideEffects: false`: no top-level statements in `dist/`.
 
@@ -161,6 +162,68 @@ Pure `(headers: Headers.Headers) => Headers.Headers` functions; compose them and
 - `MARKDOWN_MEDIA_TYPE`, `Representation`, `Negotiation`.
 
 What is adopted from `@thomasfosterau/effect-jsonapi` and what is not: the JSON:API §5/§6 media-type-parameter rule (`ext` / `profile` only; every `ext` URI must be declared) runs through `Middleware.negotiate` for a write and `Middleware.contentTypeIsAcceptable` per `Accept` instance. The **ranking** — whether the JSON:API or Markdown instance outranks every other media type the client offered (`q`, ties win, an unparsable `q` reads as `1`) — is local, because a JSON:API-only server never chooses between representations. Two consequences: an undeclared `ext` is a 406 / 415 (spec-correct), and the §6 error `code`s are effect-jsonapi's (`not_acceptable`, `unsupported_media_type`).
+
+### `./service-worker` — caching strategies and event listeners
+
+The two globals a worker talks to are context references with global defaults, so a worker provides nothing and a test swaps each: `Caches` (the `CacheStorage`, default `globalThis.caches`) and Effect's own `FetchHttpClient.Fetch` (default `globalThis.fetch`). Event types are structural (`FetchEventLike`, `ExtendableEventLike`, `ExtendableMessageEventLike`), so the entry compiles under the `dom` lib and the `webworker` lib's events satisfy them.
+
+```ts
+/// <reference lib="webworker" />
+import * as Effect from "effect/Effect";
+import * as Schema from "effect/Schema";
+import {
+  cacheFirst,
+  deleteCachesExcept,
+  extendableListener,
+  fetchListener,
+  isNavigationRequest,
+  messageListener,
+  networkFirst,
+  precache,
+  route,
+  staleWhileRevalidate,
+} from "@thomasfosterau/effect-web/service-worker";
+
+declare const self: ServiceWorkerGlobalScope;
+const SHELL = "shell-v3";
+const CACHES = [SHELL, "pages", "assets", "images"];
+
+// Listeners must be added while the script first evaluates, so the effects
+// that build them run synchronously.
+const listeners = Effect.gen(function* () {
+  const onInstall = yield* extendableListener(() => precache(SHELL, ["/", "/offline", "/app.css"]));
+  const onActivate = yield* extendableListener(() => deleteCachesExcept(CACHES));
+  const onFetch = yield* fetchListener([
+    route(isNavigationRequest, networkFirst({ cacheName: "pages", timeout: "3 seconds" })),
+    route(
+      (r) => new URL(r.url).pathname.startsWith("/_app/immutable/"),
+      cacheFirst({ cacheName: "assets" }),
+    ),
+    route((r) => r.destination === "image", staleWhileRevalidate({ cacheName: "images" })),
+  ]);
+  const onMessage = yield* messageListener(
+    Schema.Struct({ type: Schema.Literal("SKIP_WAITING") }),
+    () => Effect.promise(() => self.skipWaiting()),
+  );
+  return { onInstall, onActivate, onFetch, onMessage };
+});
+
+const { onInstall, onActivate, onFetch, onMessage } = Effect.runSync(listeners);
+self.addEventListener("install", onInstall);
+self.addEventListener("activate", onActivate);
+self.addEventListener("fetch", onFetch);
+self.addEventListener("message", onMessage);
+```
+
+- `openCache(name): Effect<CacheHandle, CacheError>` — the cache's `match` (an `Option`), `put`, `delete`, `keys` as effects. `deleteCache(name)`, `cacheNames`, and `deleteCachesExcept(keep)` (a list or a predicate; returns the names deleted) for the `activate` sweep. Every Cache Storage rejection is a `CacheError` naming the `operation` and `cacheName`.
+- `fetchRequest(request): Effect<Response, FetchFailed>` — through `FetchHttpClient.Fetch`, keeping the native `Response` that `respondWith` needs; interruption aborts. `FetchFailed` is `./net`'s class.
+- `isCacheable(request, response)` — the default write-back filter: a `GET`, status `200` (so never an opaque `0` or a partial `206`), no `Vary: *`, no `Cache-Control: no-store`.
+- Strategies, each `(options) => (request) => Effect<Response, …>`: `cacheFirst`, `networkFirst` (optional `timeout`: on a cache hit after it elapses the network is aborted; on a miss the network keeps its chance), `staleWhileRevalidate`, `cacheOnly` (fails with `CacheMiss`), `networkOnly`. `StrategyOptions`: `cacheName`, `cacheable?`, `matchOptions?`. Write-backs run in the background through `EventLifetime`, so the page never waits on `Cache.put`.
+- `precache(cacheName, urls)` — fetches every URL with `cache: "reload"`, writes only once all are `200` (`PrecacheRejected` otherwise), so a failed `install` leaves the previous worker in charge.
+- `route(match, handle)`, `fetchListener(routes)` — `match` is synchronous because `respondWith` must be called during dispatch; the first match answers, and no match leaves the request to the browser. A failed answer rejects `respondWith` (a network error to the page).
+- `extendableListener(handle)` — `install` / `activate`: the effect's promise goes to `waitUntil`, so a failure fails the install. `messageListener(schema, handle)` — decodes `event.data` first; an undecodable message is logged and dropped.
+- `EventLifetime` — how background work outlives a response: bound to the event's `waitUntil` inside a listener, detached outside one. Background failures are logged at `Warning`.
+- `memoryCacheStorage({ fetch? })` — an in-memory `CacheStorage` for tests, rejecting what the browser's `put` rejects.
 
 ## License
 
