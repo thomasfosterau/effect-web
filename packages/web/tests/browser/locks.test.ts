@@ -311,3 +311,64 @@ describe("Locks rejection mapping", () => {
     });
   });
 });
+
+describe("Locks grant races", () => {
+  /** A manager whose grants the test hands out by hand, as a browser task would. */
+  const manual = () => {
+    const pending: Array<(lock: { readonly name: string; readonly mode: "exclusive" }) => void> =
+      [];
+    const outcomes: Array<Promise<void> | undefined> = [];
+    const manager: Locks.LockManagerLike = {
+      request: (name, _options, callback) =>
+        new Promise<void>((resolve) => {
+          pending.push((lock) => {
+            const held = callback(lock);
+            outcomes.push(held);
+            Promise.resolve(held).then(() => resolve());
+          });
+        }),
+      query: () => Promise.resolve({}),
+    };
+    const grantNext = () => pending.shift()?.({ name: "x", mode: "exclusive" });
+    return { manager, grantNext, outcomes };
+  };
+
+  it("releases at once a lock granted after the acquiring fiber was interrupted", async () => {
+    const { manager, grantNext, outcomes } = manual();
+    const locks = Locks.make(manager);
+    const result = await Effect.runPromise(
+      Effect.scoped(
+        Effect.gen(function* () {
+          // The acquire times out inside a scope that stays open.
+          const timedOut = yield* Effect.timeoutOption(locks.acquire("x"), "1 millis");
+          // The browser's grant task runs only now.
+          grantNext();
+          return { timedOut, held: outcomes[0] };
+        }),
+      ),
+    );
+    expect(Option.isNone(result.timedOut)).toBe(true);
+    // `undefined`, not a pending promise: the lock was handed straight back.
+    expect(result.held).toBeUndefined();
+  });
+
+  it("waits, on closing, for a cancelled request to settle", async () => {
+    const { manager, grantNext } = manual();
+    const locks = Locks.make(manager);
+    const log: Array<string> = [];
+    await Effect.runPromise(
+      Effect.gen(function* () {
+        const closing = yield* Effect.forkChild(
+          Effect.scoped(Effect.timeoutOption(locks.acquire("x"), "1 millis")).pipe(
+            Effect.andThen(Effect.sync(() => log.push("scope closed"))),
+          ),
+        );
+        yield* Effect.sleep("10 millis");
+        log.push("granted");
+        grantNext();
+        yield* Fiber.join(closing);
+      }),
+    );
+    expect(log).toStrictEqual(["granted", "scope closed"]);
+  });
+});

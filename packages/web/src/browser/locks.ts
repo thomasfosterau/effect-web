@@ -247,6 +247,8 @@ interface RequestState {
   release: () => void;
   released: Effect.Effect<void>;
   cancelled: boolean;
+  /** Withdraws a queued request: on interruption, or when the scope closes first. */
+  readonly withdraw: AbortController;
 }
 
 const toInfo = (info: LockInfoLike): LockInfo => ({
@@ -303,19 +305,28 @@ export const make = (manager: LockManagerLike | undefined): Locks["Service"] => 
       // The release hook outlives the value: whatever the browser grants is
       // released when the scope closes, even if the grant raced an
       // interruption and never reached this fiber.
-      const state: RequestState = { release: () => {}, released: Effect.void, cancelled: false };
-      // Closing the scope waits for the browser to report the release, so
-      // once `withLock` returns, another context can already be granted it.
+      const state: RequestState = {
+        release: () => {},
+        released: Effect.void,
+        cancelled: false,
+        withdraw: new AbortController(),
+      };
+      // Closing the scope withdraws a still-queued request, releases a held
+      // lock, and waits for the browser to report either, so once `withLock`
+      // returns, another context can already be granted the lock.
       yield* Effect.addFinalizer(() =>
         Effect.suspend(() => {
           state.cancelled = true;
+          state.withdraw.abort();
           state.release();
           return state.released;
         }),
       );
       const stolen = yield* Deferred.make<void>();
-      return yield* Effect.callback<Option.Option<HeldLock>, LockError>((resume, signal) => {
+      return yield* Effect.callback<Option.Option<HeldLock>, LockError>((resume, interrupted) => {
         let granted = false;
+        const signal = state.withdraw.signal;
+        interrupted.addEventListener("abort", () => state.withdraw.abort(), { once: true });
         // The browser refuses a signal next to `steal` / `ifAvailable`; neither
         // ever queues, so neither needs withdrawing.
         const options: LockManagerRequestOptions =
@@ -327,15 +338,19 @@ export const make = (manager: LockManagerLike | undefined): Locks["Service"] => 
             resume(Effect.succeedNone);
             return undefined;
           }
-          if (state.cancelled) return undefined;
+          // Interrupted (the signal) or its scope closed while the grant was
+          // in flight: release at once rather than hold a lock nobody has.
+          if (state.cancelled || signal.aborted) return undefined;
           granted = true;
           const held = pendingPromise();
           state.release = held.resolve;
-          // A thunk: `outcome` is only bound once `request` has returned.
-          state.released = settled(() => outcome);
           resume(Effect.succeedSome({ name, mode, stolen: Deferred.await(stolen) }));
           return held.promise;
         });
+        // Whatever happens next — granted and released, withdrawn, or granted
+        // after cancellation and released at once — the request settles, and
+        // the scope's finalizer waits for it.
+        state.released = settled(() => outcome);
         outcome.then(undefined, (cause: unknown) => {
           // After the grant the held promise never rejects, so the only way
           // the request can still reject is a steal.

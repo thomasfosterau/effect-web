@@ -187,3 +187,18 @@ describe("Broadcast.open", () => {
     expect(result).toBe(true);
   });
 });
+
+describe("Broadcast stream lifetime", () => {
+  it("ends a subscription's stream when the channel's scope closes", async () => {
+    const { broadcast } = TestBroadcast.make();
+    const collected = await Effect.runPromise(
+      Effect.gen(function* () {
+        const inbox = yield* Effect.scoped(
+          Effect.flatMap(broadcast.open("ending"), (raw) => raw.subscribe),
+        );
+        return yield* Stream.runCollect(inbox).pipe(Effect.timeoutOption("1 second"));
+      }),
+    );
+    expect(collected).toStrictEqual(Option.some([]));
+  });
+});

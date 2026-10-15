@@ -16,6 +16,7 @@
  *
  * @since 0.2.0
  */
+import type * as Cause from "effect/Cause";
 import * as Context from "effect/Context";
 import * as Effect from "effect/Effect";
 import { identity } from "effect/Function";
@@ -181,7 +182,7 @@ export const make = (factory: BroadcastChannelFactory | undefined): Broadcast["S
       ).pipe(
         Effect.map((channel): RawChannel => {
           const subscribe = Effect.fn("Broadcast.subscribe")(function* () {
-            const queue = yield* Queue.unbounded<unknown>();
+            const queue = yield* Queue.unbounded<unknown, Cause.Done>();
             yield* Effect.acquireRelease(
               Effect.sync(() => {
                 const onMessage = (event: unknown): void => {
@@ -193,7 +194,13 @@ export const make = (factory: BroadcastChannelFactory | undefined): Broadcast["S
                 channel.addEventListener("message", onMessage);
                 return onMessage;
               }),
-              (onMessage) => Effect.sync(() => channel.removeEventListener("message", onMessage)),
+              // Ending the queue ends the stream: a consumer outliving the
+              // channel's scope completes instead of waiting forever.
+              (onMessage) =>
+                Effect.sync(() => {
+                  channel.removeEventListener("message", onMessage);
+                  Queue.endUnsafe(queue);
+                }),
             );
             return Stream.fromQueue(queue);
           });
