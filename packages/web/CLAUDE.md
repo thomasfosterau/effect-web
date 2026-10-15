@@ -14,6 +14,9 @@ Imports nothing from this workspace (`.fallowrc.json` zone `web`, no outbound ru
 - **`logStructured` keeps the flat line shape** (`{"event":…}`), never Effect's logger envelope: the line shape is a stable output contract that log dashboards and queries key on.
 - **The `Accept` `q` split is effect-jsonapi's; the weight is local.** Each `Accept` entry, trimmed and with empty `;` parts dropped, goes to `Middleware.contentTypeIsAcceptable`, which ends the media type at the first `q` (RFC 9110 §12.4.2) from the `>=0.16.1` peer floor on. The weight (the first `q`) is read locally, because effect-jsonapi exports no per-entry weight and its `acceptIsAcceptable` reads an unparsable `q` as a refusal, where `./negotiate` reads it as `1` (a malformed weight is a client bug, not a refusal). The local weight goes once effect-jsonapi exports a per-entry weight, or under #58 (whether `./negotiate` defers to effect-jsonapi's `Negotiation`).
 - **The plain-`Promise` / plain-`Error` forms** (`assertAllowedUrl`, `fetchFollowingRedirects`) keep fixed message wording (the `UnsafeUrl` and `RedirectRejected` messages), stable because callers' tests pin it; the tests here pin it too. The tagged `cause` they carry is readable in the same realm only.
+- **`./service-worker` touches no global at import.** `caches` and `fetch` are read through context references with global defaults (`Caches`, Effect's `FetchHttpClient.Fetch`), on first use; event types are structural so the entry compiles under `dom` without the `webworker` lib.
+- **A route's `match` is synchronous.** `respondWith` must be called during dispatch, so whether a route answers can never wait on an effect; no match means no `respondWith`, and the browser fetches the request itself.
+- **The page never waits on a cache write.** Strategies clone the response and hand the `put` to `EventLifetime`, which inside a listener is bound to the event's `waitUntil`; a background failure is logged, never served.
 
 ## Terms
 
@@ -21,4 +24,6 @@ Imports nothing from this workspace (`.fallowrc.json` zone `web`, no outbound ru
 - **Fetch adapter** — the boundary to the Fetch types a SvelteKit hook deals in: Effect's own `HttpServerRequest.fromWeb` / `HttpServerResponse.toWeb`, this package's header adapters, and the `*Web` pre-applied forms.
 - **Route class** — `"locale-invariant" | "format-negotiated" | "negotiated"`: what decides a response's `Vary`. Classification is injected; the locale-invariant set ships as the default.
 - **Verdict** — a `Negotiation`: representation token, dispatch flag, Markdown flag, §6 error. Decided from the request line and headers alone.
+- **Strategy** — `(request: Request) => Effect<Response, E, R>`: how one request is answered. The five standard ones are built from `StrategyOptions`; any function of that shape is one.
+- **Event lifetime** — `EventLifetime`: where background work goes. Inside a listener it is the event's `waitUntil`; outside one, a detached fiber.
 - **Ranking** — the one part of content negotiation that stays local: whether the JSON:API / Markdown instance outranks every other media type the client offered. The §5/§6 parameter rules are effect-jsonapi's.
