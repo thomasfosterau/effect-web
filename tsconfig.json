@@ -4,6 +4,9 @@
   "references": [
     { "path": "packages/web" },
     { "path": "packages/robots" },
-    { "path": "packages/sitemap" }
+    { "path": "packages/sitemap" },
+    { "path": "packages/rss-feed" },
+    { "path": "packages/atom-feed" },
+    { "path": "packages/json-feed" }
   ]
 }
