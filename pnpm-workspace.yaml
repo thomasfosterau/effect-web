@@ -41,7 +41,7 @@ catalog:
   # `components` table in node_modules/@effect/tsgo/dist/effect-tsgo.cjs
   # before bumping any of the three.
   "@effect/tsgo": 0.47.2
-  "@mpsuesser/oxlint-plugin-effect": ^0.5.0
+  "@mpsuesser/oxlint-plugin-effect": ^0.6.0
   # Optional peer of @thomasfosterau/effect-web: only the `./negotiate` entry
   # imports it (the JSON:API §5/§6 media-type rules are adopted from its
   # `Middleware`, never re-implemented here).
