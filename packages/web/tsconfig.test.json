@@ -13,7 +13,9 @@
       "@thomasfosterau/effect-web/net": ["./src/net/index.ts"],
       "@thomasfosterau/effect-web/observability": ["./src/observability/index.ts"],
       "@thomasfosterau/effect-web/negotiate": ["./src/negotiate/index.ts"],
-      "@thomasfosterau/effect-web/service-worker": ["./src/service-worker/index.ts"]
+      "@thomasfosterau/effect-web/service-worker": ["./src/service-worker/index.ts"],
+      "@thomasfosterau/effect-web/browser": ["./src/browser/index.ts"],
+      "@thomasfosterau/effect-web/testing": ["./src/testing/index.ts"]
     }
   },
   "include": ["src", "tests"]

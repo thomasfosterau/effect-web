@@ -28,6 +28,11 @@ catalog:
   # and a TypeScript JS API — the TS6 alias below satisfies its peer.
   "@effect/docgen": ^4.0.3
   "@effect/language-service": ^0.87.4
+  # Optional peer of @thomasfosterau/effect-web: only the `./browser` and
+  # `./testing` entries import it (its `Permissions`, `Clipboard` and
+  # `Geolocation` services). Exact, in lockstep with `effect` below: its own
+  # peer is `effect: ^<its version>`.
+  "@effect/platform-browser": 4.0.3
   # Effect Language Service as a native (TypeScript-Go) binary — the TS7 side
   # of the 6/7 split. `effect-tsgo patch` overwrites the native `tsc` binary
   # with an Effect-patched build matched by gitHead, so this pins in lockstep
@@ -82,6 +87,9 @@ catalog:
 # replaces `catalog:peers` with these ranges in the published manifest.
 catalogs:
   peers:
+    # Its 4.0.0 is the first release on the stable `effect` line this
+    # family's `effect` floor (rc.118) already admits.
+    "@effect/platform-browser": ">=4.0.0"
     "@thomasfosterau/effect-jsonapi": ">=0.16.1"
     # rc.118 removed every `effect/unstable/*` export path (now `effect/http`,
     # `effect/http-api`, `effect/sql`, ...), so the published dist imports

@@ -1,6 +1,6 @@
 # @thomasfosterau/effect-web
 
-Framework-neutral web request/response utilities on `effect/http`: cache-control and security headers, Vary, the cross-origin guard, client IP, an SSRF-guarded fetch, structured logging and an allow-listed span tracer, with no SvelteKit, Alchemy or Cloudflare dependency, so it serves a SvelteKit hook, an `HttpApi` middleware or a bare Worker equally.
+Framework-neutral web request/response utilities on `effect/http`: cache-control and security headers, Vary, the cross-origin guard, client IP, an SSRF-guarded fetch, structured logging and an allow-listed span tracer, with no SvelteKit, Alchemy or Cloudflare dependency, so it serves a SvelteKit hook, an `HttpApi` middleware or a bare Worker equally. On the client side, browser platform APIs (Web Locks, `navigator`, page visibility, media queries, the screen wake lock, `BroadcastChannel`, permission state) as Effect services, alongside `@effect/platform-browser`, with in-memory test doubles for every one.
 
 Invariant ids in doc comments and below (`CACHE-AUTH-003`, `SEC-SSRF-003`, …) name the rule an export enforces; [`SECURITY.md`](https://github.com/thomasfosterau/effect-web/blob/main/SECURITY.md#invariant-ids) states each rule and the exports that enforce it.
 
@@ -10,7 +10,11 @@ Invariant ids in doc comments and below (`CACHE-AUTH-003`, `SEC-SSRF-003`, …) 
 pnpm add @thomasfosterau/effect-web effect
 ```
 
-`effect` (>= 4.0.0-rc.118) is a peer dependency. `@thomasfosterau/effect-jsonapi` (>= 0.16.1, the first release built on rc.118) is an **optional** peer, needed only by the `./negotiate` entry.
+`effect` (>= 4.0.0-rc.118) is a peer dependency. `@thomasfosterau/effect-jsonapi` (>= 0.16.1, the first release built on rc.118) is an **optional** peer, needed only by the `./negotiate` entry. `@effect/platform-browser` (>= 4.0.0) is an **optional** peer, needed only by the `./browser` and `./testing` entries:
+
+```sh
+pnpm add @effect/platform-browser
+```
 
 | Entry | What it is | Peers |
 | --- | --- | --- |
@@ -19,6 +23,8 @@ pnpm add @thomasfosterau/effect-web effect
 | `./observability` | The structured JSON-line sink on `effect/Logger`, the allow-listed span tracer on `effect/Tracer`, the `logEvent` trio, `describeError`, and the `read-path.auth` signal. | `effect` |
 | `./negotiate` | The content-negotiation dispatch verdict (HTML / JSON:API / Markdown) for a URL space shared between pages and a JSON:API, over effect-jsonapi's §5/§6 rules. | `effect`, `@thomasfosterau/effect-jsonapi` |
 | `./service-worker` | Service Worker primitives: Cache Storage as typed effects, the five caching strategies, a route table that becomes a `fetch` listener, and `install` / `activate` / `message` listeners whose work runs inside `waitUntil`. | `effect` |
+| `./browser` | Browser platform APIs as Effect services: `Locks` (Web Locks), `Navigator`, `PageVisibility`, `MediaQuery`, `WakeLock`, `Broadcast` (`BroadcastChannel`), `PermissionStatus`, and one `layer` with every live service. | `effect`, `@effect/platform-browser` |
+| `./testing` | In-memory doubles for every `./browser` service and for `@effect/platform-browser`'s `Clipboard`, `Geolocation` and `Permissions`, each with a `Control` that drives the platform; `observe` for race-free stream assertions. Runs under Node with no DOM. | `effect`, `@effect/platform-browser` |
 
 Every entry is `sideEffects: false`: no top-level statements in `dist/`.
 
@@ -109,6 +115,49 @@ export const makeHandle = (app: App): Handle => {
 ```
 
 A response that bypasses the middleware (an auth short-circuit) still gets the safety net: `updateWebHeaders(response, ensureCacheControl)`. A verdict with an `error` (406 / 415) is answered with `jsonApiErrorResponseWeb(verdict.error)`.
+
+### In a browser
+
+Every `./browser` module has the same shape: a `Context.Service` tag, a `make` over a structural `*Like` slice of the platform object, a live `layer` that reads the ambient global when it is built (never at import), a tagged error whose `reason` maps the platform's `DOMException` names, and accessors. A live layer builds in any context — a missing API degrades (`supported: false`, an `Unsupported` failure, `Option.none()`) rather than failing the layer — so one layer serves every browser, a worker and a server render.
+
+```ts
+import * as Effect from "effect/Effect";
+import { Locks, Navigator, PageVisibility, layer } from "@thomasfosterau/effect-web/browser";
+
+// One tab refreshes the session on behalf of every tab of the origin.
+const refresh = Effect.gen(function* () {
+  yield* Navigator.awaitOnLine;
+  return yield* fetchFreshToken; // your effect
+}).pipe(Locks.withLock("auth-refresh"));
+
+// Poll only while somebody can see the page.
+const poll = PageVisibility.whileVisible(syncInbox.pipe(Effect.repeat(everyMinute)));
+
+Effect.runFork(Effect.provide(Effect.all([refresh, poll], { concurrency: 2 }), layer));
+```
+
+### Testing browser code
+
+`./testing`'s doubles run the **real** `./browser` adapter over an in-memory platform object, so a test exercises the code that runs in the browser. Each module's `layer` provides the service and its `Control`; drive the platform through the `Control` (the double fires the events the browser would), and read back what the code under test asked of it.
+
+```ts
+import * as Effect from "effect/Effect";
+import * as Fiber from "effect/Fiber";
+import { Navigator } from "@thomasfosterau/effect-web/browser";
+import { TestNavigator, observe } from "@thomasfosterau/effect-web/testing";
+
+const program = Effect.gen(function* () {
+  const control = yield* TestNavigator.Control;
+  // Subscribe first: `observe` returns once the stream has emitted its current value.
+  const seen = yield* observe(Navigator.onLineChanges, 2);
+  yield* control.setOnLine(false);
+  return yield* Fiber.join(seen); // [true, false]
+});
+
+Effect.runPromise(Effect.provide(program, TestNavigator.layer()));
+```
+
+Fork-then-sleep is a race (the child may not have subscribed yet); `observe` is the sync point. `TestLocks.makeLockManager()` is one origin: build several `Locks` services over it (`Locks.make(manager.forClient("tab-b"))`) to test contention between tabs.
 
 ## API
 
@@ -224,6 +273,27 @@ self.addEventListener("message", onMessage);
 - `extendableListener(handle)` — `install` / `activate`: the effect's promise goes to `waitUntil`, so a failure fails the install. `messageListener(schema, handle)` — decodes `event.data` first; an undecodable message is logged and dropped.
 - `EventLifetime` — how background work outlives a response: bound to the event's `waitUntil` inside a listener, detached outside one. Background failures are logged at `Warning`.
 - `memoryCacheStorage({ fetch? })` — an in-memory `CacheStorage` for tests, rejecting what the browser's `put` rejects.
+
+### `./browser` — platform services
+
+Each module is a namespace: `import { Locks } from "@thomasfosterau/effect-web/browser"`, then `Locks.Locks` (the tag), `Locks.layer`, `Locks.make`, `Locks.withLock`, ….
+
+- `Locks` — Web Locks. `acquire(name, { mode?, steal? }): Effect<HeldLock, LockError, Scope>` holds an origin-wide lock until the scope closes; waiting is interruptible (the request is withdrawn), and closing the scope waits for the browser to report the release. `tryAcquire` is `ifAvailable` (`None` instead of queueing). `withLock(name, options?)` runs an effect under the lock and, if another context steals it, interrupts the effect and fails `Stolen`; `withLockIfAvailable` runs it only when the lock is free (leader election). `query` is a diagnostic snapshot. `LockError.reason`: `Unsupported`, `Stolen`, `InvalidRequest`, `NotAllowed`, `InvalidState`, `Failed`.
+- `Navigator` — `info` (user agent, languages, `hardwareConcurrency`, `deviceMemoryGiB`, touch points, cookies, `webdriver`, Global Privacy Control); `onLine` / `onLineChanges` / `awaitOnLine`; `languages` / `languageChanges`; `connection` / `connectionChanges` (Network Information, `None` where missing); `userActivation`; `canShare` / `share`; `sendBeacon`; `vibrate`; `storage.estimate` / `persisted` / `persist`. `NavigatorError` carries the `operation` and a `reason` (`Unsupported`, `NotAllowed`, `Aborted` — the user dismissed the share sheet, `InvalidData`, `InvalidState`, `Rejected` — the beacon was not queued, `Failed`).
+- `PageVisibility` — `state`, `changes`, `awaitVisible`, and `whileVisible(effect)`: started whenever the page becomes visible, interrupted whenever it is hidden.
+- `MediaQuery` — `matches(query)`, `changes(query)`, and the preference streams `colorScheme`, `reducedMotion`, `moreContrast`, `reducedData`.
+- `WakeLock` — the Screen Wake Lock. `acquire` is scoped; `keepAwake(effect)` holds one lock for the effect and fails `WakeLockError` without one; `keepAwakeWhileVisible(effect)` re-acquires each time the page returns (the browser drops the lock on hide) and never fails the effect over a lock it could not get.
+- `Broadcast` — `BroadcastChannel`. `channel(name, schema)` opens a scoped channel whose `publish` encodes and whose messages are decoded through the schema (an undecodable message from another tab — an older deploy — is dropped with a warning log). `subscribe` starts listening when it runs, so nothing posted before the stream is consumed is lost; `messages` listens from when it runs. `open(name)` is the undecoded form.
+- `PermissionStatus` — over `@effect/platform-browser`'s `Permissions`: `state(name)`, `changes(name)` (follows the status's `change` event), `awaitGranted(name)`.
+- `layer` — every live service above plus `@effect/platform-browser`'s `Clipboard`, `Geolocation` and `Permissions`. Prefer the per-service layers where bundle size matters.
+
+### `./testing` — doubles
+
+- `TestLocks` — `makeLockManager({ clientId? })`, an in-memory lock manager following the Web Locks request algorithm (FIFO per name, shared/exclusive, `ifAvailable`, `steal`, `signal`, `query`), with `forClient(id)` views for other tabs; `layer(manager?)`.
+- `TestNavigator` — `layer(options?)` / `make(options?)` with `Control`: `setOnLine`, `setLanguages`, `setConnection`, `setUserActivation`, and the recorded `shares`, `beacons`, `vibrations`. Options choose how `share` (`succeed` / `abort` / `deny` / `unsupported`) and `sendBeacon` (`queue` / `reject` / `unsupported`) answer.
+- `TestPageVisibility`, `TestMediaQuery`, `TestWakeLock` (`held`, `requests`, `releaseAll`, `setDenied`), `TestBroadcast` (an in-memory hub with structured-clone semantics; `posted`, `deliver` a message from "another context").
+- `TestPermissions`, `TestClipboard`, `TestGeolocation` — doubles for the `@effect/platform-browser` services.
+- `layer` — every double and every `Control` at once. `observe(stream, count)` — forks the first `count` elements and returns once the first is out.
 
 ## License
 
