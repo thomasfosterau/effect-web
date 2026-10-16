@@ -1,5 +1,19 @@
 # @thomasfosterau/effect-web
 
+## 0.2.0
+
+### Minor Changes
+
+- [#107](https://github.com/thomasfosterau/effect-web/pull/107) [`f0e215d`](https://github.com/thomasfosterau/effect-web/commit/f0e215de8884f7c0a1fb4701fe3ba6e8473ad1cb) Thanks [@thomasfosterau](https://github.com/thomasfosterau)! - Add the `./browser` and `./testing` entries.
+
+  `./browser` wraps browser platform APIs as Effect services, each with a `make` over a structural slice of the platform object, a live `layer` that degrades where the API is missing, a tagged error and accessors: `Locks` (Web Locks — a lock held for a `Scope`, `withLock` / `withLockIfAvailable`, steal detection), `Navigator` (connectivity, languages, network information, user activation, Web Share, `sendBeacon`, vibration, storage persistence), `PageVisibility` (`whileVisible`), `MediaQuery` (preference streams), `WakeLock` (`keepAwake`, `keepAwakeWhileVisible`), `Broadcast` (schema-typed `BroadcastChannel`) and `PermissionStatus` (permission state as a stream over `@effect/platform-browser`'s `Permissions`), plus one `layer` with every live service.
+
+  `./testing` provides an in-memory double for every `./browser` service and for `@effect/platform-browser`'s `Clipboard`, `Geolocation` and `Permissions` — each the real adapter over an in-memory platform object, with a `Control` service to drive it — a combined `layer`, and `observe` for race-free stream assertions.
+
+  `@effect/platform-browser` (>= 4.0.0) is a new optional peer, needed only by these two entries.
+
+- [#105](https://github.com/thomasfosterau/effect-web/pull/105) [`789086c`](https://github.com/thomasfosterau/effect-web/commit/789086c8b8544bbb1cd55154003c6df18474bd02) Thanks [@thomasfosterau](https://github.com/thomasfosterau)! - Add the `./service-worker` entry: Cache Storage as typed effects (`openCache`, `deleteCachesExcept`, `CacheError`), the five caching strategies (`cacheFirst`, `networkFirst` with an optional timeout, `staleWhileRevalidate`, `cacheOnly`, `networkOnly`) with the `isCacheable` write-back filter, `precache`, and listeners for `fetch` (a synchronous route table), `install` / `activate` and `message` (Schema-decoded) whose work runs inside `respondWith` / `waitUntil`. `caches` and `fetch` are context references with global defaults (`Caches`, `FetchHttpClient.Fetch`); `memoryCacheStorage` is an in-memory `CacheStorage` for tests.
+
 ## 0.1.0
 
 ### Minor Changes

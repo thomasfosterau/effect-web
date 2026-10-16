@@ -1,7 +1,7 @@
 {
   "$schema": "https://www.schemastore.org/package",
   "name": "@thomasfosterau/effect-rss-feed",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "RSS 2.0 feed builder for Effect web applications: the channel and item renderer with escaped authored text, canonical absolute URLs, and the served HttpServerResponse.",
   "keywords": [
     "effect",

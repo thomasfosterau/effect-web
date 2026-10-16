@@ -1,7 +1,7 @@
 {
   "$schema": "https://www.schemastore.org/package",
   "name": "@thomasfosterau/effect-web",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Framework-neutral web request/response utilities on effect/http (cache-control and security headers, Vary, the cross-origin guard, client IP, an SSRF-guarded fetch, structured logging, an allow-listed span tracer), Service Worker caching strategies, and browser platform APIs as Effect services (Web Locks, navigator, page visibility, media queries, wake lock, BroadcastChannel, permission state) with in-memory test doubles.",
   "keywords": [
     "browser",

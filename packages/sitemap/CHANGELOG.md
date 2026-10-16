@@ -1,5 +1,12 @@
 # @thomasfosterau/effect-sitemap
 
+## 0.1.1
+
+### Patch Changes
+
+- Updated dependencies [[`f0e215d`](https://github.com/thomasfosterau/effect-web/commit/f0e215de8884f7c0a1fb4701fe3ba6e8473ad1cb), [`789086c`](https://github.com/thomasfosterau/effect-web/commit/789086c8b8544bbb1cd55154003c6df18474bd02)]:
+  - @thomasfosterau/effect-web@0.2.0
+
 ## 0.1.0
 
 ### Minor Changes
