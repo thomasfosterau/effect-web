@@ -48,7 +48,7 @@ const everyService = Effect.all([
 ]);
 
 describe("browser layer", () => {
-  it("builds every live service, degrading where Node lacks the API", async () => {
+  it("builds every live service, degrading where the runtime lacks the API", async () => {
     const [broadcast, locks, , , , wakeLock] = await Effect.runPromise(
       Effect.provide(everyService, browserLayer),
     );
@@ -56,7 +56,12 @@ describe("browser layer", () => {
       broadcast: broadcast.supported,
       locks: locks.supported,
       wakeLock: wakeLock.supported,
-    }).toStrictEqual({ broadcast: true, locks: false, wakeLock: false });
+    }).toStrictEqual({
+      broadcast: true,
+      // Node 24 ships `navigator.locks`; no Node has a wake lock.
+      locks: globalThis.navigator?.locks !== undefined,
+      wakeLock: false,
+    });
   });
 });
 

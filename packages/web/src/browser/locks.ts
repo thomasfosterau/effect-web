@@ -412,7 +412,8 @@ export const make = (manager: LockManagerLike | undefined): Locks["Service"] => 
  *   const locks = yield* Locks.Locks
  *   return locks.supported
  * })
- * // `false` under Node, which has no `navigator.locks`.
+ * // `true` where the runtime has `navigator.locks` (browsers, Node 24+),
+ * // otherwise `false`.
  * Effect.runPromise(Effect.provide(program, Locks.layer)).then(console.log)
  * ```
  *

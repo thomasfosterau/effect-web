@@ -263,14 +263,23 @@ describe("Locks without a lock manager", () => {
     expect(errors[2]?.message).toBe("lock query failed: Unsupported");
   });
 
-  it("builds the live layer under Node, which has no navigator.locks", async () => {
-    const supported = await Effect.runPromise(
+  it("builds the live layer whether or not the runtime has navigator.locks", async () => {
+    // Node 24 ships a native `navigator.locks`; Node 22 has none.
+    const native = globalThis.navigator?.locks !== undefined;
+    const result = await Effect.runPromise(
       Effect.provide(
-        Effect.map(Locks.Locks, (locks) => locks.supported),
+        Effect.gen(function* () {
+          const locks = yield* Locks.Locks;
+          const ran = locks.supported
+            ? yield* Effect.succeed("ran").pipe(Locks.withLock("live-layer-test"))
+            : "skipped";
+          return { supported: locks.supported, ran };
+        }),
         Locks.layer,
       ),
     );
-    expect(supported).toBe(false);
+    // Where the runtime has the API, the adapter runs over the real implementation.
+    expect(result).toStrictEqual({ supported: native, ran: native ? "ran" : "skipped" });
   });
 });
 
