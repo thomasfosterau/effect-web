@@ -30,6 +30,9 @@ catalogs:
     '@thomasfosterau/effect-jsonapi':
       specifier: ^0.16.3
       version: 0.16.3
+    '@thomasfosterau/effect-parse':
+      specifier: ^0.1.0
+      version: 0.1.0
     '@types/node':
       specifier: ^26.6.5
       version: 26.6.5
@@ -167,6 +170,9 @@ importers:
       '@effect/language-service':
         specifier: 'catalog:'
         version: 0.87.4
+      '@thomasfosterau/effect-parse':
+        specifier: 'catalog:'
+        version: 0.1.0(effect@4.0.3)
       '@types/node':
         specifier: 'catalog:'
         version: 26.6.5
@@ -1087,6 +1093,12 @@ packages:
   '@thomasfosterau/effect-jsonapi@0.16.3':
     resolution: {integrity: sha512-Nr5rdA/MMLMqwel8XZkruVYkVgzI/pBjkjyV9Lz0ERJcL/7bvQRdsJ0QW1CFiArcRIeNvXk24SiWBe1i1guTMw==}
     engines: {node: '>=22', pnpm: '>=11'}
+    peerDependencies:
+      effect: 4.0.3
+
+  '@thomasfosterau/effect-parse@0.1.0':
+    resolution: {integrity: sha512-SQ9GwUsAqvrgT0R7z8GhYAKnRHQgSssFFG9k3HAGCYJWYjbdZyy9bOkhqSDbyBRwLjfNQ2mwkm0TratRRaa6JQ==}
+    engines: {node: '>=22'}
     peerDependencies:
       effect: 4.0.3
 
@@ -3092,6 +3104,10 @@ snapshots:
       '@testing-library/dom': 10.4.2
 
   '@thomasfosterau/effect-jsonapi@0.16.3(effect@4.0.3)':
+    dependencies:
+      effect: 4.0.3
+
+  '@thomasfosterau/effect-parse@0.1.0(effect@4.0.3)':
     dependencies:
       effect: 4.0.3
 

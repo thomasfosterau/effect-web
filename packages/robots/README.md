@@ -7,10 +7,10 @@ Invariant ids in doc comments and below (`ROBOTS-005`, `PERF-CACHE-002`, …) na
 ## Install
 
 ```sh
-pnpm add @thomasfosterau/effect-robots effect
+pnpm add @thomasfosterau/effect-robots @thomasfosterau/effect-parse effect
 ```
 
-Peer: `effect` (>= 4.0.0-rc.118). One entry, `sideEffects: false`, no top-level statements in `dist/`.
+Peers: `effect` (>= 4.0.0-rc.118) and `@thomasfosterau/effect-parse` (^0.1.0; the robots.txt line grammar is one of its parsers). One entry, `sideEffects: false`, no top-level statements in `dist/`.
 
 ## Usage
 

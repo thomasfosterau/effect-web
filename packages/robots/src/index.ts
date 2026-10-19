@@ -18,7 +18,7 @@
  * 3. **The serving side**: {@link robotsBody}, the stage-aware `robots.txt`
  *    a site serves.
  *
- * Peer: `effect` only.
+ * Peers: `effect`, and `@thomasfosterau/effect-parse` for the line grammar.
  *
  * @since 0.1.0
  */
@@ -32,6 +32,9 @@ import * as Schema from "effect/Schema";
 import * as SchemaTransformation from "effect/SchemaTransformation";
 import * as Str from "effect/String";
 import * as HttpClient from "effect/http/HttpClient";
+import * as Parser from "@thomasfosterau/effect-parse/Parser";
+import * as ParserSchema from "@thomasfosterau/effect-parse/ParserSchema";
+import * as Token from "@thomasfosterau/effect-parse/Token";
 
 // ── Types (Effect Data structures) ─────────────────────────────────────
 
@@ -128,27 +131,49 @@ export const RobotGroupSchema = Schema.instanceOf(RobotGroup, { identifier: "Rob
 export const RobotsTxtSchema = Schema.instanceOf(RobotsTxt, { identifier: "RobotsTxt" });
 /* oxlint-enable effect/avoid-schema-suffix, effect/require-schema-type-alias */
 
-/** One `field: value` line, comments and blanks removed. */
+/** One `field: value` line, its comment removed and both sides trimmed; `field` keeps its case. */
 interface DirectiveLine {
   readonly field: string;
   readonly value: string;
 }
 
+/** A line of robots.txt: its directive, or `None` for a blank, comment-only or colon-less line. */
+type Line = Option.Option<DirectiveLine>;
+
+/** The rest of a line up to its comment or line feed. */
+const lineContent = Token.takeTill("#\n");
+
+/** `field: value`; the field ends at the first colon, so a colon in the value is kept. */
+const directive: Parser.Parser<Line> = Parser.separatedPair(
+  Token.takeTill(":#\n"),
+  Token.literal(":"),
+  lineContent,
+).pipe(Parser.map(([field, value]) => Option.some({ field: field.trim(), value: value.trim() })));
+
 /**
- * Splits a robots.txt line into its directive field and value, dropping
- * comments; `None` for a blank, comment-only or malformed line.
+ * One line: a directive, or else anything at all (RFC 9309 §2.2 ignores a
+ * malformed line rather than rejecting the file), then an optional `#`
+ * comment. The CR of a CRLF ending stays in the line and is trimmed with
+ * the other whitespace.
  */
-const parseDirectiveLine = (rawLine: string): Option.Option<DirectiveLine> => {
-  const commentIndex = rawLine.indexOf("#");
-  const line = (commentIndex >= 0 ? rawLine.slice(0, commentIndex) : rawLine).trim();
-  if (Str.isEmpty(line)) return Option.none();
-  const colon = line.indexOf(":");
-  if (colon < 0) return Option.none();
-  return Option.some({
-    field: line.slice(0, colon).trim().toLowerCase(),
-    value: line.slice(colon + 1).trim(),
-  });
-};
+const line: Parser.Parser<Line> = Parser.terminated(
+  Parser.alt(directive, Parser.as(lineContent, Option.none())),
+  Parser.opt(Parser.preceded(Token.literal("#"), Token.takeTill("\n"))),
+);
+
+/** Prints a line back to text; `None` is a blank line. */
+const printLine: (line: Line) => string = Option.match({
+  onNone: () => "",
+  onSome: ({ field, value }) => `${field}: ${value}`,
+});
+
+/**
+ * robots.txt as its lines, one per line feed. The grammar is total (every
+ * string parses), which is what keeps `parse` from throwing.
+ */
+const RobotsTxtLines = ParserSchema.make(Parser.separated(line, Token.literal("\n")), {
+  encode: (lines) => Arr.map(lines, printLine).join("\n"),
+});
 
 /** The accumulator the parser threads through the lines. */
 interface ParserState {
@@ -180,9 +205,10 @@ const finishGroup = (state: ParserState): void => {
   }
 };
 
-/** Applies one directive to the parser state (RFC 9309 group rules). */
-const applyDirective = (state: ParserState, { field, value }: DirectiveLine): void => {
+/** Applies one directive to the parser state (RFC 9309 group rules; fields are case-insensitive). */
+const applyDirective = (state: ParserState, { field: rawField, value }: DirectiveLine): void => {
   if (Str.isEmpty(value)) return;
+  const field = rawField.toLowerCase();
   if (field === "user-agent") {
     // A `User-agent` after any directive starts a new group.
     if (state.hasDirectives) finishGroup(state);
@@ -208,12 +234,11 @@ const applyDirective = (state: ParserState, { field, value }: DirectiveLine): vo
 };
 
 /**
- * Parses robots.txt content per RFC 9309: consecutive `User-agent:` lines
- * share one group; rules belong to the most recent group; `#` starts a
- * comment; unknown directives are ignored; a group with no directive is
- * dropped.
+ * Groups parsed lines per RFC 9309: consecutive `User-agent:` lines share
+ * one group; rules belong to the most recent group; unknown directives are
+ * ignored; a group with no directive is dropped.
  */
-const parseRobotsTxt = (content: string): RobotsTxt => {
+const groupLines = (lines: ReadonlyArray<Line>): RobotsTxt => {
   const state: ParserState = {
     groups: [],
     sitemaps: [],
@@ -222,33 +247,34 @@ const parseRobotsTxt = (content: string): RobotsTxt => {
     crawlDelay: undefined,
     hasDirectives: false,
   };
-  for (const rawLine of content.split(/\r?\n/)) {
-    const directive = parseDirectiveLine(rawLine);
-    if (Option.isSome(directive)) applyDirective(state, directive.value);
-  }
+  for (const directive of Arr.getSomes(lines)) applyDirective(state, directive);
   finishGroup(state);
   return new RobotsTxt({ groups: state.groups, sitemaps: state.sitemaps });
 };
 
-/** Encodes a group as its `User-agent` / rule / `Crawl-delay` lines. */
-const encodeGroup = (group: RobotGroup): ReadonlyArray<string> => [
-  ...Arr.map(group.userAgents, (userAgent) => `User-agent: ${userAgent}`),
-  ...Arr.map(group.rules, (rule) => `${rule.allow ? "Allow" : "Disallow"}: ${rule.path}`),
-  ...(group.crawlDelay === undefined ? [] : [`Crawl-delay: ${group.crawlDelay}`]),
-  "",
+/** A canonical directive line for the encoder. */
+const directiveLine = (field: string, value: string): Line => Option.some({ field, value });
+
+/** Encodes a group as its `User-agent` / rule / `Crawl-delay` lines and a closing blank line. */
+const encodeGroup = (group: RobotGroup): Array<Line> => [
+  ...Arr.map(group.userAgents, (userAgent) => directiveLine("User-agent", userAgent)),
+  ...Arr.map(group.rules, (rule) => directiveLine(rule.allow ? "Allow" : "Disallow", rule.path)),
+  ...(group.crawlDelay === undefined ? [] : [directiveLine("Crawl-delay", `${group.crawlDelay}`)]),
+  Option.none(),
 ];
 
-/** Encodes a `RobotsTxt` as text: each group, a blank line, then the sitemaps. */
-const encodeRobotsTxt = (robotsTxt: RobotsTxt): string =>
-  [
-    ...Arr.flatMap(robotsTxt.groups, encodeGroup),
-    ...Arr.map(robotsTxt.sitemaps, (sitemap) => `Sitemap: ${sitemap}`),
-  ].join("\n");
+/** Encodes a `RobotsTxt` as lines: each group, a blank line, then the sitemaps. */
+const ungroupLines = (robotsTxt: RobotsTxt): Array<Line> => [
+  ...Arr.flatMap(robotsTxt.groups, encodeGroup),
+  ...Arr.map(robotsTxt.sitemaps, (sitemap) => directiveLine("Sitemap", sitemap)),
+];
 
 /**
  * The schema between robots.txt text and {@link RobotsTxt}: decoding parses
  * (RFC 9309 grouping, comments, unknown directives ignored), encoding
- * serialises.
+ * serialises. Typed as a plain `Codec` so the line layer underneath (an
+ * `@thomasfosterau/effect-parse` `ParserSchema`) stays an implementation
+ * detail.
  *
  * @example
  * ```ts
@@ -263,10 +289,10 @@ const encodeRobotsTxt = (robotsTxt: RobotsTxt): string =>
  * @since 0.1.0
  * @category schemas
  */
-export const RobotsTxtFromString = Schema.String.pipe(
+export const RobotsTxtFromString: Schema.Codec<RobotsTxt, string> = RobotsTxtLines.pipe(
   Schema.decodeTo(
     RobotsTxtSchema,
-    SchemaTransformation.transform({ decode: parseRobotsTxt, encode: encodeRobotsTxt }),
+    SchemaTransformation.transform({ decode: groupLines, encode: ungroupLines }),
   ),
 );
 

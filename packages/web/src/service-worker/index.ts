@@ -517,7 +517,7 @@ const fetchAndCache = (
  * ```ts
  * import * as Effect from "effect/Effect"
  * import * as FetchHttpClient from "effect/http/FetchHttpClient"
- * import { Caches, cacheFirst, memoryCacheStorage } from "@thomasfosterau/effect-web/service-worker"
+ * import { Caches, EventLifetime, cacheFirst, memoryCacheStorage } from "@thomasfosterau/effect-web/service-worker"
  *
  * let fetches = 0
  * const stub: typeof fetch = async () => (fetches++, new Response("asset"))
@@ -526,7 +526,6 @@ const fetchAndCache = (
  *
  * const program = Effect.gen(function* () {
  *   yield* strategy(request())
- *   yield* Effect.sleep("10 millis") // let the background write land
  *   const second = yield* strategy(request())
  *   return yield* Effect.promise(() => second.text())
  * })
@@ -535,6 +534,8 @@ const fetchAndCache = (
  *   program.pipe(
  *     Effect.provideService(Caches, memoryCacheStorage()),
  *     Effect.provideService(FetchHttpClient.Fetch, stub),
+ *     // Run the background cache write inline, so the next read sees it.
+ *     Effect.provideService(EventLifetime, { extend: Effect.ignore }),
  *   ),
  * ) // "asset"
  * fetches // 1
@@ -580,7 +581,7 @@ export interface NetworkFirstOptions extends StrategyOptions {
  * ```ts
  * import * as Effect from "effect/Effect"
  * import * as FetchHttpClient from "effect/http/FetchHttpClient"
- * import { Caches, memoryCacheStorage, networkFirst } from "@thomasfosterau/effect-web/service-worker"
+ * import { Caches, EventLifetime, memoryCacheStorage, networkFirst } from "@thomasfosterau/effect-web/service-worker"
  *
  * let online = true
  * const stub: typeof fetch = async () => {
@@ -592,7 +593,6 @@ export interface NetworkFirstOptions extends StrategyOptions {
  *
  * const program = Effect.gen(function* () {
  *   yield* strategy(request())
- *   yield* Effect.sleep("10 millis") // let the background write land
  *   online = false
  *   const offline = yield* strategy(request())
  *   return yield* Effect.promise(() => offline.text())
@@ -602,6 +602,8 @@ export interface NetworkFirstOptions extends StrategyOptions {
  *   program.pipe(
  *     Effect.provideService(Caches, memoryCacheStorage()),
  *     Effect.provideService(FetchHttpClient.Fetch, stub),
+ *     // Run the background cache write inline, so the next read sees it.
+ *     Effect.provideService(EventLifetime, { extend: Effect.ignore }),
  *   ),
  * ) // "fresh"
  * ```
@@ -642,14 +644,13 @@ export const networkFirst =
  * ```ts
  * import * as Effect from "effect/Effect"
  * import * as FetchHttpClient from "effect/http/FetchHttpClient"
- * import { Caches, memoryCacheStorage, staleWhileRevalidate } from "@thomasfosterau/effect-web/service-worker"
+ * import { Caches, EventLifetime, memoryCacheStorage, staleWhileRevalidate } from "@thomasfosterau/effect-web/service-worker"
  *
  * let version = 0
  * const stub: typeof fetch = async () => new Response(`v${++version}`)
  * const strategy = staleWhileRevalidate({ cacheName: "avatars" })
  * const read = Effect.fnUntraced(function* () {
  *   const response = yield* strategy(new Request("https://example.com/me.png"))
- *   yield* Effect.sleep("10 millis") // let the background write land
  *   return yield* Effect.promise(() => response.text())
  * })
  *
@@ -659,6 +660,8 @@ export const networkFirst =
  *   program.pipe(
  *     Effect.provideService(Caches, memoryCacheStorage()),
  *     Effect.provideService(FetchHttpClient.Fetch, stub),
+ *     // Run the background cache write inline, so the next read sees it.
+ *     Effect.provideService(EventLifetime, { extend: Effect.ignore }),
  *   ),
  * ) // ["v1", "v1", "v2"]
  * ```

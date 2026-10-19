@@ -4,11 +4,11 @@ RFC 9309 on Effect 4: the library (`parse` / `encode`, the data classes and sche
 
 ## Boundary
 
-Peer: `effect` only. Imports nothing from this workspace (`.fallowrc.json` zone `robots`, no outbound rule).
+Peers: `effect` and `@thomasfosterau/effect-parse` (the line grammar, decoded through its `ParserSchema`; import its subpaths `/Parser`, `/Token`, `/ParserSchema`, never the root barrel). Imports nothing from this workspace (`.fallowrc.json` zone `robots`, no outbound rule).
 
 ## Invariants
 
-- **`parse` never throws and `encode(parse(x))` is canonical**: unknown lines dropped, orphan rules dropped, `#` comments, CRLF. `productionBody` renders through `encode` so a served document always round-trips.
+- **`parse` never throws because the line grammar is total** (every string parses: a line that is not `field: value` becomes `None`, never a parse failure), **and `encode(parse(x))` is canonical**: unknown lines dropped, orphan rules dropped, `#` comments, CRLF. `productionBody` renders through `encode` so a served document always round-trips.
 - **`isAllowed` strips the query string; `evaluateRobots` matches it.** `isAllowed` keeps the library's documented behaviour, which the acceptance suite pins; the crawler decision matches the query as RFC 9309 §2.2.2 does, so a site can disallow a `?tab=` path. Both strip the fragment.
 - **Every non-production stage serves `NON_PRODUCTION_BODY`** whatever the policy says (ROBOTS-005); `robotsBody` takes `production: boolean`, never reads an environment.
 - **The 500 KiB cap (RFC 9309 §2.5), the 24 h / 1 h TTLs (a directive change honoured within a day; an unavailable origin not probed on every check) and the 30 s crawl-delay cap (a hostile value cannot stall a batch) are this package's defaults**, exported as constants so a consumer's tests can pin them.

@@ -41,11 +41,13 @@
   },
   "devDependencies": {
     "@effect/language-service": "catalog:",
+    "@thomasfosterau/effect-parse": "catalog:",
     "@types/node": "catalog:",
     "@vitest/coverage-istanbul": "catalog:",
     "effect": "catalog:"
   },
   "peerDependencies": {
+    "@thomasfosterau/effect-parse": "catalog:peers",
     "effect": "catalog:peers"
   },
   "engines": {
