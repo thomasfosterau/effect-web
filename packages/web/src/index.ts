@@ -3,8 +3,8 @@
  * utilities on `effect/http`: response-header policies
  * (security baseline, stage `noindex`, `Vary` discipline, the
  * `Cache-Control` safety net), the cross-origin mutation guard, the trusted
- * client address, the degraded-session report and the JSON:API guard
- * responses a front door emits at its seam.
+ * client address, the degraded-session report, the canonical site base and
+ * the JSON:API guard responses a front door emits at its seam.
  *
  * Everything here is written over `Headers`, `HttpServerRequest` and
  * `HttpServerResponse`; `HttpServerRequest.fromWeb`, `HttpServerResponse.toWeb`
@@ -23,4 +23,5 @@ export * from "./cross-origin.ts";
 export * from "./headers.ts";
 export * from "./jsonapi-error.ts";
 export * from "./session.ts";
+export * from "./site-base.ts";
 export * from "./web.ts";

@@ -18,7 +18,7 @@ pnpm add @effect/platform-browser
 
 | Entry | What it is | Peers |
 | --- | --- | --- |
-| `.` | Response-header policies (security baseline, stage `noindex`, `Vary` discipline, the `Cache-Control` safety net and the viewer-aware policy), the cross-origin mutation guard, the trusted client address, the degraded-session report, the JSON:API guard responses a front door emits at its seam, and the Fetch adapters. | `effect` |
+| `.` | Response-header policies (security baseline, stage `noindex`, `Vary` discipline, the `Cache-Control` safety net and the viewer-aware policy), the cross-origin mutation guard, the trusted client address, the degraded-session report, the canonical site base, the JSON:API guard responses a front door emits at its seam, and the Fetch adapters. | `effect` |
 | `./net` | The SSRF host block list, the URL safety check (as a `Result`, as a throw) and the redirect-revalidating fetch (as an `Effect` with tagged failures, as a `Promise`). | `effect` |
 | `./observability` | The structured JSON-line sink on `effect/Logger`, the allow-listed span tracer on `effect/Tracer`, the `logEvent` trio, `describeError`, and the `read-path.auth` signal. | `effect` |
 | `./negotiate` | The content-negotiation dispatch verdict (HTML / JSON:API / Markdown) for a URL space shared between pages and a JSON:API, over effect-jsonapi's §5/§6 rules. | `effect`, `@thomasfosterau/effect-jsonapi` |
@@ -183,6 +183,7 @@ Pure `(headers: Headers.Headers) => Headers.Headers` functions; compose them and
 - `resolveClientIp(getClientAddress): Option<string>` — the platform-resolved address or `None`, never the spoofable inbound `x-forwarded-for` (SEC-SSRF-005).
 - `describeSessionDegraded(error)` / `SESSION_DEGRADED_LOG_MESSAGE` — what a fail-open session resolution reports: the fixed message plus the error for the Worker log, the error verbatim for the tracker.
 - `isMutatingMethod(method)` — `POST` / `PUT` / `PATCH` / `DELETE`.
+- `siteBase({ key, fallback }): Effect<string>` — the canonical site base every absolute URL about the site is built on (CANON-001): `key` (`PUBLIC_SITE_URL`) read through the ambient `ConfigProvider`, never the request origin, so a preview host still names production. Total (error channel `never`): a missing key or a provider error yields `fallback`, the application's own production origin; an invalid value yields it too, after a `site-base.invalid` warning. `normalizeSiteBase(value): Option<string>` is the check: an absolute `http(s)` URL with no credentials, path, query or fragment, returned as its origin (no trailing slash).
 
 #### JSON:API seam errors
 
