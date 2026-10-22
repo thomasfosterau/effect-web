@@ -19,6 +19,7 @@ import {
   IdleDetection,
   Locks,
   Navigator,
+  Notifications,
   PageVisibility,
   ScreenOrientation,
   WakeLock,
@@ -87,6 +88,16 @@ export type OrientationLockServices = Effect.Services<
   ReturnType<ScreenOrientation.ScreenOrientation["Service"]["lock"]>
 >;
 
+// A notification is shown for a scope.
+export const shown = Notifications.show("Saved");
+// A notification error's reason is the closed union.
+export const notificationError = new Notifications.NotificationError({
+  // @ts-expect-error -- not a notification error reason
+  reason: "Blocked",
+  message: "",
+  cause: undefined,
+});
+
 // Navigator readings that may be absent are Options, never `undefined`.
 export type Connection = Effect.Success<Navigator.Navigator["Service"]["connection"]>;
 
@@ -143,6 +154,12 @@ export type BrowserChecks = [
     >
   >,
   /** _orientationLockIsScoped */ Assert<Equals<OrientationLockServices, Scope.Scope>>,
+  /** _showIsScoped */ Assert<
+    Equals<Effect.Services<typeof shown>, Notifications.Notifications | Scope.Scope>
+  >,
+  /** _notificationStreamsCarryTheError */ Assert<
+    Equals<Stream.Error<Effect.Success<typeof shown>["clicks"]>, Notifications.NotificationError>
+  >,
   /** _streamsAreServiceFree */ Assert<
     Equals<Stream.Services<Navigator.Navigator["Service"]["onLineChanges"]>, never>
   >,

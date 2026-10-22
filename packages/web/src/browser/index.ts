@@ -26,6 +26,7 @@
  * - `Fullscreen` — an element shown fullscreen for a `Scope`.
  * - `ScreenOrientation` — the orientation as values and a stream, and a
  *   lock held for a `Scope`.
+ * - `Notifications` — a page's own notifications, shown for a `Scope`.
  * - `PermissionStatus` — permission state as a stream, over
  *   `@effect/platform-browser`'s `Permissions`.
  *
@@ -43,6 +44,7 @@ export { layer } from "./layer.ts";
 export * as Locks from "./locks.ts";
 export * as MediaQuery from "./media-query.ts";
 export * as Navigator from "./navigator.ts";
+export * as Notifications from "./notifications.ts";
 export * as PageVisibility from "./page-visibility.ts";
 export * as PermissionStatus from "./permission-status.ts";
 export * as ScreenOrientation from "./screen-orientation.ts";

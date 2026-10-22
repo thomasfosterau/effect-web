@@ -41,7 +41,7 @@
   "ignoreExports": [
     {
       "file": "packages/web/src/browser/*.ts",
-      "exports": ["make", "layer", "changes"]
+      "exports": ["make", "layer", "changes", "requestPermission"]
     },
     {
       "file": "packages/web/src/testing/*.ts",
