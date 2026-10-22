@@ -14,6 +14,7 @@
     "packages/atom-feed/src/index.ts",
     "packages/json-feed/src/index.ts",
     "packages/uri-template/src/index.ts",
+    "packages/langtag/src/index.ts",
     "packages/*/tests/**/*.test.ts",
     "packages/*/tests/**/*.types.ts",
     "**/vite.config.ts",
@@ -91,6 +92,10 @@
       {
         "name": "uri-template",
         "patterns": ["packages/uri-template/**"]
+      },
+      {
+        "name": "langtag",
+        "patterns": ["packages/langtag/**"]
       }
     ],
     "rules": [
@@ -120,6 +125,10 @@
       },
       {
         "from": "uri-template",
+        "allow": []
+      },
+      {
+        "from": "langtag",
         "allow": []
       }
     ]
