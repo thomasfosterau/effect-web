@@ -13,6 +13,7 @@
     "packages/rss-feed/src/index.ts",
     "packages/atom-feed/src/index.ts",
     "packages/json-feed/src/index.ts",
+    "packages/uri-template/src/index.ts",
     "packages/*/tests/**/*.test.ts",
     "packages/*/tests/**/*.types.ts",
     "**/vite.config.ts",
@@ -86,6 +87,10 @@
       {
         "name": "json-feed",
         "patterns": ["packages/json-feed/**"]
+      },
+      {
+        "name": "uri-template",
+        "patterns": ["packages/uri-template/**"]
       }
     ],
     "rules": [
@@ -111,6 +116,10 @@
       },
       {
         "from": "json-feed",
+        "allow": []
+      },
+      {
+        "from": "uri-template",
         "allow": []
       }
     ]

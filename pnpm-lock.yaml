@@ -97,6 +97,9 @@ importers:
       '@thomasfosterau/effect-sitemap':
         specifier: workspace:*
         version: link:packages/sitemap
+      '@thomasfosterau/effect-uri-template':
+        specifier: workspace:*
+        version: link:packages/uri-template
       '@thomasfosterau/effect-web':
         specifier: workspace:*
         version: link:packages/web
@@ -196,6 +199,21 @@ importers:
       '@thomasfosterau/effect-web':
         specifier: workspace:^
         version: link:../web
+    devDependencies:
+      '@effect/language-service':
+        specifier: 'catalog:'
+        version: 0.87.5
+      '@types/node':
+        specifier: 'catalog:'
+        version: 26.6.5
+      '@vitest/coverage-istanbul':
+        specifier: 'catalog:'
+        version: 5.0.5(vitest@5.0.5)
+      effect:
+        specifier: 4.0.5
+        version: 4.0.5
+
+  packages/uri-template:
     devDependencies:
       '@effect/language-service':
         specifier: 'catalog:'

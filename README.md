@@ -12,6 +12,7 @@ A collection of (experimental) utility libraries for using Effect with a variety
 | [`@thomasfosterau/effect-rss-feed`](packages/rss-feed/README.md) | RSS 2.0: render the channel and its items (authored text escaped, URLs absolute on the canonical origin) and serve it behind the low-churn edge cache. | `effect` |
 | [`@thomasfosterau/effect-atom-feed`](packages/atom-feed/README.md) | Atom (RFC 4287): render the feed and its entries (authored text escaped, URLs absolute on the canonical origin) and serve it behind the low-churn edge cache. | `effect` |
 | [`@thomasfosterau/effect-json-feed`](packages/json-feed/README.md) | JSON Feed 1.1: build the typed document (absent members omitted, URLs absolute on the canonical origin) and serve it behind the low-churn edge cache. | `effect` |
+| [`@thomasfosterau/effect-uri-template`](packages/uri-template/README.md) | URI Templates (RFC 6570, all four levels), the `Link` header (RFC 8288: parse against a base, serialise, find by `rel`) and well-known URIs (RFC 8615). | `effect` |
 
 ## Development
 
