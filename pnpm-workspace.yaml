@@ -59,7 +59,6 @@ catalog:
   # refuses to run coverage on a mismatch.
   "@vitest/coverage-istanbul": 5.0.5
   effect: 4.0.5
-  effect-solutions: ^0.5.3
   fallow: 3.34.1
   # Runs docgen's compiled examples.
   tsx: ^4.23.15

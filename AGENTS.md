@@ -17,7 +17,7 @@ A new package adds a row here and in the root `README.md`, its own `CLAUDE.md`, 
 
 ## Common pitfalls
 
-- **Never edit a version in a `package.json`.** Versions live in the `pnpm-workspace.yaml` catalog (`catalogMode: strict` rejects anything else). After editing it, run `pnpm install` and commit `pnpm-lock.yaml`, or every CI job fails with `ERR_PNPM_LOCKFILE_CONFIG_MISMATCH`. `@effect/tsgo`, `@typescript/native` and `vite-plus` move together (the tsgo patch hard-errors at install on an unsupported `tsc` or `oxlint`); read their catalog comments first.
+- **Never edit a version in a `package.json`.** Versions live in the `pnpm-workspace.yaml` catalog (`catalogMode: strict` rejects anything else). After editing it, run `pnpm install` and commit `pnpm-lock.yaml`, or every CI job fails with `ERR_PNPM_LOCKFILE_CONFIG_MISMATCH`. `@effect/tsgo`, `@typescript/native` and `vite-plus` move together (the tsgo patch hard-errors at install on an unsupported `tsc` or `oxlint`); read their catalog comments first. Dependabot's `toolchain` group bumps them as one PR, but cannot pick the `@effect/tsgo` release that supports a new vite-plus's oxlint: when that PR goes red at install, move the `@effect/tsgo` pin by hand on its branch.
 - **`dist/` is the product.** Each package is a `vp pack` (tsdown) library with one bundle per entry point; `exports` points at `dist/`, so a sibling package consumes it the way a consumer does and its `check` / `test:unit` / `docgen` tasks take a `{ task: 'build', from: 'dependencies' }` edge.
 - **`"sideEffects": false` is a claim about `dist/`, and it is load-bearing.** Every emitted `.js` must be pure declarations: no top-level statements, no top-level `await`, no bare imports. That is what lets a consumer's bundler drop what it does not use.
 - **`vp run docgen` executes your examples.** `@effect/docgen` compiles every JSDoc `@example` as a program and runs it (docgen 4 runs examples only under `"runExamples": true` in each `packages/*/docgen.json`; it defaults to type-checking alone), importing the package by name through `dist/`. An example must be complete (import everything it uses), must not use `declare const` (no runtime value — the failure is at execution and easy to misread), and must not throw.
@@ -84,7 +84,7 @@ Steps 2–8 are CI's required `ci` job, in its order ([ci.yml](.github/workflows
 
 ## Effect
 
-Consult effect-solutions before writing Effect code (`vp exec effect-solutions list`, then `vp exec effect-solutions show <topic>…`: error-handling, basics, data-modeling, services-and-layers); never guess at an Effect pattern. If it isn't enough, read `node_modules/effect/dist/*.d.ts`.
+Read the installed package before writing Effect code: `node_modules/effect/AGENTS.md` and `node_modules/effect/ai-docs/` (the pinned version ships both), then `node_modules/effect/dist/*.d.ts` and `node_modules/effect/src` for the exact API. Never guess at an Effect API or pattern.
 
 - The pinned version is the `effect` entry in `pnpm-workspace.yaml`'s catalog; the published peer floor is under `catalogs.peers`. Raising the floor is a breaking change for every published package.
 - Tagged errors are `Schema.TaggedError<Self>()(tag, fields)` classes (the rc spelling; `Schema.TaggedErrorClass` was the beta-line name).
