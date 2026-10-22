@@ -6,12 +6,6 @@
  * `followRedirects`) it wraps.
  */
 
-/*
- * A vitest test body IS the runtime boundary — it is the entrypoint that runs
- * the effect under test, and `effect-run-in-body` has no entrypoint detection.
- */
-/* oxlint-disable effect/effect-run-in-body */
-
 import { describe, expect, it } from "vite-plus/test";
 import * as Array from "effect/Array";
 import * as Effect from "effect/Effect";
@@ -574,18 +568,18 @@ describe("followRedirects (the Effect form)", () => {
       ),
     );
     expect(looping._tag).toBe("RedirectRejected");
-    expect(looping._tag === "RedirectRejected" && looping.reason).toBe("too-many-hops");
+    expect(Predicate.isTagged(looping, "RedirectRejected") && looping.reason).toBe("too-many-hops");
   });
 
   it("fails with FetchFailed carrying the cause when fetch rejects", async () => {
-    const cause = new Error("socket hang up");
+    const cause = new TypeError("socket hang up");
     const failed = await Effect.runPromise(
       Effect.flip(
         followRedirects("https://example.com/", {}, { fetch: () => Promise.reject(cause) }),
       ),
     );
     expect(failed._tag).toBe("FetchFailed");
-    expect(failed._tag === "FetchFailed" && failed.cause).toBe(cause);
+    expect(Predicate.isTagged(failed, "FetchFailed") && failed.cause).toBe(cause);
   });
 
   it("passes the shared init (signal included) to every hop with redirect: manual", async () => {
@@ -607,9 +601,9 @@ describe("followRedirects (the Effect form)", () => {
     );
     expect(finalUrl).toBe("https://example.com/final");
     expect(seen).toHaveLength(2);
-    for (const init of seen) {
+    Array.forEach(seen, (init) => {
       expect(init?.redirect).toBe("manual");
       expect(init?.signal).toBe(controller.signal);
-    }
+    });
   });
 });

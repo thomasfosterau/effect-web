@@ -4,6 +4,7 @@
  */
 
 import { describe, expect, it } from "vite-plus/test";
+import * as Chunk from "effect/Chunk";
 import * as DateTime from "effect/DateTime";
 import * as HttpServerResponse from "effect/http/HttpServerResponse";
 import {
@@ -55,10 +56,7 @@ describe("renderRss", () => {
   });
 
   it("keeps item order and accepts any iterable", () => {
-    const items = new Set([
-      { path: "/b", title: "B" },
-      { path: "/a", title: "A" },
-    ]);
+    const items = Chunk.make({ path: "/b", title: "B" }, { path: "/a", title: "A" });
     const xml = renderRss(channel, items);
     expect(xml.indexOf("<title>B</title>")).toBeLessThan(xml.indexOf("<title>A</title>"));
   });

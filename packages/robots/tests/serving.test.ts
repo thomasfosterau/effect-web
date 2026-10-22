@@ -47,9 +47,9 @@ describe("productionBody (ROBOTS-002/003/004)", () => {
   });
 
   it("ROBOTS-003: disallows every non-content URL space", () => {
-    for (const path of DISALLOW) {
+    DISALLOW.forEach((path) => {
       expect(body).toContain(`Disallow: ${path}`);
-    }
+    });
     expect(body).toContain("Disallow: /search");
     expect(body).toContain("Disallow: /*/search");
     expect(body).toContain("Disallow: /api/");

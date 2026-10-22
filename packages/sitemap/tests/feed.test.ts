@@ -4,6 +4,7 @@
  */
 
 import { describe, expect, it } from "vite-plus/test";
+import * as Arr from "effect/Array";
 import * as HttpServerResponse from "effect/http/HttpServerResponse";
 import {
   buildJsonFeed,
@@ -68,14 +69,17 @@ describe("buildJsonFeed", () => {
   });
 
   it("omits title and summary when null or absent (not null-valued keys)", () => {
-    for (const entry of [
-      makeEntry({ title: null, summary: null }),
-      makeEntry({ title: undefined, summary: undefined }),
-    ]) {
-      const item = buildJsonFeed(options, [entry]).items[0] ?? {};
-      expect(Object.hasOwn(item, "title")).toBe(false);
-      expect(Object.hasOwn(item, "summary")).toBe(false);
-    }
+    Arr.forEach(
+      [
+        makeEntry({ title: null, summary: null }),
+        makeEntry({ title: undefined, summary: undefined }),
+      ],
+      (entry) => {
+        const item = buildJsonFeed(options, [entry]).items[0] ?? {};
+        expect(Object.hasOwn(item, "title")).toBe(false);
+        expect(Object.hasOwn(item, "summary")).toBe(false);
+      },
+    );
   });
 
   it("preserves entry order (caller is responsible for newest-first)", () => {
@@ -102,6 +106,7 @@ describe("jsonFeedResponse", () => {
     expect(response.headers["cache-control"]).toBe(LOW_CHURN_CACHE_CONTROL);
     expect(response.headers["cache-tag"]).toBe("feed");
     const text = await HttpServerResponse.toWeb(response).text();
+    // oxlint-disable-next-line effect/avoid-direct-json -- the expected bytes ARE `JSON.stringify(feed, null, 2)`: the deliberate 2-space pretty-print the source documents, which `Schema.fromJsonString` cannot express (it has no indent option).
     expect(text).toBe(JSON.stringify(feed, null, 2));
   });
 });

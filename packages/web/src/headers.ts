@@ -120,16 +120,14 @@ export const appendVary = (
 ): Headers.Headers => {
   const existing = Headers.get(headers, "vary");
   const present = Option.match(existing, {
-    onNone: () => new Set<string>(),
+    onNone: (): ReadonlyArray<string> => [],
     onSome: (value) =>
-      new Set(
-        value
-          .split(",")
-          .map((entry) => entry.trim().toLowerCase())
-          .filter((entry) => entry !== ""),
-      ),
+      value
+        .split(",")
+        .map((entry) => entry.trim().toLowerCase())
+        .filter((entry) => entry !== ""),
   });
-  const additions = names.filter((name) => !present.has(name.toLowerCase()));
+  const additions = names.filter((name) => !Arr.contains(present, name.toLowerCase()));
   if (Arr.isReadonlyArrayEmpty(additions)) return headers;
   return Headers.set(
     headers,

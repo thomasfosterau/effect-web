@@ -8,7 +8,7 @@ import { describeSessionDegraded, SESSION_DEGRADED_LOG_MESSAGE } from "@thomasfo
 
 describe("describeSessionDegraded", () => {
   it("pairs the fixed log message with the error and forwards the error verbatim", () => {
-    const error = new Error("db down");
+    const error = new TypeError("db down");
     const report = describeSessionDegraded(error);
     expect(report.logArgs).toStrictEqual([SESSION_DEGRADED_LOG_MESSAGE, error]);
     expect(report.reportedError).toBe(error);

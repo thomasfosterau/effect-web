@@ -5,13 +5,8 @@
  * all against `memoryCacheStorage` and a stubbed `FetchHttpClient.Fetch`.
  */
 
-/*
- * A vitest test body IS the runtime boundary — it is the entrypoint that runs
- * the effect under test, and `effect-run-in-body` has no entrypoint detection.
- */
-/* oxlint-disable effect/effect-run-in-body */
-
 import { describe, expect, it } from "vite-plus/test";
+import * as Arr from "effect/Array";
 import * as Effect from "effect/Effect";
 import * as Exit from "effect/Exit";
 import * as Fiber from "effect/Fiber";
@@ -74,13 +69,13 @@ const collectingLifetime = () => {
       ),
   };
   // Settles everything started so far, including work started by work.
-  const settle = async (): Promise<ReadonlyArray<Exit.Exit<unknown, unknown>>> => {
-    const exits: Array<Exit.Exit<unknown, unknown>> = [];
-    while (exits.length < fibers.length) {
-      exits.push(await Effect.runPromise(Fiber.await(fibers[exits.length]!)));
-    }
-    return exits;
+  const settleFrom = async (index: number): Promise<ReadonlyArray<Exit.Exit<unknown, unknown>>> => {
+    const fiber = fibers[index];
+    if (fiber === undefined) return [];
+    const exit = await Effect.runPromise(Fiber.await(fiber));
+    return [exit, ...(await settleFrom(index + 1))];
   };
+  const settle = () => settleFrom(0);
   return { service, settle };
 };
 
@@ -258,11 +253,14 @@ describe("isCacheable", () => {
     expect(isCacheable(get(), new Response("", { status: 206 }))).toBe(false);
     expect(isCacheable(get(), Response.error())).toBe(false);
     expect(isCacheable(get(), new Response("ok", { headers: { vary: " * " } }))).toBe(false);
-    for (const value of ["no-store", "private, no-store", "No-Store , max-age=0", "no-store=1"]) {
-      expect(isCacheable(get(), new Response("ok", { headers: { "cache-control": value } }))).toBe(
-        false,
-      );
-    }
+    Arr.forEach(
+      ["no-store", "private, no-store", "No-Store , max-age=0", "no-store=1"],
+      (value) => {
+        expect(
+          isCacheable(get(), new Response("ok", { headers: { "cache-control": value } })),
+        ).toBe(false);
+      },
+    );
   });
 
   it("matches no-store as a whole directive only", () => {

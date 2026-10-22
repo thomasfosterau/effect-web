@@ -4,9 +4,8 @@
  * `checkRobots` decision over a stub `HttpClient` and the in-memory cache.
  */
 
-/* oxlint-disable effect/effect-run-in-body */
-
 import { describe, expect, it } from "vite-plus/test";
+import * as Arr from "effect/Array";
 import * as Effect from "effect/Effect";
 import * as Option from "effect/Option";
 import * as HttpClient from "effect/http/HttpClient";
@@ -43,9 +42,9 @@ describe("parse — the crawlers' cases", () => {
       ].join("\n"),
     );
     expect(parsed.groups).toHaveLength(2);
-    expect(parsed.groups[0]!.userAgents).toEqual(["a", "b"]);
-    expect(parsed.groups[0]!.rules).toHaveLength(1);
-    expect(parsed.groups[1]!.userAgents).toEqual(["c"]);
+    expect(parsed.groups[0]?.userAgents).toEqual(["a", "b"]);
+    expect(parsed.groups[0]?.rules).toHaveLength(1);
+    expect(parsed.groups[1]?.userAgents).toEqual(["c"]);
   });
 
   it("ignores comments and blank lines", () => {
@@ -53,26 +52,26 @@ describe("parse — the crawlers' cases", () => {
       ["# top comment", "", "User-agent: * # inline comment", "Disallow: /a # trailing"].join("\n"),
     );
     expect(parsed.groups).toHaveLength(1);
-    expect(parsed.groups[0]!.rules[0]!.path).toBe("/a");
+    expect(parsed.groups[0]?.rules[0]?.path).toBe("/a");
   });
 
   it("handles \\r\\n line endings", () => {
     const parsed = parse("User-agent: *\r\nDisallow: /x\r\n");
-    expect(parsed.groups[0]!.rules[0]!.path).toBe("/x");
+    expect(parsed.groups[0]?.rules[0]?.path).toBe("/x");
   });
 
   it("ignores rules and a Crawl-delay that appear before any user-agent line", () => {
     const parsed = parse("Crawl-delay: 5\nDisallow: /orphan\nUser-agent: *\nDisallow: /x");
     expect(parsed.groups).toHaveLength(1);
-    expect(parsed.groups[0]!.rules).toHaveLength(1);
-    expect(parsed.groups[0]!.crawlDelay).toBeUndefined();
+    expect(parsed.groups[0]?.rules).toHaveLength(1);
+    expect(parsed.groups[0]?.crawlDelay).toBeUndefined();
   });
 
   it("ignores an invalid Crawl-delay, keeping any prior valid value", () => {
     const parsed = parse(
       ["User-agent: *", "Crawl-delay: 7", "Crawl-delay: notanumber", "Crawl-delay: -3"].join("\n"),
     );
-    expect(parsed.groups[0]!.crawlDelay).toBe(7);
+    expect(parsed.groups[0]?.crawlDelay).toBe(7);
   });
 
   it("ignores lines with no colon and unknown directives, and collects Sitemap", () => {
@@ -80,7 +79,7 @@ describe("parse — the crawlers' cases", () => {
       ["User-agent: *", "garbage-no-colon", "Sitemap: https://x/s.xml", "Disallow: /a"].join("\n"),
     );
     expect(parsed.groups).toHaveLength(1);
-    expect(parsed.groups[0]!.rules).toHaveLength(1);
+    expect(parsed.groups[0]?.rules).toHaveLength(1);
     expect(parsed.sitemaps).toEqual(["https://x/s.xml"]);
   });
 
@@ -232,21 +231,30 @@ const checker = (cache: RobotsCache) =>
 
 describe("fetchRobots", () => {
   it("folds 2xx / 4xx / 5xx / transport failure into the cache values", async () => {
-    for (const [answer, expected] of [
+    const cases = [
       [text("User-agent: *\nDisallow: /x"), "User-agent: *\nDisallow: /x"],
       [text("gone", 404), ROBOTS_NO_RESTRICTIONS],
       [text("boom", 503), ROBOTS_UNAVAILABLE_SENTINEL],
       [() => "transport-error" as const, ROBOTS_UNAVAILABLE_SENTINEL],
-    ] as const) {
-      const site = siteFrom({ "/robots.txt": answer });
-      const got = await Effect.runPromise(
-        fetchRobots("https://feed.test", { userAgent: "bot/1.0" }).pipe(
-          Effect.provideService(HttpClient.HttpClient, site.client),
-        ),
-      );
-      expect(got).toBe(expected);
-      expect(site.requests).toEqual(["https://feed.test/robots.txt"]);
-    }
+    ] as const;
+    await Effect.runPromise(
+      Effect.forEach(
+        cases,
+        ([answer, expected]) => {
+          const site = siteFrom({ "/robots.txt": answer });
+          return fetchRobots("https://feed.test", { userAgent: "bot/1.0" }).pipe(
+            Effect.provideService(HttpClient.HttpClient, site.client),
+            Effect.tap((got) =>
+              Effect.sync(() => {
+                expect(got).toBe(expected);
+                expect(site.requests).toEqual(["https://feed.test/robots.txt"]);
+              }),
+            ),
+          );
+        },
+        { concurrency: 1, discard: true },
+      ),
+    );
   });
 
   it("caps the body at maxBytes and sends the User-Agent", async () => {
@@ -304,19 +312,27 @@ describe("makeRobotsChecker", () => {
   });
 
   it("treats a 5xx or a transport failure as disallow-all and caches that for an hour", async () => {
-    for (const answer of [text("boom", 503), () => "transport-error" as const]) {
-      const cache = memoryRobotsCache();
-      const site = siteFrom({ "/robots.txt": answer });
-      const decision = await Effect.runPromise(
-        checker(cache)("https://feed.test/27966/").pipe(
-          Effect.provideService(HttpClient.HttpClient, site.client),
-        ),
-      );
-      expect(decision).toEqual({ allowed: false, reason: ROBOTS_UNAVAILABLE_REASON });
-      expect(cache.entries.get("https://feed.test")?.ttlSeconds).toBe(
-        ROBOTS_UNAVAILABLE_TTL_SECONDS,
-      );
-    }
+    await Effect.runPromise(
+      Effect.forEach(
+        [text("boom", 503), () => "transport-error" as const],
+        (answer) => {
+          const cache = memoryRobotsCache();
+          const site = siteFrom({ "/robots.txt": answer });
+          return checker(cache)("https://feed.test/27966/").pipe(
+            Effect.provideService(HttpClient.HttpClient, site.client),
+            Effect.tap((decision) =>
+              Effect.sync(() => {
+                expect(decision).toEqual({ allowed: false, reason: ROBOTS_UNAVAILABLE_REASON });
+                expect(cache.entries.get("https://feed.test")?.ttlSeconds).toBe(
+                  ROBOTS_UNAVAILABLE_TTL_SECONDS,
+                );
+              }),
+            ),
+          );
+        },
+        { concurrency: 1, discard: true },
+      ),
+    );
   });
 
   it("evaluates a fetched body for the path and reports the crawl delay, then serves the cache", async () => {
@@ -362,14 +378,17 @@ describe("makeRobotsChecker", () => {
   it("fetches every time with no cache configured", async () => {
     const site = siteFrom({ "/robots.txt": text("User-agent: *\nDisallow: /nope") });
     const check = makeRobotsChecker({ userAgent: "bot", userAgentToken: UA });
-    for (let i = 0; i < 2; i += 1) {
-      const decision = await Effect.runPromise(
-        check("https://feed.test/27966/").pipe(
-          Effect.provideService(HttpClient.HttpClient, site.client),
-        ),
-      );
-      expect(decision.allowed).toBe(true);
-    }
+    const decisions = await Effect.runPromise(
+      Effect.forEach(
+        Arr.range(1, 2),
+        () =>
+          check("https://feed.test/27966/").pipe(
+            Effect.provideService(HttpClient.HttpClient, site.client),
+          ),
+        { concurrency: 1 },
+      ),
+    );
+    expect(decisions.map((decision) => decision.allowed)).toEqual([true, true]);
     expect(site.requests).toHaveLength(2);
   });
 });

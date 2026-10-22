@@ -26,7 +26,7 @@ Allow: /public
     const result = parse(content);
 
     expect(result.groups).toHaveLength(1);
-    expect([...result.groups[0]!.userAgents]).toEqual(["*"]);
+    expect([...(result.groups[0]?.userAgents ?? [])]).toEqual(["*"]);
     expect(result.groups[0]?.rules).toHaveLength(2);
     expect(result.groups[0]?.rules[0]?.path).toBe("/admin");
     expect(result.groups[0]?.rules[0]?.allow).toBe(false);
@@ -44,7 +44,7 @@ Disallow: /private
     const result = parse(content);
 
     expect(result.groups).toHaveLength(1);
-    expect([...result.groups[0]!.userAgents]).toEqual(["Googlebot", "Bingbot"]);
+    expect([...(result.groups[0]?.userAgents ?? [])]).toEqual(["Googlebot", "Bingbot"]);
   });
 
   test("should parse multiple groups", () => {
@@ -59,8 +59,8 @@ Disallow: /admin
     const result = parse(content);
 
     expect(result.groups).toHaveLength(2);
-    expect([...result.groups[0]!.userAgents]).toEqual(["Googlebot"]);
-    expect([...result.groups[1]!.userAgents]).toEqual(["*"]);
+    expect([...(result.groups[0]?.userAgents ?? [])]).toEqual(["Googlebot"]);
+    expect([...(result.groups[1]?.userAgents ?? [])]).toEqual(["*"]);
   });
 
   test("should parse crawl-delay", () => {
@@ -102,7 +102,7 @@ Disallow: /admin # another comment
     const result = parse(content);
 
     expect(result.groups).toHaveLength(1);
-    expect([...result.groups[0]!.userAgents]).toEqual(["*"]);
+    expect([...(result.groups[0]?.userAgents ?? [])]).toEqual(["*"]);
     expect(result.groups[0]?.rules).toHaveLength(1);
   });
 
@@ -370,11 +370,11 @@ Disallow: /admin
     const result = parse(content);
 
     expect(result.groups).toHaveLength(2);
-    expect([...result.groups[0]!.userAgents]).toEqual(["A"]);
+    expect([...(result.groups[0]?.userAgents ?? [])]).toEqual(["A"]);
     expect(result.groups[0]?.crawlDelay).toBe(10);
     expect(result.groups[0]?.rules).toHaveLength(0);
 
-    expect([...result.groups[1]!.userAgents]).toEqual(["B"]);
+    expect([...(result.groups[1]?.userAgents ?? [])]).toEqual(["B"]);
     expect(result.groups[1]?.rules).toHaveLength(1);
   });
 });
@@ -391,7 +391,10 @@ Sitemap: https://example.com/sitemap.xml`;
     const encoded = encode(parsed);
     const reparsed = parse(encoded);
 
-    expect([...reparsed.groups[0]!.userAgents]).toEqual([...parsed.groups[0]!.userAgents]);
+    expect(parsed.groups).toHaveLength(1);
+    expect([...(reparsed.groups[0]?.userAgents ?? [])]).toEqual([
+      ...(parsed.groups[0]?.userAgents ?? []),
+    ]);
     expect(reparsed.groups[0]?.rules).toHaveLength(parsed.groups[0]?.rules.length ?? 0);
     expect([...reparsed.sitemaps]).toEqual([...parsed.sitemaps]);
   });

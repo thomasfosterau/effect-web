@@ -4,6 +4,7 @@
  */
 
 import { describe, expect, it } from "vite-plus/test";
+import * as Chunk from "effect/Chunk";
 import * as DateTime from "effect/DateTime";
 import * as HttpServerResponse from "effect/http/HttpServerResponse";
 import {
@@ -75,10 +76,7 @@ describe("buildJsonFeed", () => {
   });
 
   it("keeps entry order and accepts any iterable", () => {
-    const entries = new Set([
-      { path: "/b", contentText: "B" },
-      { path: "/a", contentText: "A" },
-    ]);
+    const entries = Chunk.make({ path: "/b", contentText: "B" }, { path: "/a", contentText: "A" });
     expect(buildJsonFeed(options, entries).items.map((item) => item.id)).toStrictEqual([
       "https://example.com/b",
       "https://example.com/a",
@@ -151,7 +149,9 @@ describe("jsonFeedResponse", () => {
     expect(response.headers["content-type"]).toBe(JSON_FEED_CONTENT_TYPE);
     expect(response.headers["cache-control"]).toBe(LOW_CHURN_CACHE_CONTROL);
     expect(response.headers["cache-tag"]).toBeUndefined();
-    expect(await HttpServerResponse.toWeb(response).text()).toBe(JSON.stringify(feed, null, 2));
+    const text = await HttpServerResponse.toWeb(response).text();
+    // oxlint-disable-next-line effect/avoid-direct-json -- the expected bytes ARE `JSON.stringify(feed, null, 2)`: the deliberate 2-space pretty-print the source documents, which `Schema.fromJsonString` cannot express (it has no indent option).
+    expect(text).toBe(JSON.stringify(feed, null, 2));
   });
 
   it("carries a Cache-Tag and an overridden Cache-Control when given", () => {

@@ -4,8 +4,12 @@
  */
 
 import { describe, expect, it } from "vite-plus/test";
+import * as Arr from "effect/Array";
 import * as Schema from "effect/Schema";
 import { encode, parse, RobotsTxt, RobotsTxtFromString, Rule } from "@thomasfosterau/effect-robots";
+
+/** A failing case's input as a JSON string literal, so control characters show. */
+const quoted = Schema.encodeSync(Schema.fromJsonString(Schema.String));
 
 /**
  * The line splitter the grammar replaced: comment cut, CRLF split, trim,
@@ -62,31 +66,31 @@ describe("line grammar", () => {
   });
 
   it("decodes any string without a schema issue", () => {
-    for (const input of ["\u0000", "#", "\n\n\n", ":::", "\uD800", "\r\r\n#\n:"]) {
+    Arr.forEach(["\u0000", "#", "\n\n\n", ":::", "\uD800", "\r\r\n#\n:"], (input) => {
       expect(Schema.decodeUnknownSync(RobotsTxtFromString)(input)).toBeInstanceOf(RobotsTxt);
-    }
+    });
   });
 
   it("matches the hand-written line splitter it replaced on every pair and triple of tricky lines", () => {
-    for (const separator of separators) {
-      for (const a of fragments) {
-        for (const b of fragments) {
-          for (const c of ["User-agent: z", "Disallow: /q", "#", ""]) {
-            const content = [a, b, c].join(separator);
-            expect(parse(content), JSON.stringify(content)).toEqual(parse(referenceLines(content)));
-          }
-        }
-      }
-    }
+    const contents = Arr.flatMap(separators, (separator) =>
+      Arr.flatMap(fragments, (a) =>
+        Arr.flatMap(fragments, (b) =>
+          Arr.map(["User-agent: z", "Disallow: /q", "#", ""], (c) => [a, b, c].join(separator)),
+        ),
+      ),
+    );
+    Arr.forEach(contents, (content) => {
+      expect(parse(content), quoted(content)).toEqual(parse(referenceLines(content)));
+    });
   });
 
   it("round-trips through encode", () => {
-    for (const separator of separators) {
-      for (const a of fragments) {
-        const content = ["User-agent: a", a, "Disallow: /q", a].join(separator);
-        const parsed = parse(content);
-        expect(parse(encode(parsed))).toEqual(parsed);
-      }
-    }
+    const contents = Arr.flatMap(separators, (separator) =>
+      Arr.map(fragments, (a) => ["User-agent: a", a, "Disallow: /q", a].join(separator)),
+    );
+    Arr.forEach(contents, (content) => {
+      const parsed = parse(content);
+      expect(parse(encode(parsed))).toEqual(parsed);
+    });
   });
 });

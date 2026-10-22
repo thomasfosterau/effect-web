@@ -5,7 +5,9 @@
  * is tested directly, without a request handler's import graph.
  */
 import { describe, expect, it } from "vite-plus/test";
+import * as Arr from "effect/Array";
 import * as Option from "effect/Option";
+import * as Record from "effect/Record";
 import * as Headers from "effect/http/Headers";
 import {
   appendVary,
@@ -28,9 +30,9 @@ const vary = (headers: Headers.Headers): Option.Option<string> => Headers.get(he
 describe("securityHeaders", () => {
   it("adds every baseline header to a bare response", () => {
     const headers = securityHeaders(Headers.empty);
-    for (const [name, value] of Object.entries(SECURITY_HEADER_DEFAULTS)) {
+    Arr.forEach(Record.toEntries(SECURITY_HEADER_DEFAULTS), ([name, value]) => {
       expect(Headers.get(headers, name)).toStrictEqual(Option.some(value));
-    }
+    });
   });
 
   it("never overrides a header the route already set", () => {
@@ -112,8 +114,9 @@ describe("responseVary / classifyRoute (PERF-CACHE-001)", () => {
 
 describe("isLocaleInvariantAsset", () => {
   it("matches every path in the set and the Open Graph card family", () => {
-    for (const path of LOCALE_INVARIANT_ASSET_PATHS)
+    LOCALE_INVARIANT_ASSET_PATHS.forEach((path) => {
       expect(isLocaleInvariantAsset(path)).toBe(true);
+    });
     expect(isLocaleInvariantAsset("/og/abc.png")).toBe(true);
     expect(isOpenGraphCard("/og/abc.png")).toBe(true);
   });

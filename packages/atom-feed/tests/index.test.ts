@@ -4,6 +4,7 @@
  */
 
 import { describe, expect, it } from "vite-plus/test";
+import * as Chunk from "effect/Chunk";
 import * as DateTime from "effect/DateTime";
 import * as HttpServerResponse from "effect/http/HttpServerResponse";
 import {
@@ -49,10 +50,10 @@ describe("renderAtom", () => {
   });
 
   it("keeps entry order and accepts any iterable", () => {
-    const entries = new Set([
+    const entries = Chunk.make(
       { path: "/b", title: "B", updated: UPDATED },
       { path: "/a", title: "A", updated: UPDATED },
-    ]);
+    );
     const xml = renderAtom(options, entries);
     expect(xml.indexOf("<title>B</title>")).toBeLessThan(xml.indexOf("<title>A</title>"));
     expect(xml.endsWith("</entry></feed>")).toBe(true);
