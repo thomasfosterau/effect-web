@@ -15,11 +15,14 @@
  * @since 0.1.0
  */
 import * as Arr from "effect/Array";
+import * as DateTime from "effect/DateTime";
 import * as Effect from "effect/Effect";
 import * as HashSet from "effect/HashSet";
+import * as Option from "effect/Option";
 import * as Predicate from "effect/Predicate";
 import * as Stream from "effect/Stream";
 import * as HttpServerResponse from "effect/http/HttpServerResponse";
+import * as JsonFeedDocument from "@thomasfosterau/effect-json-feed";
 import { describeError, logErrorEvent } from "@thomasfosterau/effect-web/observability";
 
 // ── Sitemaps ───────────────────────────────────────────────────────────
@@ -314,34 +317,22 @@ export const renderSitemapIndex = (base: string, sitemaps: Iterable<SitemapUrl>)
 // ── JSON Feed 1.1 ──────────────────────────────────────────────────────
 
 /**
- * A JSON Feed 1.1 item (the subset emitted).
+ * A JSON Feed 1.1 item, as {@link buildJsonFeed} emits it: effect-json-feed's
+ * item type, so the document validates against the spec.
  *
  * @since 0.1.0
  * @category models
  */
-export interface JsonFeedItem {
-  readonly id: string;
-  readonly url: string;
-  readonly title?: string;
-  readonly summary?: string;
-  readonly date_published: string;
-  readonly date_modified: string;
-}
+export type JsonFeedItem = JsonFeedDocument.JsonFeedItem;
 
 /**
- * A JSON Feed 1.1 document (the subset emitted).
+ * A JSON Feed 1.1 document, as {@link buildJsonFeed} emits it:
+ * effect-json-feed's document type.
  *
  * @since 0.1.0
  * @category models
  */
-export interface JsonFeed {
-  readonly version: "https://jsonfeed.org/version/1.1";
-  readonly title: string;
-  readonly home_page_url: string;
-  readonly feed_url: string;
-  readonly description: string;
-  readonly items: ReadonlyArray<JsonFeedItem>;
-}
+export type JsonFeed = JsonFeedDocument.JsonFeed;
 
 /**
  * One feed entry: a site-root-relative path, its timestamps and its text.
@@ -390,11 +381,18 @@ export interface JsonFeedOptions {
 export const FEED_ITEM_LIMIT = 50;
 
 /**
- * Serialises feed entries into a JSON Feed 1.1 document. Pure. Item `id`
- * and `url` are the canonical absolute URL on `options.base`, never the
- * request origin (CANON-001); `title` / `summary` are omitted, never
- * `null`-valued keys, when absent; entry order is preserved (the caller is
- * responsible for newest-first).
+ * Serialises feed entries into a JSON Feed 1.1 document: an adapter that maps
+ * each {@link FeedEntry} to effect-json-feed's entry and builds the document
+ * with its `buildJsonFeed`. Pure. Item `id` and `url` are the canonical
+ * absolute URL on `options.base`, never the request origin (CANON-001);
+ * `title` / `summary` are omitted, never `null`-valued keys, when absent;
+ * entry order is preserved (the caller is responsible for newest-first).
+ *
+ * JSON Feed 1.1 requires `content_text` or `content_html` on every item, and
+ * a `FeedEntry` carries no body, so `content_text` is the entry's `summary`,
+ * else its `title`, else the empty string. The timestamps are emitted RFC
+ * 3339 in UTC (a timestamp without a zone reads as UTC); one that does not
+ * parse is omitted rather than emitted invalid.
  *
  * @example
  * ```ts
@@ -405,6 +403,7 @@ export const FEED_ITEM_LIMIT = 50;
  *   [{ path: "/posts/1", publishedAt: "2026-01-01T00:00:00.000Z", updatedAt: "2026-02-01T00:00:00.000Z", title: "Hello", summary: null }],
  * )
  * feed.items[0]?.url // "https://example.com/posts/1"
+ * feed.items[0]?.content_text // "Hello"
  * "summary" in (feed.items[0] ?? {}) // false
  * ```
  *
@@ -414,37 +413,27 @@ export const FEED_ITEM_LIMIT = 50;
 export const buildJsonFeed = (
   options: JsonFeedOptions,
   entries: ReadonlyArray<FeedEntry>,
-): JsonFeed => ({
-  version: "https://jsonfeed.org/version/1.1",
-  title: options.title,
-  home_page_url: new URL(options.homePath ?? "/", options.base).toString(),
-  feed_url: new URL(options.feedPath ?? "/feed.json", options.base).toString(),
-  description: options.description,
-  items: Arr.map(entries, (entry) => feedItem(options.base, entry)),
-});
+): JsonFeed => JsonFeedDocument.buildJsonFeed(options, Arr.map(entries, jsonFeedEntry));
 
-/** A {@link JsonFeedItem} under construction. */
-interface MutableJsonFeedItem {
-  id: string;
-  url: string;
-  title?: string;
-  summary?: string;
-  date_published: string;
-  date_modified: string;
-}
+/** A nullable wire text as an optional member. */
+const optionalText = (text: string | null | undefined): string | undefined => text ?? undefined;
 
-/** One item; `title` / `summary` are added only when the entry has them. */
-const feedItem = (base: string, entry: FeedEntry): JsonFeedItem => {
-  const url = new URL(entry.path, base).toString();
-  const item: MutableJsonFeedItem = {
-    id: url,
-    url,
-    date_published: entry.publishedAt,
-    date_modified: entry.updatedAt,
+/** An ISO 8601 wire timestamp as a `DateTime`, or `undefined` when it does not parse. */
+const timestamp = (iso: string): DateTime.Utc | undefined =>
+  Option.getOrUndefined(DateTime.make(iso));
+
+/** One {@link FeedEntry} as effect-json-feed's entry. */
+const jsonFeedEntry = (entry: FeedEntry): JsonFeedDocument.JsonFeedEntry => {
+  const title = optionalText(entry.title);
+  const summary = optionalText(entry.summary);
+  return {
+    path: entry.path,
+    title,
+    summary,
+    contentText: summary ?? title ?? "",
+    publishedAt: timestamp(entry.publishedAt),
+    updatedAt: timestamp(entry.updatedAt),
   };
-  if (entry.title !== null && entry.title !== undefined) item.title = entry.title;
-  if (entry.summary !== null && entry.summary !== undefined) item.summary = entry.summary;
-  return item;
 };
 
 /**
@@ -453,13 +442,14 @@ const feedItem = (base: string, entry: FeedEntry): JsonFeedItem => {
  * @since 0.1.0
  * @category constants
  */
-export const JSON_FEED_CONTENT_TYPE = "application/feed+json";
+export const JSON_FEED_CONTENT_TYPE = JsonFeedDocument.JSON_FEED_CONTENT_TYPE;
 
 /**
- * A JSON Feed as an `HttpServerResponse`: 2-space pretty-printed (a
- * hand-readable discovery document; changing the indent changes the bytes on
- * the wire and in every cached copy), `application/feed+json`,
- * {@link LOW_CHURN_CACHE_CONTROL} and, when given, the `Cache-Tag`.
+ * A JSON Feed as an `HttpServerResponse`, served by effect-json-feed's
+ * `jsonFeedResponse`: 2-space pretty-printed (a hand-readable discovery
+ * document; changing the indent changes the bytes on the wire and in every
+ * cached copy), `application/feed+json`, {@link LOW_CHURN_CACHE_CONTROL}
+ * unless overridden and, when given, the `Cache-Tag`.
  *
  * @example
  * ```ts
@@ -480,10 +470,9 @@ export const jsonFeedResponse = (
   feed: JsonFeed,
   options: DocumentCacheOptions = {},
 ): HttpServerResponse.HttpServerResponse =>
-  // oxlint-disable-next-line effect/avoid-direct-json -- the served document is deliberately 2-space pretty-printed; `Schema.fromJsonString` emits compact JSON with no indent option, so encoding through a schema would change the bytes on the wire and every cached copy of them.
-  HttpServerResponse.text(JSON.stringify(feed, null, 2), {
-    contentType: JSON_FEED_CONTENT_TYPE,
-    headers: documentHeaders(options),
+  JsonFeedDocument.jsonFeedResponse(feed, {
+    cacheTag: options.cacheTag,
+    cacheControl: options.cacheControl ?? LOW_CHURN_CACHE_CONTROL,
   });
 
 // ── Cache-Tag purge on mutation ────────────────────────────────────────

@@ -82,11 +82,11 @@ const feedResponse = (base: string, rows: ReadonlyArray<FeedEntry>) =>
 
 | Export | What it is |
 | --- | --- |
-| `FeedEntry` | `{ path, publishedAt, updatedAt, title?: string \| null, summary?: string \| null }` — the SQL wire shape, `null` for an absent text. |
-| `buildJsonFeed({ base, title, description, feedPath? = "/feed.json", homePath? = "/" }, entries)` | The document. Item `id` and `url` are the canonical URL on `base`, never the request origin (CANON-001); `title` / `summary` are omitted, never `null`-valued; order is the caller's (newest-first). |
+| `FeedEntry` | `{ path, publishedAt, updatedAt, title?: string \| null, summary?: string \| null }` — the SQL wire shape, `null` for an absent text; the timestamps are ISO 8601 strings (no zone reads as UTC). |
+| `buildJsonFeed({ base, title, description, feedPath? = "/feed.json", homePath? = "/" }, entries)` | The document. Item `id` and `url` are the canonical URL on `base`, never the request origin (CANON-001); `title` / `summary` are omitted, never `null`-valued; `content_text` (which JSON Feed 1.1 requires) is the `summary`, else the `title`, else `""`; dates are RFC 3339 in UTC, an unparsable one omitted; order is the caller's (newest-first). Built with [`@thomasfosterau/effect-json-feed`](../json-feed/README.md)'s `buildJsonFeed`; use that package directly for a feed with item bodies, authors or images. |
 | `FEED_ITEM_LIMIT` (50) | The item bound: a change-discovery feed, not a corpus listing (DISC-010). |
 | `jsonFeedResponse(feed, { cacheTag?, cacheControl? })` | 2-space pretty-printed `application/feed+json` with the cache headers. The indent is part of the bytes on the wire and in every cached copy. |
-| `JsonFeed`, `JsonFeedItem`, `JSON_FEED_CONTENT_TYPE` | The shapes and the media type. |
+| `JsonFeed`, `JsonFeedItem`, `JSON_FEED_CONTENT_TYPE` | The shapes and the media type: effect-json-feed's. |
 
 ### Cache-Tag purge on mutation
 

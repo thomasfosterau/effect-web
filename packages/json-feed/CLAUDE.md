@@ -4,7 +4,7 @@ A JSON Feed 1.1 document (`feed.json`): `buildJsonFeed`, `buildJsonFeedItem` and
 
 ## Boundary
 
-Peer: `effect`. No workspace dependency (`.fallowrc.json` zone `json-feed` allows none), and nothing else in the workspace imports this package. It renders and serves; enumerating the rows and purging the edge cache stay with the application (and `effect-sitemap`'s `purgeCacheTags`).
+Peer: `effect`. No workspace dependency (`.fallowrc.json` zone `json-feed` allows none), and only `@thomasfosterau/effect-sitemap` imports this package (its JSON Feed builder is an adapter over this one). It renders and serves; enumerating the rows and purging the edge cache stay with the application (and `effect-sitemap`'s `purgeCacheTags`).
 
 ## Invariants
 
