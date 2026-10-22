@@ -4,9 +4,11 @@
  * @since 0.2.0
  */
 import * as Layer from "effect/Layer";
+import * as TestBattery from "./battery.ts";
 import * as TestBroadcast from "./broadcast.ts";
 import * as TestClipboard from "./clipboard.ts";
 import * as TestGeolocation from "./geolocation.ts";
+import * as TestIdleDetection from "./idle-detection.ts";
 import * as TestLocks from "./locks.ts";
 import * as TestMediaQuery from "./media-query.ts";
 import * as TestNavigator from "./navigator.ts";
@@ -39,9 +41,11 @@ import * as TestWakeLock from "./wake-lock.ts";
  * @category layers
  */
 export const layer = Layer.mergeAll(
+  TestBattery.layer(),
   TestBroadcast.layer,
   TestClipboard.layer(),
   TestGeolocation.layer(),
+  TestIdleDetection.layer(),
   TestLocks.layer(),
   TestMediaQuery.layer(),
   TestNavigator.layer(),

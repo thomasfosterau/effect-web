@@ -20,6 +20,9 @@
  * - `MediaQuery` — `matchMedia` as values and streams; user preferences.
  * - `WakeLock` — the Screen Wake Lock, held for a `Scope`.
  * - `Broadcast` — `BroadcastChannel`, schema-typed.
+ * - `IdleDetection` — user idleness and screen lock, as a stream
+ *   (Chromium-only, behind a permission).
+ * - `Battery` — the battery's charge and charging state (Chromium-only).
  * - `PermissionStatus` — permission state as a stream, over
  *   `@effect/platform-browser`'s `Permissions`.
  *
@@ -29,7 +32,9 @@
  *
  * @since 0.2.0
  */
+export * as Battery from "./battery.ts";
 export * as Broadcast from "./broadcast.ts";
+export * as IdleDetection from "./idle-detection.ts";
 export { layer } from "./layer.ts";
 export * as Locks from "./locks.ts";
 export * as MediaQuery from "./media-query.ts";
