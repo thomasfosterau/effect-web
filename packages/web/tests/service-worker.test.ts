@@ -7,6 +7,7 @@
 
 import { describe, expect, it } from "vite-plus/test";
 import * as Arr from "effect/Array";
+import * as Deferred from "effect/Deferred";
 import * as Effect from "effect/Effect";
 import * as Exit from "effect/Exit";
 import * as Fiber from "effect/Fiber";
@@ -639,16 +640,19 @@ describe("messageListener", () => {
 
 describe("EventLifetime default", () => {
   it("runs background work detached and swallows its failure", async () => {
-    let ran = false;
-    const program = Effect.fn("program")(function* () {
-      const lifetime = yield* EventLifetime;
-      yield* lifetime.extend(
-        Effect.sync(() => (ran = true)).pipe(Effect.andThen(Effect.fail("boom"))),
-      );
-      return "answered";
-    });
-    expect(await Effect.runPromise(program())).toBe("answered");
-    await Effect.runPromise(Effect.sleep("5 millis"));
-    expect(ran).toBe(true);
+    // The work is detached, so the answer may come back before it runs: wait
+    // for the work itself (bounded), never for a fixed interval (#139).
+    const answered = await Effect.runPromise(
+      Effect.gen(function* () {
+        const ran = yield* Deferred.make<void>();
+        const lifetime = yield* EventLifetime;
+        yield* lifetime.extend(
+          Deferred.succeed(ran, undefined).pipe(Effect.andThen(Effect.fail("boom"))),
+        );
+        yield* Deferred.await(ran).pipe(Effect.timeout("1 second"));
+        return "answered";
+      }),
+    );
+    expect(answered).toBe("answered");
   });
 });
