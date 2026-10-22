@@ -7,7 +7,7 @@
 import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 
-const packages = ["web", "robots", "sitemap", "rss-feed", "atom-feed", "json-feed"];
+const packages = ["web", "robots", "sitemap", "rss-feed", "atom-feed", "json-feed", "uri-template"];
 const forbidden = [/["'`]effect\/(?:unstable|httpapi)(?:\/[^"'`]*)?["'`]/];
 
 const failures = [];

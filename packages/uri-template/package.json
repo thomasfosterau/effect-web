@@ -1,0 +1,56 @@
+{
+  "$schema": "https://www.schemastore.org/package",
+  "name": "@thomasfosterau/effect-uri-template",
+  "version": "0.0.0",
+  "description": "URI Templates (RFC 6570), Web Linking (RFC 8288) and well-known URIs (RFC 8615) for Effect: parse and expand templates at all four levels, parse and serialise Link headers, and build /.well-known/ URLs.",
+  "keywords": [
+    "effect",
+    "link-header",
+    "rfc6570",
+    "rfc8288",
+    "rfc8615",
+    "typescript",
+    "uri-template",
+    "well-known"
+  ],
+  "homepage": "https://github.com/thomasfosterau/effect-web#readme",
+  "bugs": {
+    "url": "https://github.com/thomasfosterau/effect-web/issues"
+  },
+  "license": "MIT",
+  "author": "Thomas Foster <me@thomasfoster.au>",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/thomasfosterau/effect-web.git",
+    "directory": "packages/uri-template"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "type": "module",
+  "sideEffects": false,
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "devDependencies": {
+    "@effect/language-service": "catalog:",
+    "@types/node": "catalog:",
+    "@vitest/coverage-istanbul": "catalog:",
+    "effect": "catalog:"
+  },
+  "peerDependencies": {
+    "effect": "catalog:peers"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}

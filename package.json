@@ -27,6 +27,7 @@
     "@thomasfosterau/effect-robots": "workspace:*",
     "@thomasfosterau/effect-rss-feed": "workspace:*",
     "@thomasfosterau/effect-sitemap": "workspace:*",
+    "@thomasfosterau/effect-uri-template": "workspace:*",
     "@thomasfosterau/effect-web": "workspace:*",
     "@types/node": "catalog:",
     "@typescript/native": "catalog:",
