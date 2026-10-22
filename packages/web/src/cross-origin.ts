@@ -67,8 +67,12 @@ export const isCrossOrigin = (origin: Option.Option<string>, expectedOrigin: str
  * `expectedOrigin` is explicit rather than derived: an `HttpServerRequest`'s
  * `url` is its path, and `HttpServerRequest.toURL` reconstructs the origin
  * from the `Host` header with an `http` default, which is not the origin a
- * browser puts in `Origin` for an HTTPS site. A Fetch-level caller passes
- * `new URL(request.url).origin` (see {@link crossOriginMutationRejectionWeb}).
+ * browser puts in `Origin` for an HTTPS site.
+ *
+ * `request` must be an `HttpServerRequest` (wrap a Fetch `Request` with
+ * `HttpServerRequest.fromWeb`): its `headers` is a plain record, and a Fetch
+ * `Request` cast to this type reads no `Origin` and passes every request. A
+ * Fetch-level caller uses {@link isCrossOriginRejectedWeb}.
  *
  * @example
  * ```ts
@@ -87,6 +91,30 @@ export const isCrossOriginRejected = (
   request: HttpServerRequest.HttpServerRequest,
   expectedOrigin: string,
 ): boolean => isCrossOrigin(Headers.get(request.headers, "origin"), expectedOrigin);
+
+/**
+ * {@link isCrossOriginRejected} over a Fetch `Request`: whether it carries an
+ * `Origin` other than `expectedOrigin` (SEC-CSRF-001), read from the Fetch
+ * `Headers`. `expectedOrigin` defaults to the request URL's own origin, which
+ * at a Fetch-level seam is the origin the browser was talking to.
+ *
+ * @example
+ * ```ts
+ * import { isCrossOriginRejectedWeb } from "@thomasfosterau/effect-web"
+ *
+ * const request = new Request("https://thomasfoster.au/uploads", { method: "POST" })
+ * request.headers.set("origin", "https://evil.example")
+ * isCrossOriginRejectedWeb(request) // true
+ * isCrossOriginRejectedWeb(request, "https://evil.example") // false
+ * ```
+ *
+ * @since 0.2.0
+ * @category adapters
+ */
+export const isCrossOriginRejectedWeb = (
+  request: Request,
+  expectedOrigin: string = new URL(request.url).origin,
+): boolean => isCrossOrigin(Option.fromNullishOr(request.headers.get("origin")), expectedOrigin);
 
 /**
  * The web front door's SEC-CSRF-001 guard for a dispatched JSON:API request
@@ -145,8 +173,7 @@ export const crossOriginMutationRejectionWeb = (
   expectedOrigin: string = new URL(request.url).origin,
 ): Option.Option<Response> => {
   if (!isMutatingMethod(request.method)) return Option.none();
-  const origin = Option.fromNullishOr(request.headers.get("origin"));
-  return isCrossOrigin(origin, expectedOrigin)
+  return isCrossOriginRejectedWeb(request, expectedOrigin)
     ? Option.some(
         updateWebHeaders(jsonApiErrorResponseWeb(CROSS_ORIGIN_REJECTED), ensureCacheControl),
       )

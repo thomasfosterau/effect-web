@@ -20,6 +20,7 @@ import {
   crossOriginMutationRejectionWeb,
   isCrossOrigin,
   isCrossOriginRejected,
+  isCrossOriginRejectedWeb,
 } from "@thomasfosterau/effect-web";
 
 const ORIGIN = "https://thomasfoster.au";
@@ -155,5 +156,28 @@ describe("isCrossOriginRejected (the centralised per-route predicate)", () => {
     ).toBe(true);
     expect(isCrossOrigin(Option.some("https://evil.example"), ORIGIN)).toBe(true);
     expect(isCrossOrigin(Option.none(), ORIGIN)).toBe(false);
+  });
+});
+
+describe("isCrossOriginRejectedWeb (the predicate over a Fetch Request)", () => {
+  it("refuses a real Fetch Request carrying a foreign Origin", () => {
+    const request = requestWithOrigin("POST", Option.some("https://evil.example"));
+    expect(request.headers).toBeInstanceOf(globalThis.Headers);
+    expect(isCrossOriginRejectedWeb(request, ORIGIN)).toBe(true);
+    expect(isCrossOriginRejectedWeb(request)).toBe(true);
+  });
+
+  it("passes an own or absent Origin, with the expected origin explicit or derived", () => {
+    expect(isCrossOriginRejectedWeb(requestWithOrigin("POST", Option.some(ORIGIN)), ORIGIN)).toBe(
+      false,
+    );
+    expect(isCrossOriginRejectedWeb(requestWithOrigin("POST", Option.some(ORIGIN)))).toBe(false);
+    expect(isCrossOriginRejectedWeb(requestWithOrigin("POST", Option.none()))).toBe(false);
+  });
+
+  it("is method-agnostic, like isCrossOriginRejected", () => {
+    expect(
+      isCrossOriginRejectedWeb(requestWithOrigin("GET", Option.some("https://evil.example"))),
+    ).toBe(true);
   });
 });
