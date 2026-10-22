@@ -24,6 +24,7 @@ import * as Schema from "effect/Schema";
 import * as SchemaGetter from "effect/SchemaGetter";
 import * as SchemaIssue from "effect/SchemaIssue";
 import { encodeReserved, encodeUnreserved } from "./internal/encoding.ts";
+import { compile, type MatchedValues } from "./internal/match.ts";
 
 /**
  * Why a template was rejected, or could not be expanded.
@@ -39,6 +40,8 @@ import { encodeReserved, encodeUnreserved } from "./internal/encoding.ts";
  *   both modifiers).
  * - `PrefixOnComposite` — at expansion: a prefix modifier on a list or an
  *   associative array, which RFC 6570 §2.4.1 does not define.
+ * - `Unmatchable` — from {@link matcher}: a template outside the subset a
+ *   URL can be matched back against without guessing.
  *
  * @since 0.1.0
  * @category errors
@@ -48,7 +51,8 @@ export type TemplateErrorReason =
   | "InvalidLiteral"
   | "ReservedOperator"
   | "InvalidVariable"
-  | "PrefixOnComposite";
+  | "PrefixOnComposite"
+  | "Unmatchable";
 
 /**
  * A template that is not RFC 6570 syntax, or could not be expanded.
@@ -64,6 +68,7 @@ export class TemplateError extends Schema.TaggedError<TemplateError>()("Template
     "ReservedOperator",
     "InvalidVariable",
     "PrefixOnComposite",
+    "Unmatchable",
   ]),
   position: Schema.Number,
   message: Schema.String,
@@ -470,3 +475,98 @@ export const UriTemplateFromString: Schema.Codec<UriTemplate, string> = Schema.S
     },
   ),
 );
+
+// ---- matching (the inverse) ----
+
+/**
+ * The variables {@link match} recovers from a URL: each one the URL
+ * defines, a string, a list of strings or a record of them. It is a
+ * {@link Variables}, so it expands straight back.
+ *
+ * @since 0.1.0
+ * @category models
+ */
+export type Matched = MatchedValues;
+
+/**
+ * A template compiled for matching URLs back to their variables; make one
+ * with {@link matcher}.
+ *
+ * @since 0.1.0
+ * @category models
+ */
+export interface Matcher {
+  readonly template: UriTemplate;
+  readonly match: (url: string) => Option.Option<Matched>;
+}
+
+/**
+ * Compiles a template for {@link match}: recovering the variables a URL was
+ * expanded from, for routing. RFC 6570 §1.4 warns that the inverse is
+ * ambiguous in general, so only an unambiguous subset compiles; anything
+ * else fails `Unmatchable` here, with the expression's position, rather
+ * than guessing at match time. A template is refused when it has:
+ *
+ * - a prefix modifier (`{var:3}`), which drops what it truncates;
+ * - several variables in one unnamed expression (`{x,y}`, `{/a,b}`),
+ *   where an undefined one would shift the rest — named ones (`;`, `?`,
+ *   `&`) are fine;
+ * - explode anywhere but `/`, `.`, `?` and `&` (`{;list*}`, `{keys*}`);
+ * - two expressions with no literal between them, when the first one's
+ *   values could contain the second one's leading character (`{x}{y}`,
+ *   `{x}{.ext}`) — `{/id}{?q}` is fine;
+ * - a `?` / `&` expression before another part, or a variable used twice.
+ *
+ * @example
+ * ```ts
+ * import * as Result from "effect/Result"
+ * import { UriTemplate } from "@thomasfosterau/effect-uri-template"
+ *
+ * const parsed = Result.getOrThrow(UriTemplate.parse("/x{a:3}"))
+ * const refused = UriTemplate.matcher(parsed)
+ * if (Result.isFailure(refused)) console.log(refused.failure.reason) // "Unmatchable"
+ * ```
+ *
+ * @since 0.1.0
+ * @category matching
+ */
+export const matcher = (template: UriTemplate): Result.Result<Matcher, TemplateError> =>
+  Result.mapBoth(compile(template.parts), {
+    onFailure: (refusal) => templateError("Unmatchable", refusal.position, refusal.detail),
+    onSuccess: (compiled) => ({ template, match: compiled.match }),
+  });
+
+/**
+ * The variables `url` was expanded from; `None` when it does not match.
+ *
+ * - Values of `U` operators are percent-decoded, and a raw `,` (which a `U`
+ *   value never contains) separates a list; `+` and `#` values are kept as
+ *   written. An exploded `/` or `.` expression, or a repeated `?` / `&`
+ *   name, gives a list.
+ * - Query variables (`?`, `&`) are read by name, in any order. An exploded
+ *   one with no parameter of its own name (`{?keys*}` → `?a=1&b=2`) takes
+ *   the parameters no other variable names, as a record; otherwise
+ *   parameters the template does not name are ignored.
+ * - An undefined variable is absent from the result.
+ *
+ * For a URL the template itself expanded, expanding the result reproduces
+ * the URL: `expand(template, match(url)) === url`.
+ *
+ * @example
+ * ```ts
+ * import * as Option from "effect/Option"
+ * import * as Result from "effect/Result"
+ * import { UriTemplate } from "@thomasfosterau/effect-uri-template"
+ *
+ * const users = Result.getOrThrow(
+ *   Result.flatMap(UriTemplate.parse("/users{/id}{?fields*,lang}"), UriTemplate.matcher),
+ * )
+ * console.log(UriTemplate.match(users, "/users/42?lang=en&fields=name&fields=email"))
+ * // { _id: "Option", _tag: "Some", value: { id: "42", fields: ["name", "email"], lang: "en" } }
+ * console.log(Option.isNone(UriTemplate.match(users, "/teams/42"))) // true
+ * ```
+ *
+ * @since 0.1.0
+ * @category matching
+ */
+export const match = (matcher: Matcher, url: string): Option.Option<Matched> => matcher.match(url);
