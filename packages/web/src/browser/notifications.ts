@@ -189,12 +189,13 @@ type Signal = Take.Take<"click" | "close", NotificationError>;
  */
 const REPLAY = 64;
 
-const unsupported: Notifications["Service"] = Notifications.of({
-  supported: false,
-  permission: Effect.succeed(Option.none()),
-  requestPermission: Effect.fail(notificationError("Unsupported", undefined)),
-  show: () => Effect.fail(notificationError("Unsupported", undefined)),
-});
+const unsupported = (): Notifications["Service"] =>
+  Notifications.of({
+    supported: false,
+    permission: Effect.succeed(Option.none()),
+    requestPermission: Effect.fail(notificationError("Unsupported", undefined)),
+    show: () => Effect.fail(notificationError("Unsupported", undefined)),
+  });
 
 /**
  * Builds the {@link Notifications} service over a `Notification`
@@ -217,7 +218,7 @@ const unsupported: Notifications["Service"] = Notifications.of({
  */
 export const make = (environment: NotificationsEnvironment): Notifications["Service"] => {
   const { Notification, userActivation } = environment;
-  if (Notification === undefined) return unsupported;
+  if (Notification === undefined) return unsupported();
   const show = (title: string, options?: NotificationOptions | undefined) =>
     Effect.acquireRelease(
       Effect.gen(function* () {
