@@ -17,7 +17,7 @@
  *   share one between layers to model several tabs.
  * - `TestNavigator`, `TestPageVisibility`, `TestMediaQuery`, `TestWakeLock`,
  *   `TestBroadcast`, `TestIdleDetection`, `TestBattery`, `TestFullscreen`,
- *   `TestScreenOrientation` — the `./browser` services.
+ *   `TestScreenOrientation`, `TestNotifications` — the `./browser` services.
  * - `TestPermissions`, `TestClipboard`, `TestGeolocation` — the
  *   `@effect/platform-browser` services.
  *
@@ -36,6 +36,7 @@ export * as TestIdleDetection from "./idle-detection.ts";
 export * as TestLocks from "./locks.ts";
 export * as TestMediaQuery from "./media-query.ts";
 export * as TestNavigator from "./navigator.ts";
+export * as TestNotifications from "./notifications.ts";
 export * as TestPageVisibility from "./page-visibility.ts";
 export * as TestPermissions from "./permissions.ts";
 export * as TestScreenOrientation from "./screen-orientation.ts";

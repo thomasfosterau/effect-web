@@ -66,3 +66,7 @@ export const ambientScreenOrientation = (): ScreenOrientation | undefined => {
   const orientation: ScreenOrientation | undefined = screen?.orientation;
   return orientation;
 };
+
+/** `globalThis.Notification`, where the context has one (a window, or a dedicated worker). */
+export const ambientNotification = (): typeof globalThis.Notification | undefined =>
+  globalThis.Notification;
