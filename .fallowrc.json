@@ -15,11 +15,13 @@
     "packages/json-feed/src/index.ts",
     "packages/uri-template/src/index.ts",
     "packages/langtag/src/index.ts",
+    "packages/langtag/src/registry/index.ts",
     "packages/*/tests/**/*.test.ts",
     "packages/*/tests/**/*.types.ts",
     "**/vite.config.ts",
     "vite.package.ts",
-    "scripts/check-dist-imports.mjs"
+    "scripts/check-dist-imports.mjs",
+    "scripts/generate-language-subtag-registry.mjs"
   ],
   "ignorePatterns": ["**/dist/**", "**/docs/**", "**/coverage/**"],
   "ignoreDependencies": [

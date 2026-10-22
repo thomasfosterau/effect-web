@@ -8,7 +8,8 @@
     // package's `dist/` first (the sibling's `dist/` it does need — the
     // `check` task's build edge). Relative to this file.
     "paths": {
-      "@thomasfosterau/effect-langtag": ["./src/index.ts"]
+      "@thomasfosterau/effect-langtag": ["./src/index.ts"],
+      "@thomasfosterau/effect-langtag/registry": ["./src/registry/index.ts"]
     }
   },
   "include": ["src", "tests"]
