@@ -4,11 +4,12 @@
 
 ## Boundary
 
-Peer: `effect`. Depends on `@thomasfosterau/effect-web` and may import from it (`.fallowrc.json` zone `sitemap` → `web`): `logErrorEvent` / `describeError` for the purge outcome. Nothing else in the workspace imports this package.
+Peer: `effect`. Depends on `@thomasfosterau/effect-web` and `@thomasfosterau/effect-json-feed` and may import from them (`.fallowrc.json` zone `sitemap` → `web`, `json-feed`): `logErrorEvent` / `describeError` for the purge outcome; the JSON Feed document, its types and its response. Nothing else in the workspace imports this package.
 
 ## Invariants
 
 - **The rendered bytes are a stable contract.** `renderSitemap` joins with `""` after the XML declaration; `jsonFeedResponse` pretty-prints with two spaces; an absent `title` / `summary` is an omitted key, never `null`. The cached copies at the edge are those bytes, so a change here is a visible change in every consumer.
+- **The JSON Feed is effect-json-feed's.** `buildJsonFeed` / `jsonFeedResponse` are an adapter: they map a `FeedEntry` (the SQL wire shape) to effect-json-feed's entry and build and serve with its functions, never a second serialiser. Every item carries `content_text` (the `summary`, else the `title`, else `""`), as JSON Feed 1.1 requires.
 - **No XML escaping on `<loc>`**: every location is the canonical origin plus a path derived from validated ids or a hand-written list. `escapeXml` exists for authored text a consumer emits; nothing here emits any.
 - **`lastmodOf` is a parse, never a clock read**; `undefined` means omit the element.
 - **`purgeCacheTags` never fails**: a rejection or a `success: false` is one error-level event (`cache-purge.failed` / `cache-purge.rejected`), and the mutation that triggered it completes.

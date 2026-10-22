@@ -214,6 +214,9 @@ importers:
 
   packages/sitemap:
     dependencies:
+      '@thomasfosterau/effect-json-feed':
+        specifier: workspace:^
+        version: link:../json-feed
       '@thomasfosterau/effect-web':
         specifier: workspace:^
         version: link:../web

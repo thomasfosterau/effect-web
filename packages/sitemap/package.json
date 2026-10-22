@@ -37,6 +37,7 @@
     "access": "public"
   },
   "dependencies": {
+    "@thomasfosterau/effect-json-feed": "workspace:^",
     "@thomasfosterau/effect-web": "workspace:^"
   },
   "devDependencies": {

@@ -111,7 +111,7 @@
       },
       {
         "from": "sitemap",
-        "allow": ["web"]
+        "allow": ["web", "json-feed"]
       },
       {
         "from": "rss-feed",
