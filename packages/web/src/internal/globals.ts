@@ -9,6 +9,8 @@
  * throw), so each read is typed `| undefined` for the caller to narrow.
  */
 import * as Predicate from "effect/Predicate";
+import type { BatteryManagerLike } from "../browser/battery.ts";
+import type { IdleDetectorLike } from "../browser/idle-detection.ts";
 
 /** `globalThis.navigator`, where the context has one. */
 export const ambientNavigator = (): Navigator | undefined => globalThis.navigator;
@@ -33,3 +35,27 @@ export const ambientBroadcastChannel = (): typeof globalThis.BroadcastChannel | 
  */
 export const ambientEventTarget = (): EventTarget | undefined =>
   Predicate.isFunction(globalThis.addEventListener) ? globalThis : undefined;
+
+/** `globalThis.IdleDetector`, where the agent has one (Chromium, in a window or a dedicated worker). */
+export const ambientIdleDetector = (): IdleDetectorLike | undefined => {
+  // The DOM lib has no `IdleDetector`; the `navigator` member only stops the
+  // annotation reading as a weak type (one with no member in common).
+  const scope: { readonly IdleDetector?: IdleDetectorLike | undefined } & Pick<
+    typeof globalThis,
+    "navigator"
+  > = globalThis;
+  return scope.IdleDetector;
+};
+
+/** `navigator.getBattery`, bound to `navigator`, where the agent has it (Chromium). */
+export const ambientGetBattery = (): (() => Promise<BatteryManagerLike>) | undefined => {
+  // The DOM lib has no `getBattery`; `userAgent` as for `ambientIdleDetector`.
+  const navigator:
+    | ({ getBattery?: (() => Promise<BatteryManagerLike>) | undefined } & Pick<
+        Navigator,
+        "userAgent"
+      >)
+    | undefined = ambientNavigator();
+  const getBattery = navigator?.getBattery;
+  return getBattery === undefined ? undefined : () => getBattery.call(navigator);
+};

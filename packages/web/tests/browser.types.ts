@@ -5,6 +5,7 @@
  * an unused-local error can never stand in for the assertion a directive
  * expects.
  */
+import type * as Duration from "effect/Duration";
 import type * as Effect from "effect/Effect";
 import type * as Fiber from "effect/Fiber";
 import * as Option from "effect/Option";
@@ -12,7 +13,9 @@ import * as Schema from "effect/Schema";
 import type * as Scope from "effect/Scope";
 import type * as Stream from "effect/Stream";
 import {
+  Battery,
   Broadcast,
+  IdleDetection,
   Locks,
   Navigator,
   PageVisibility,
@@ -59,6 +62,15 @@ export declare const open: Broadcast.Channel<{ readonly at: number }>;
 // @ts-expect-error -- not the schema's type
 export const wrong = open.publish({ at: "now" });
 
+// The idle stream carries its error and nothing else.
+export const idle = IdleDetection.watch({ threshold: "1 minute" });
+// @ts-expect-error -- a threshold is a Duration input, not any string
+export const unparsed = IdleDetection.watch({ threshold: "soon" });
+// Battery times are optional durations.
+export type DischargingTime = Option.Option.Value<
+  Effect.Success<Battery.Battery["Service"]["status"]>
+>["dischargingTime"];
+
 // Navigator readings that may be absent are Options, never `undefined`.
 export type Connection = Effect.Success<Navigator.Navigator["Service"]["connection"]>;
 
@@ -87,6 +99,15 @@ export type BrowserChecks = [
   /** _connectionIsOption */ Assert<Equals<Connection, Option.Option<Navigator.ConnectionInfo>>>,
   /** _observeReturnsTheFiber */ Assert<
     Equals<Effect.Success<typeof observed>, Fiber.Fiber<ReadonlyArray<boolean>, never>>
+  >,
+  /** _idleStreamCarriesIdleError */ Assert<
+    Equals<
+      typeof idle,
+      Stream.Stream<IdleDetection.IdleState, IdleDetection.IdleError, IdleDetection.IdleDetection>
+    >
+  >,
+  /** _batteryTimesAreOptionalDurations */ Assert<
+    Equals<DischargingTime, Option.Option<Duration.Duration>>
   >,
   /** _streamsAreServiceFree */ Assert<
     Equals<Stream.Services<Navigator.Navigator["Service"]["onLineChanges"]>, never>
