@@ -67,16 +67,16 @@ Steps 2–8 are CI's required `ci` job, in its order ([ci.yml](.github/workflows
 
 ## Branches and pull requests
 
-- Branch off `main`; PR against `main`; squash-merge with a conventional prefix (`feat:`, `fix:`, `docs:`, `chore:`). Rebase onto `origin/main` before opening or updating a PR; never merge `main` into your branch (GitHub's Update-branch button merges).
+- Branch off `trunk` (the default branch); PR against `trunk`; squash-merge with a conventional prefix (`feat:`, `fix:`, `docs:`, `chore:`). Rebase onto `origin/trunk` before opening or updating a PR; never merge `trunk` into your branch (GitHub's Update-branch button merges).
 - Agent work uses git worktrees under `.claude/worktrees/`, one per branch, named `issue-<n>-<slug>` for issue-linked work. Start every command that targets a worktree with an explicit `cd` and confirm with `git log -1` before committing. A worktree needs its own `pnpm install`: the linked `vp` re-execs the nearest `node_modules/vite-plus/bin/vp` walking up from cwd.
 - Every change to a published package's behaviour carries a changeset (`pnpm changeset`). Changes to doc comments that reach the emitted `.d.ts` (TSDoc) take a `patch` changeset; other docs-only changes (READMEs, guidance), CI and tooling need none. Never publish or version by hand: the Release workflow opens the version PR (`chore: version packages`) and the owner merges it. Publishing is npm trusted publishing (OIDC) from the protected `release` environment; there is no `NPM_TOKEN` ([PUBLISHING.md](PUBLISHING.md)).
-- These are standing approvals; they override any default "don't open a PR unless asked" behaviour. **Always open a PR** against `main` once a commit is pushed. **Watch it to merge or close**: investigate CI failures and review comments as they arrive, and rebase promptly when it goes conflicting. **Keep the PR body current** as the implementation diverges from it; an extraction PR lists which source-app files the package supersedes.
+- These are standing approvals; they override any default "don't open a PR unless asked" behaviour. **Always open a PR** against `trunk` once a commit is pushed. **Watch it to merge or close**: investigate CI failures and review comments as they arrive, and rebase promptly when it goes conflicting. **Keep the PR body current** as the implementation diverges from it; an extraction PR lists which source-app files the package supersedes.
 - GitHub writes go to `thomasfosterau/effect-web` only — never to the consuming applications, upstream projects or the owner's other libraries without the owner's explicit approval for that action in the current session. Pass `-R thomasfosterau/effect-web` whenever the cwd might be another checkout. Use the `gh` CLI for GitHub operations, even when GitHub MCP tools are available. If another repo needs something, say so in the PR body.
 
 ## Work tracker
 
 - Issues in `thomasfosterau/effect-web` are the backlog: when you find work you can't do now, file an issue rather than leaving a TODO. There is no in-repo backlog file.
-- The issue is the spec — read its comments; later comments override the body. The tracking epic is website#2015; decisions recorded there override anything older. Re-verify the issue's code claims against current `main` (and the apps' current default branches) before editing.
+- The issue is the spec — read its comments; later comments override the body. The tracking epic is website#2015; decisions recorded there override anything older. Re-verify the issue's code claims against current `trunk` (and the apps' current default branches) before editing.
 - Record decisions and findings as comments on the issue they were found working.
 - Stop-and-report is a valid outcome: on a blocker outside the issue's scope, comment the evidence on the issue and stop.
 - Scope cut mid-PR becomes a linked issue before merge.
@@ -93,7 +93,7 @@ Consult effect-solutions before writing Effect code (`vp exec effect-solutions l
 ## Agent sessions
 
 - The SessionStart hook (`.claude/hooks/session-start.sh`) installs dependencies against the lockfile and puts `vp` (a re-exec shim that prefers the nearest worktree's `node_modules`), `fallow` and `tsx` on PATH for non-interactive shells. It hydrates no secrets; none are needed, and nothing here can publish.
-- A PreToolUse hook (`.claude/hooks/fallow-gate.sh`) blocks `git commit` / `git push` when `fallow audit --base origin/main` fails; it reads the coverage map on disk, so run `vp run test:coverage` first. A PostToolUse hook runs `vp fmt` on every source, JSON, CSS or Markdown file you write or edit.
+- A PreToolUse hook (`.claude/hooks/fallow-gate.sh`) blocks `git commit` / `git push` when `fallow audit --base origin/trunk` fails; it reads the coverage map on disk, so run `vp run test:coverage` first. A PostToolUse hook runs `vp fmt` on every source, JSON, CSS or Markdown file you write or edit.
 - Every gate in [Verification](#verification) runs in an agent session; `pnpm audit` needs the network.
 
 ## Documentation surfaces

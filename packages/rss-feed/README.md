@@ -2,7 +2,7 @@
 
 An RSS 2.0 feed builder for Effect web applications: the channel and item renderer, with escaped authored text and canonical absolute URLs, and the served `HttpServerResponse`.
 
-Invariant ids in doc comments and below (`CANON-001`, `PERF-CACHE-002`) name the rule an export enforces; [`SECURITY.md`](https://github.com/thomasfosterau/effect-web/blob/main/SECURITY.md#invariant-ids) states each rule and the exports that enforce it.
+Invariant ids in doc comments and below (`CANON-001`, `PERF-CACHE-002`) name the rule an export enforces; [`SECURITY.md`](https://github.com/thomasfosterau/effect-web/blob/trunk/SECURITY.md#invariant-ids) states each rule and the exports that enforce it.
 
 ## Install
 
