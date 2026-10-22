@@ -2,13 +2,17 @@
  * Service Worker primitives on Effect: the Cache Storage API as typed
  * effects, the five standard caching strategies, a synchronous route table
  * that turns into a `fetch` listener, and `install` / `activate` / `message`
- * listeners whose work runs as an `Effect` inside `event.waitUntil`.
+ * listeners whose work runs as an `Effect` inside `event.waitUntil`, and
+ * persistent notifications: shown through the registration, with
+ * `notificationclick` / `notificationclose` listeners.
  *
- * Nothing here touches a global at import time. The two globals a worker
+ * Nothing here touches a global at import time. The globals a worker
  * talks to are context references with global defaults, so a worker needs no
  * layer and a test swaps each for a stub:
  *
  * - {@link Caches} — the `CacheStorage` (default `globalThis.caches`);
+ * - {@link Registration} — the `ServiceWorkerRegistration` notifications
+ *   are shown through (default the worker's `self.registration`);
  * - `FetchHttpClient.Fetch` from `effect/http/FetchHttpClient` — the `fetch`
  *   every network step calls (default `globalThis.fetch`), the same
  *   reference Effect's own fetch client reads. A rejected `fetch` fails
@@ -33,6 +37,7 @@ import * as Option from "effect/Option";
 import * as Predicate from "effect/Predicate";
 import * as Schema from "effect/Schema";
 import * as FetchHttpClient from "effect/http/FetchHttpClient";
+import { reasonOf } from "../internal/dom.ts";
 import { FetchFailed } from "../net/index.ts";
 
 // ---------------------------------------------------------------------------
@@ -1020,17 +1025,336 @@ export const messageListener = <
 >(
   schema: S,
   handle: (message: S["Type"], event: Event) => Effect.Effect<unknown, E, R>,
+): Effect.Effect<(event: Event) => void, never, R | S["DecodingServices"]> =>
+  decodedListener(schema, (event: Event) => event.data, "service-worker: message dropped", handle);
+
+/**
+ * An {@link extendableListener} that decodes `read(event)` with `schema`
+ * first: an undecodable payload is logged at `Warning` as `dropped` and
+ * the handler is skipped.
+ */
+const decodedListener = <
+  S extends Schema.Constraint,
+  Event extends ExtendableEventLike,
+  Payload,
+  E,
+  R,
+>(
+  schema: S,
+  read: (event: Event) => Payload,
+  dropped: string,
+  handle: (decoded: S["Type"], event: Event) => Effect.Effect<unknown, E, R>,
 ): Effect.Effect<(event: Event) => void, never, R | S["DecodingServices"]> => {
   const decode = Schema.decodeUnknownEffect(schema);
   return extendableListener((event: Event) =>
-    decode(event.data).pipe(
+    decode(read(event)).pipe(
       Effect.matchEffect({
-        onFailure: (error) => Effect.logWarning("service-worker: message dropped", error),
-        onSuccess: (message) => handle(message, event),
+        onFailure: (error) => Effect.logWarning(dropped, error),
+        onSuccess: (decoded) => handle(decoded, event),
       }),
     ),
   );
 };
+
+// ---------------------------------------------------------------------------
+// Notifications
+// ---------------------------------------------------------------------------
+
+/**
+ * The part of a persistent `Notification` (one shown through a
+ * registration) this entry reads: what it was shown with, and `close`.
+ *
+ * @since 0.2.0
+ * @category models
+ */
+export interface PersistentNotificationLike {
+  readonly title: string;
+  readonly tag: string;
+  readonly body: string;
+  readonly data: unknown;
+  close(): void;
+}
+
+/**
+ * The part of a `ServiceWorkerRegistration` this entry calls. In a worker
+ * it is `self.registration`; in a page, `await navigator.serviceWorker.ready`.
+ *
+ * @since 0.2.0
+ * @category models
+ */
+export interface ServiceWorkerRegistrationLike {
+  showNotification(title: string, options?: NotificationOptions): Promise<void>;
+  getNotifications(
+    filter?: GetNotificationOptions,
+  ): Promise<ReadonlyArray<PersistentNotificationLike>>;
+}
+
+/**
+ * The part of a `NotificationEvent` (`notificationclick`,
+ * `notificationclose`) this entry uses: the notification, and which action
+ * button was pressed (`""` for the notification itself).
+ *
+ * @since 0.2.0
+ * @category models
+ */
+export interface NotificationEventLike extends ExtendableEventLike {
+  readonly notification: PersistentNotificationLike;
+  readonly action?: string | undefined;
+}
+
+/**
+ * Why a registration notification call failed.
+ *
+ * - `Unsupported` — no registration to call (not a service worker, and
+ *   none provided).
+ * - `NotAllowed` — refused with `NotAllowedError` / `SecurityError`.
+ * - `InvalidData` — refused with a `TypeError` or `DataCloneError`: invalid
+ *   options, or `data` that cannot be structured-cloned. Chromium also
+ *   rejects with a `TypeError` when the origin has no notification
+ *   permission, which reads as this too; check the permission first.
+ * - `Failed` — any other rejection; `cause` carries it.
+ *
+ * @since 0.2.0
+ * @category errors
+ */
+export type ShowNotificationErrorReason = "Unsupported" | "NotAllowed" | "InvalidData" | "Failed";
+
+/**
+ * A registration notification call that failed: `operation` names it.
+ * Distinct from `./browser`'s `NotificationError` (a page's own
+ * notifications), so a `catchTag` for one never swallows the other.
+ *
+ * @since 0.2.0
+ * @category errors
+ */
+export class ShowNotificationError extends Schema.TaggedError<ShowNotificationError>()(
+  "ShowNotificationError",
+  {
+    operation: Schema.Literals(["show", "get"]),
+    reason: Schema.Literals(["Unsupported", "NotAllowed", "InvalidData", "Failed"]),
+    message: Schema.String,
+    cause: Schema.Unknown,
+  },
+) {}
+
+const NOTIFICATION_REJECTIONS = {
+  NotAllowedError: "NotAllowed",
+  SecurityError: "NotAllowed",
+  TypeError: "InvalidData",
+  DataCloneError: "InvalidData",
+} satisfies Readonly<Record<string, ShowNotificationErrorReason>>;
+
+const notificationError = (
+  operation: "show" | "get",
+  reason: ShowNotificationErrorReason,
+  cause: unknown,
+) =>
+  new ShowNotificationError({
+    operation,
+    reason,
+    cause,
+    message: `service-worker: ${operation} notification: ${reason}`,
+  });
+
+/** The worker's own registration, read structurally: the `dom` lib has no `registration` global. */
+const ambientRegistration = (): ServiceWorkerRegistrationLike | undefined => {
+  // `caches` only keeps the annotation from reading as a weak type.
+  const scope: { readonly registration?: ServiceWorkerRegistrationLike | undefined } & Pick<
+    typeof globalThis,
+    "caches"
+  > = globalThis;
+  return scope.registration;
+};
+
+/**
+ * The `ServiceWorkerRegistration` notifications are shown through. Defaults
+ * to the worker's `self.registration`, read on first use, never at import;
+ * `undefined` (a page, a test) fails each call `Unsupported`. A page
+ * provides `await navigator.serviceWorker.ready`, which is how it shows a
+ * notification where the `Notification` constructor is refused (Chrome on
+ * Android).
+ *
+ * @example
+ * ```ts
+ * import * as Effect from "effect/Effect"
+ * import { Registration, showNotification } from "@thomasfosterau/effect-web/service-worker"
+ *
+ * const shown: Array<string> = []
+ * const registration = {
+ *   showNotification: async (title: string) => { shown.push(title) },
+ *   getNotifications: async () => [],
+ * }
+ * await Effect.runPromise(
+ *   showNotification("Back online").pipe(Effect.provideService(Registration, registration)),
+ * )
+ * shown // ["Back online"]
+ * ```
+ *
+ * @since 0.2.0
+ * @category context
+ */
+export const Registration: Context.Reference<ServiceWorkerRegistrationLike | undefined> =
+  /*#__PURE__*/ Context.Reference("@thomasfosterau/effect-web/service-worker/Registration", {
+    defaultValue: ambientRegistration,
+  });
+
+const withRegistration = <A>(
+  operation: "show" | "get",
+  call: (registration: ServiceWorkerRegistrationLike) => Promise<A>,
+): Effect.Effect<A, ShowNotificationError> =>
+  Registration.use((registration) =>
+    registration === undefined
+      ? Effect.fail(notificationError(operation, "Unsupported", undefined))
+      : Effect.tryPromise({
+          try: () => call(registration),
+          catch: (cause) =>
+            notificationError(operation, reasonOf(cause, NOTIFICATION_REJECTIONS, "Failed"), cause),
+        }),
+  );
+
+/**
+ * Shows a persistent notification through the {@link Registration}. It
+ * outlives the page and the worker's current event; its clicks and closes
+ * arrive as `notificationclick` / `notificationclose` events in the worker
+ * (see {@link notificationClickListener}). Inside a listener built here,
+ * keep the worker alive until it is shown by yielding it from the handler.
+ *
+ * @example
+ * ```ts
+ * import * as Effect from "effect/Effect"
+ * import { Registration, showNotification } from "@thomasfosterau/effect-web/service-worker"
+ *
+ * const program = Effect.flip(showNotification("x").pipe(Effect.provideService(Registration, undefined)))
+ * Effect.runPromise(program).then((error) => console.log(error.reason)) // "Unsupported"
+ * ```
+ *
+ * @since 0.2.0
+ * @category notifications
+ */
+export const showNotification = (
+  title: string,
+  options?: NotificationOptions | undefined,
+): Effect.Effect<void, ShowNotificationError> =>
+  withRegistration("show", (registration) => registration.showNotification(title, options));
+
+/**
+ * The registration's notifications still showing, optionally only those
+ * with `tag` — to close them, or to fold a new message into one already
+ * on screen.
+ *
+ * @example
+ * ```ts
+ * import * as Effect from "effect/Effect"
+ * import { getNotifications, Registration } from "@thomasfosterau/effect-web/service-worker"
+ *
+ * const registration = {
+ *   showNotification: async () => {},
+ *   getNotifications: async () => [{ title: "Hi", tag: "chat", body: "", data: null, close: () => {} }],
+ * }
+ * const titles = await Effect.runPromise(
+ *   getNotifications({ tag: "chat" }).pipe(
+ *     Effect.map((shown) => shown.map((notification) => notification.title)),
+ *     Effect.provideService(Registration, registration),
+ *   ),
+ * )
+ * titles // ["Hi"]
+ * ```
+ *
+ * @since 0.2.0
+ * @category notifications
+ */
+export const getNotifications = (
+  filter?: { readonly tag?: string | undefined } | undefined,
+): Effect.Effect<ReadonlyArray<PersistentNotificationLike>, ShowNotificationError> =>
+  withRegistration("get", (registration) =>
+    registration.getNotifications(filter?.tag === undefined ? undefined : { tag: filter.tag }),
+  );
+
+const notificationListener =
+  (kind: string) =>
+  <S extends Schema.Constraint, Event extends NotificationEventLike, E, R>(
+    schema: S,
+    handle: (data: S["Type"], event: Event) => Effect.Effect<unknown, E, R>,
+  ): Effect.Effect<(event: Event) => void, never, R | S["DecodingServices"]> =>
+    decodedListener(
+      schema,
+      (event: Event) => event.notification.data,
+      `service-worker: ${kind} dropped`,
+      handle,
+    );
+
+/**
+ * Turns `handle` into a `notificationclick` listener that decodes the
+ * notification's `data` with `schema` first (it is whatever was passed to
+ * {@link showNotification}, structured-cloned). A notification whose data
+ * fails to decode is logged at `Warning` and dropped; a decoded one runs
+ * `handle` inside `waitUntil`, as {@link extendableListener} does — the
+ * place to focus or open a window. Pass `Schema.Unknown` to skip decoding.
+ *
+ * @example
+ * ```ts
+ * import * as Effect from "effect/Effect"
+ * import * as Schema from "effect/Schema"
+ * import { notificationClickListener } from "@thomasfosterau/effect-web/service-worker"
+ *
+ * const Chat = Schema.Struct({ room: Schema.String })
+ * const opened: Array<string> = []
+ *
+ * // In a worker: `self.addEventListener("notificationclick", onClick)`, and
+ * // `handle` would call `clients.openWindow`.
+ * const onClick = Effect.runSync(
+ *   notificationClickListener(Chat, (data, event) =>
+ *     Effect.sync(() => {
+ *       event.notification.close()
+ *       opened.push(data.room)
+ *     }),
+ *   ),
+ * )
+ *
+ * const pending: Array<Promise<unknown>> = []
+ * onClick({
+ *   notification: { title: "New message", tag: "", body: "", data: { room: "general" }, close: () => {} },
+ *   action: "",
+ *   waitUntil: (promise) => { pending.push(promise) },
+ * })
+ * await Promise.all(pending)
+ * opened // ["general"]
+ * ```
+ *
+ * @since 0.2.0
+ * @category listeners
+ */
+export const notificationClickListener = notificationListener("notificationclick");
+
+/**
+ * Turns `handle` into a `notificationclose` listener (the user dismissed a
+ * notification), decoding its `data` with `schema` as
+ * {@link notificationClickListener} does.
+ *
+ * @example
+ * ```ts
+ * import * as Effect from "effect/Effect"
+ * import * as Schema from "effect/Schema"
+ * import { notificationCloseListener } from "@thomasfosterau/effect-web/service-worker"
+ *
+ * const dismissed: Array<unknown> = []
+ * const onClose = Effect.runSync(
+ *   notificationCloseListener(Schema.Unknown, (data) => Effect.sync(() => dismissed.push(data))),
+ * )
+ *
+ * const pending: Array<Promise<unknown>> = []
+ * onClose({
+ *   notification: { title: "Reminder", tag: "", body: "", data: 7, close: () => {} },
+ *   waitUntil: (promise) => { pending.push(promise) },
+ * })
+ * await Promise.all(pending)
+ * dismissed // [7]
+ * ```
+ *
+ * @since 0.2.0
+ * @category listeners
+ */
+export const notificationCloseListener = notificationListener("notificationclose");
 
 // ---------------------------------------------------------------------------
 // In-memory CacheStorage
