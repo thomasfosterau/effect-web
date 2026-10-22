@@ -10,7 +10,7 @@
  * production) — set it via `Headers#set` on the already-constructed request
  * instead, which the polyfill does not filter.
  */
-import { describe, expect, it } from "vite-plus/test";
+import { assert, describe, expect, it } from "vite-plus/test";
 import * as Option from "effect/Option";
 import * as Headers from "effect/http/Headers";
 import * as HttpServerRequest from "effect/http/HttpServerRequest";
@@ -86,8 +86,8 @@ describe("crossOriginMutationRejection (HttpServerRequest)", () => {
 
     const rejection = crossOriginMutationRejection(request, ORIGIN);
 
-    expect(Option.isSome(rejection)).toBe(true);
-    const response = Option.getOrThrow(rejection);
+    assert(Option.isSome(rejection));
+    const response = rejection.value;
     expect(response.status).toBe(403);
     expect(Headers.get(response.headers, "cache-control")).toStrictEqual(
       Option.some("private, no-store"),

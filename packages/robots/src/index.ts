@@ -247,7 +247,7 @@ const groupLines = (lines: ReadonlyArray<Line>): RobotsTxt => {
     crawlDelay: undefined,
     hasDirectives: false,
   };
-  for (const directive of Arr.getSomes(lines)) applyDirective(state, directive);
+  Arr.forEach(Arr.getSomes(lines), (directive) => applyDirective(state, directive));
   finishGroup(state);
   return new RobotsTxt({ groups: state.groups, sitemaps: state.sitemaps });
 };

@@ -2,12 +2,6 @@
  * Unit tests for `./testing`'s `observe`.
  */
 
-/*
- * A vitest test body IS the runtime boundary — it is the entrypoint that runs
- * the effect under test, and `effect-run-in-body` has no entrypoint detection.
- */
-/* oxlint-disable effect/effect-run-in-body */
-
 import { describe, expect, it } from "vite-plus/test";
 import * as Effect from "effect/Effect";
 import * as Fiber from "effect/Fiber";

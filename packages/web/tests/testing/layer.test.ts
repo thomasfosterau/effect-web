@@ -3,12 +3,6 @@
  * under Node, where most APIs are missing) and `./testing`'s `layer`.
  */
 
-/*
- * A vitest test body IS the runtime boundary — it is the entrypoint that runs
- * the effect under test, and `effect-run-in-body` has no entrypoint detection.
- */
-/* oxlint-disable effect/effect-run-in-body */
-
 import { describe, expect, it } from "vite-plus/test";
 import * as Clipboard from "@effect/platform-browser/Clipboard";
 import * as Geolocation from "@effect/platform-browser/Geolocation";

@@ -57,8 +57,7 @@ export const packageConfig = ({ url, name, entries }: PackageConfigOptions) => {
         check: {
           command: "tsc -p tsconfig.json && tsc -p tsconfig.test.json",
           dependsOn: [siblingBuild],
-          input: cacheInputs,
-          output: [],
+          cache: { input: cacheInputs, output: [] },
         },
         // The published artifact: one ESM bundle + declaration file per entry
         // point (`vp pack` → tsdown, `platform: neutral`). `sideEffects:
@@ -66,22 +65,21 @@ export const packageConfig = ({ url, name, entries }: PackageConfigOptions) => {
         build: {
           command: "vp pack",
           dependsOn: [siblingBuild],
-          input: cacheInputs,
-          output: ["dist/**"],
+          cache: { input: cacheInputs, output: ["dist/**"] },
         },
         "test:unit": {
           command: "vp test run tests",
           dependsOn: [siblingBuild],
-          env: ["VITEST_MAX_WORKERS", "NODE_OPTIONS"],
-          input: cacheInputs,
-          output: [],
+          cache: { env: ["VITEST_MAX_WORKERS", "NODE_OPTIONS"], input: cacheInputs, output: [] },
         },
         "test:coverage": {
           command: "vp test run tests --coverage",
           dependsOn: [siblingBuild],
-          env: ["VITEST_MAX_WORKERS", "NODE_OPTIONS"],
-          input: cacheInputs,
-          output: ["coverage/**"],
+          cache: {
+            env: ["VITEST_MAX_WORKERS", "NODE_OPTIONS"],
+            input: cacheInputs,
+            output: ["coverage/**"],
+          },
         },
         // Compiles AND RUNS every JSDoc `@example` (see docgen.json). Examples
         // import the package by name exactly as a consumer would, which
@@ -89,8 +87,7 @@ export const packageConfig = ({ url, name, entries }: PackageConfigOptions) => {
         docgen: {
           command: "docgen",
           dependsOn: ["build"],
-          input: cacheInputs,
-          output: ["docs/**"],
+          cache: { input: cacheInputs, output: ["docs/**"] },
         },
       },
     },

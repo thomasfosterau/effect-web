@@ -10,6 +10,7 @@
  * fetches), and the Markdown segments are a fixed fixture list.
  */
 import { describe, expect, it } from "vite-plus/test";
+import * as Arr from "effect/Array";
 import * as Option from "effect/Option";
 import * as HttpServerRequest from "effect/http/HttpServerRequest";
 import { ApiError } from "@thomasfosterau/effect-jsonapi";
@@ -296,8 +297,13 @@ describe("negotiateRepresentation — writes (Content-Type)", () => {
 
 describe("isMutatingMethod", () => {
   it("classifies mutating methods", () => {
-    for (const m of ["POST", "put", "Patch", "DELETE"]) expect(isMutatingMethod(m)).toBe(true);
-    for (const m of ["GET", "HEAD", "OPTIONS"]) expect(isMutatingMethod(m)).toBe(false);
+    expect(Arr.map(["POST", "put", "Patch", "DELETE"], isMutatingMethod)).toEqual([
+      true,
+      true,
+      true,
+      true,
+    ]);
+    expect(Arr.map(["GET", "HEAD", "OPTIONS"], isMutatingMethod)).toEqual([false, false, false]);
   });
 });
 
@@ -381,7 +387,9 @@ describe("Markdown negotiation (DISC-009)", () => {
     expectHtmlFallthrough(html);
     expectMarkdown(md);
     expectDispatch(api);
-    expect(new Set([html.representation, md.representation, api.representation]).size).toBe(3);
+    expect(Arr.dedupe([html.representation, md.representation, api.representation])).toHaveLength(
+      3,
+    );
   });
 
   it("falls through to HTML for a browser Accept (html outranks markdown)", () => {

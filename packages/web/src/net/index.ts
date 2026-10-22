@@ -241,7 +241,11 @@ export const checkUrl = (url: string): Result.Result<URL, UnsafeUrl> => {
  * @category validation
  */
 export const assertAllowedUrl = (url: string): URL =>
-  Result.getOrThrowWith(checkUrl(url), (error) => new Error(error.message, { cause: error }));
+  Result.getOrThrowWith(
+    checkUrl(url),
+    // oxlint-disable-next-line effect/avoid-untagged-errors -- the plain-`Error` form IS this export's contract: callers outside Effect catch an `Error` whose message they pin, with the tagged `UnsafeUrl` as its `cause`.
+    (error) => new Error(error.message, { cause: error }),
+  );
 
 /**
  * Why a redirect chain was refused.
@@ -442,9 +446,11 @@ export const fetchFollowingRedirects = (
   maxHops: number = MAX_REDIRECT_HOPS,
   fetchImpl?: typeof globalThis.fetch,
 ): Promise<FollowedResponse> =>
+  // oxlint-disable-next-line effect/effect-run-in-body -- boundary: the plain-`Promise` form of `followRedirects`, for callers with no Effect runtime to run it inside.
   Effect.runPromise(
     followRedirects(url, init, { maxHops, fetch: fetchImpl }).pipe(
       Effect.catchTag("FetchFailed", (error) => Effect.die(error.cause)),
+      // oxlint-disable-next-line effect/avoid-untagged-errors -- the plain-`Error` rejection IS the contract: its message is pinned by callers' tests, the tagged failure rides as its `cause`.
       Effect.catch((error) => Effect.die(new Error(error.message, { cause: error }))),
     ),
   );

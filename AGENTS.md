@@ -17,7 +17,7 @@ A new package adds a row here and in the root `README.md`, its own `CLAUDE.md`, 
 
 ## Common pitfalls
 
-- **Never edit a version in a `package.json`.** Versions live in the `pnpm-workspace.yaml` catalog (`catalogMode: strict` rejects anything else). After editing it, run `pnpm install` and commit `pnpm-lock.yaml`, or every CI job fails with `ERR_PNPM_LOCKFILE_CONFIG_MISMATCH`. `@effect/tsgo`, `@typescript/native` and `vite-plus` move together (the tsgo patch hard-errors at install on an unsupported `tsc` or `oxlint`); read their catalog comments first.
+- **Never edit a version in a `package.json`.** Versions live in the `pnpm-workspace.yaml` catalog (`catalogMode: strict` rejects anything else). After editing it, run `pnpm install` and commit `pnpm-lock.yaml`, or every CI job fails with `ERR_PNPM_LOCKFILE_CONFIG_MISMATCH`. `@effect/tsgo`, `@typescript/native` and `vite-plus` move together (the tsgo patch hard-errors at install on an unsupported `tsc` or `oxlint`); read their catalog comments first. Dependabot's `toolchain` group bumps them as one PR, but cannot pick the `@effect/tsgo` release that supports a new vite-plus's oxlint: when that PR goes red at install, move the `@effect/tsgo` pin by hand on its branch.
 - **`dist/` is the product.** Each package is a `vp pack` (tsdown) library with one bundle per entry point; `exports` points at `dist/`, so a sibling package consumes it the way a consumer does and its `check` / `test:unit` / `docgen` tasks take a `{ task: 'build', from: 'dependencies' }` edge.
 - **`"sideEffects": false` is a claim about `dist/`, and it is load-bearing.** Every emitted `.js` must be pure declarations: no top-level statements, no top-level `await`, no bare imports. That is what lets a consumer's bundler drop what it does not use.
 - **`vp run docgen` executes your examples.** `@effect/docgen` compiles every JSDoc `@example` as a program and runs it (docgen 4 runs examples only under `"runExamples": true` in each `packages/*/docgen.json`; it defaults to type-checking alone), importing the package by name through `dist/`. An example must be complete (import everything it uses), must not use `declare const` (no runtime value — the failure is at execution and easy to misread), and must not throw.
@@ -67,16 +67,16 @@ Steps 2–8 are CI's required `ci` job, in its order ([ci.yml](.github/workflows
 
 ## Branches and pull requests
 
-- Branch off `main`; PR against `main`; squash-merge with a conventional prefix (`feat:`, `fix:`, `docs:`, `chore:`). Rebase onto `origin/main` before opening or updating a PR; never merge `main` into your branch (GitHub's Update-branch button merges).
+- Branch off `trunk` (the default branch); PR against `trunk`; squash-merge with a conventional prefix (`feat:`, `fix:`, `docs:`, `chore:`). Rebase onto `origin/trunk` before opening or updating a PR; never merge `trunk` into your branch (GitHub's Update-branch button merges).
 - Agent work uses git worktrees under `.claude/worktrees/`, one per branch, named `issue-<n>-<slug>` for issue-linked work. Start every command that targets a worktree with an explicit `cd` and confirm with `git log -1` before committing. A worktree needs its own `pnpm install`: the linked `vp` re-execs the nearest `node_modules/vite-plus/bin/vp` walking up from cwd.
 - Every change to a published package's behaviour carries a changeset (`pnpm changeset`). Changes to doc comments that reach the emitted `.d.ts` (TSDoc) take a `patch` changeset; other docs-only changes (READMEs, guidance), CI and tooling need none. Never publish or version by hand: the Release workflow opens the version PR (`chore: version packages`) and the owner merges it. Publishing is npm trusted publishing (OIDC) from the protected `release` environment; there is no `NPM_TOKEN` ([PUBLISHING.md](PUBLISHING.md)).
-- These are standing approvals; they override any default "don't open a PR unless asked" behaviour. **Always open a PR** against `main` once a commit is pushed. **Watch it to merge or close**: investigate CI failures and review comments as they arrive, and rebase promptly when it goes conflicting. **Keep the PR body current** as the implementation diverges from it; an extraction PR lists which source-app files the package supersedes.
+- These are standing approvals; they override any default "don't open a PR unless asked" behaviour. **Always open a PR** against `trunk` once a commit is pushed. **Watch it to merge or close**: investigate CI failures and review comments as they arrive, and rebase promptly when it goes conflicting. **Keep the PR body current** as the implementation diverges from it; an extraction PR lists which source-app files the package supersedes.
 - GitHub writes go to `thomasfosterau/effect-web` only — never to the consuming applications, upstream projects or the owner's other libraries without the owner's explicit approval for that action in the current session. Pass `-R thomasfosterau/effect-web` whenever the cwd might be another checkout. Use the `gh` CLI for GitHub operations, even when GitHub MCP tools are available. If another repo needs something, say so in the PR body.
 
 ## Work tracker
 
 - Issues in `thomasfosterau/effect-web` are the backlog: when you find work you can't do now, file an issue rather than leaving a TODO. There is no in-repo backlog file.
-- The issue is the spec — read its comments; later comments override the body. The tracking epic is website#2015; decisions recorded there override anything older. Re-verify the issue's code claims against current `main` (and the apps' current default branches) before editing.
+- The issue is the spec — read its comments; later comments override the body. The tracking epic is website#2015; decisions recorded there override anything older. Re-verify the issue's code claims against current `trunk` (and the apps' current default branches) before editing.
 - Record decisions and findings as comments on the issue they were found working.
 - Stop-and-report is a valid outcome: on a blocker outside the issue's scope, comment the evidence on the issue and stop.
 - Scope cut mid-PR becomes a linked issue before merge.
@@ -84,7 +84,7 @@ Steps 2–8 are CI's required `ci` job, in its order ([ci.yml](.github/workflows
 
 ## Effect
 
-Consult effect-solutions before writing Effect code (`vp exec effect-solutions list`, then `vp exec effect-solutions show <topic>…`: error-handling, basics, data-modeling, services-and-layers); never guess at an Effect pattern. If it isn't enough, read `node_modules/effect/dist/*.d.ts`.
+Read the installed package before writing Effect code: `node_modules/effect/AGENTS.md` and `node_modules/effect/ai-docs/` (the pinned version ships both), then `node_modules/effect/dist/*.d.ts` and `node_modules/effect/src` for the exact API. Never guess at an Effect API or pattern.
 
 - The pinned version is the `effect` entry in `pnpm-workspace.yaml`'s catalog; the published peer floor is under `catalogs.peers`. Raising the floor is a breaking change for every published package.
 - Tagged errors are `Schema.TaggedError<Self>()(tag, fields)` classes (the rc spelling; `Schema.TaggedErrorClass` was the beta-line name).
@@ -93,7 +93,7 @@ Consult effect-solutions before writing Effect code (`vp exec effect-solutions l
 ## Agent sessions
 
 - The SessionStart hook (`.claude/hooks/session-start.sh`) installs dependencies against the lockfile and puts `vp` (a re-exec shim that prefers the nearest worktree's `node_modules`), `fallow` and `tsx` on PATH for non-interactive shells. It hydrates no secrets; none are needed, and nothing here can publish.
-- A PreToolUse hook (`.claude/hooks/fallow-gate.sh`) blocks `git commit` / `git push` when `fallow audit --base origin/main` fails; it reads the coverage map on disk, so run `vp run test:coverage` first. A PostToolUse hook runs `vp fmt` on every source, JSON, CSS or Markdown file you write or edit.
+- A PreToolUse hook (`.claude/hooks/fallow-gate.sh`) blocks `git commit` / `git push` when `fallow audit --base origin/trunk` fails; it reads the coverage map on disk, so run `vp run test:coverage` first. A PostToolUse hook runs `vp fmt` on every source, JSON, CSS or Markdown file you write or edit.
 - Every gate in [Verification](#verification) runs in an agent session; `pnpm audit` needs the network.
 
 ## Documentation surfaces

@@ -3,9 +3,8 @@
  * parameter and the log lines read off Effect's logger.
  */
 
-/* oxlint-disable effect/effect-run-in-body */
-
 import { describe, expect, it, vi } from "vite-plus/test";
+import * as Arr from "effect/Array";
 import * as Effect from "effect/Effect";
 import * as Logger from "effect/Logger";
 import * as References from "effect/References";
@@ -47,15 +46,15 @@ const runLogging = async <A>(effect: Effect.Effect<A>) => {
 
 describe("makePurgeTagsForResourceType", () => {
   it("tags a sitemap-eligible type with sitemap + feed", () => {
-    for (const type of ["posts", "notes", "people", "projects"]) {
-      expect(purgeTagsForResourceType(type)).toEqual([SITEMAP_CACHE_TAG, FEED_CACHE_TAG]);
-    }
+    expect(Arr.map(["posts", "notes", "people", "projects"], purgeTagsForResourceType)).toEqual(
+      Arr.replicate([SITEMAP_CACHE_TAG, FEED_CACHE_TAG], 4),
+    );
   });
 
   it("returns no tags for a resource type outside both surfaces", () => {
-    for (const type of ["comments", "session", "", "not-a-real-type"]) {
-      expect(purgeTagsForResourceType(type)).toEqual([]);
-    }
+    expect(
+      Arr.map(["comments", "session", "", "not-a-real-type"], purgeTagsForResourceType),
+    ).toEqual([[], [], [], []]);
   });
 
   it("takes a custom tag list", () => {

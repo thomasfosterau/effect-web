@@ -19,7 +19,7 @@ describe("resolveClientIp", () => {
   it("chooses None when getClientAddress throws (platform can't determine an address)", () => {
     expect(
       resolveClientIp(() => {
-        throw new Error("no address");
+        throw new TypeError("no address");
       }),
     ).toStrictEqual(Option.none());
   });

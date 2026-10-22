@@ -3,8 +3,6 @@
  * stream form, the index, and `lastmodOf`.
  */
 
-/* oxlint-disable effect/effect-run-in-body */
-
 import { describe, expect, it } from "vite-plus/test";
 import * as Effect from "effect/Effect";
 import * as Stream from "effect/Stream";

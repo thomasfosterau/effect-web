@@ -29,7 +29,6 @@ import * as Arr from "effect/Array";
 import * as Context from "effect/Context";
 import type * as Duration from "effect/Duration";
 import * as Effect from "effect/Effect";
-import * as Fiber from "effect/Fiber";
 import * as Option from "effect/Option";
 import * as Predicate from "effect/Predicate";
 import * as Schema from "effect/Schema";
@@ -191,7 +190,13 @@ const detached: EventLifetimeService = {
 const eventLifetime = (event: ExtendableEventLike): EventLifetimeService => ({
   extend: (effect) =>
     Effect.flatMap(Effect.forkDetach(logBackgroundFailure(effect)), (fiber) =>
-      Effect.sync(() => event.waitUntil(Effect.runPromise(Fiber.await(fiber)))),
+      Effect.sync(() =>
+        event.waitUntil(
+          new Promise<void>((resolve) => {
+            fiber.addObserver(() => resolve());
+          }),
+        ),
+      ),
     ),
 });
 
@@ -1046,13 +1051,31 @@ const toRequest = (request: RequestInfo | URL): Request =>
 const matchable = (request: Request, options: CacheQueryOptions | undefined): boolean =>
   options?.ignoreMethod === true || request.method === "GET" || request.method === "HEAD";
 
+/**
+ * Replaces the entry `name` names in place, or appends one: the insertion
+ * order a `Map` keeps, which `match` (first hit) and `keys` expose.
+ */
+const upsert = <A>(
+  entries: ReadonlyArray<readonly [string, A]>,
+  name: string,
+  value: A,
+): ReadonlyArray<readonly [string, A]> =>
+  Arr.some(entries, ([key]) => key === name)
+    ? Arr.map(entries, (entry) => (entry[0] === name ? ([name, value] as const) : entry))
+    : Arr.append(entries, [name, value] as const);
+
+/** Runs `f` over `items` one after another, as an awaited `for … of` would. */
+const sequentially = <A>(items: ReadonlyArray<A>, f: (item: A) => Promise<void>): Promise<void> =>
+  Arr.reduce(items, Promise.resolve(), (previous, item) => previous.then(() => f(item)));
+
 const memoryCache = (fetchImpl: typeof globalThis.fetch): Cache => {
-  const entries = new Map<string, readonly [Request, Response]>();
+  // Keyed by request URL, in insertion order.
+  let entries: ReadonlyArray<readonly [string, readonly [Request, Response]]> = [];
   const find = (request: RequestInfo | URL, options: CacheQueryOptions | undefined) => {
     const wanted = toRequest(request);
     if (!matchable(wanted, options)) return [];
     const key = cacheKey(wanted, options);
-    return [...entries.entries()].filter(([, [stored]]) => cacheKey(stored, options) === key);
+    return entries.filter(([, [stored]]) => cacheKey(stored, options) === key);
   };
   const put = async (request: RequestInfo | URL, response: Response): Promise<void> => {
     const stored = toRequest(request);
@@ -1062,42 +1085,42 @@ const memoryCache = (fetchImpl: typeof globalThis.fetch): Cache => {
     if (response.bodyUsed) throw new TypeError("Cache.put: body already used");
     // Buffer the body so every match can hand out an unread clone.
     const body = await response.arrayBuffer();
-    entries.set(stored.url, [
+    entries = upsert(entries, stored.url, [
       stored,
       new Response(body, {
         status: response.status,
         statusText: response.statusText,
         headers: response.headers,
       }),
-    ]);
+    ] as const);
   };
   const addAll = async (requests: Iterable<RequestInfo | URL>): Promise<void> => {
     const fetched = await Promise.all(
-      [...requests].map(async (request) => {
+      Arr.map(Arr.fromIterable(requests), async (request) => {
         const response = await fetchImpl(request);
         if (!response.ok) throw new TypeError(`Cache.addAll: status ${response.status}`);
         return [request, response] as const;
       }),
     );
-    for (const [request, response] of fetched) await put(request, response);
+    await sequentially(fetched, ([request, response]) => put(request, response));
   };
   return {
     match: async (request, options) => find(request, options)[0]?.[1][1].clone(),
     matchAll: async (request, options) =>
       request === undefined
-        ? [...entries.values()].map(([, response]) => response.clone())
+        ? entries.map(([, [, response]]) => response.clone())
         : find(request, options).map(([, [, response]]) => response.clone()),
     put,
     add: (request) => addAll([request]),
     addAll,
     delete: async (request, options) => {
       const found = find(request, options);
-      for (const [key] of found) entries.delete(key);
+      entries = entries.filter((entry) => !Arr.contains(found, entry));
       return Arr.isReadonlyArrayNonEmpty(found);
     },
     keys: async (request, options) =>
       request === undefined
-        ? [...entries.values()].map(([stored]) => stored)
+        ? entries.map(([, [stored]]) => stored)
         : find(request, options).map(([, [stored]]) => stored),
   };
 };
@@ -1136,26 +1159,44 @@ export interface MemoryCacheStorageOptions {
  */
 export const memoryCacheStorage = (options: MemoryCacheStorageOptions = {}): CacheStorage => {
   const fetchImpl = options.fetch ?? globalThis.fetch;
-  const caches = new Map<string, Cache>();
-  const open = async (name: string): Promise<Cache> => {
-    const existing = caches.get(name);
-    if (existing !== undefined) return existing;
-    const created = memoryCache(fetchImpl);
-    caches.set(name, created);
-    return created;
-  };
+  // Keyed by cache name, in creation order (the order `keys` reports).
+  let caches: ReadonlyArray<readonly [string, Cache]> = [];
+  const lookup = (name: string): Option.Option<Cache> =>
+    Option.map(
+      Arr.findFirst(caches, ([key]) => key === name),
+      ([, cache]) => cache,
+    );
+  const open = async (name: string): Promise<Cache> =>
+    Option.getOrElse(lookup(name), () => {
+      const created = memoryCache(fetchImpl);
+      caches = upsert(caches, name, created);
+      return created;
+    });
+  const miss: ReturnType<CacheStorage["match"]> = Promise.resolve(undefined);
   return {
     open,
-    has: async (name) => caches.has(name),
-    delete: async (name) => caches.delete(name),
-    keys: async () => [...caches.keys()],
-    match: async (request, options) => {
-      const names = options?.cacheName === undefined ? [...caches.keys()] : [options.cacheName];
-      for (const name of names) {
-        const hit = await caches.get(name)?.match(request, options);
-        if (hit !== undefined) return hit;
-      }
-      return undefined;
+    has: async (name) => Option.isSome(lookup(name)),
+    delete: async (name) => {
+      const present = Option.isSome(lookup(name));
+      caches = caches.filter(([key]) => key !== name);
+      return present;
     },
+    keys: async () => caches.map(([name]) => name),
+    // The first cache (in creation order) holding a match wins; later caches
+    // are not consulted once one answers.
+    match: (request, options) =>
+      Arr.reduce(
+        options?.cacheName === undefined ? caches.map(([name]) => name) : [options.cacheName],
+        miss,
+        (previous, name) =>
+          previous.then((hit) =>
+            hit !== undefined
+              ? hit
+              : Option.match(lookup(name), {
+                  onNone: () => miss,
+                  onSome: (cache) => cache.match(request, options),
+                }),
+          ),
+      ),
   };
 };

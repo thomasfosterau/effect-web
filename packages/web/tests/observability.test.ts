@@ -10,12 +10,6 @@
  * dependency, no client graph to mock out.
  */
 
-/*
- * A vitest test body IS the runtime boundary — it is the entrypoint that runs
- * the effect under test, and `effect-run-in-body` has no entrypoint detection.
- */
-/* oxlint-disable effect/effect-run-in-body */
-
 import { describe, expect, it, vi } from "vite-plus/test";
 import * as Effect from "effect/Effect";
 import * as Logger from "effect/Logger";
@@ -268,7 +262,7 @@ describe("describeError", () => {
     expect(describeError({ _tag: "FetchFailed", message: "timeout" })).toBe("FetchFailed: timeout");
     expect(describeError({ _tag: "Interrupted" })).toBe("Interrupted");
     expect(describeError({ _tag: "Empty", message: "" })).toBe("Empty");
-    expect(describeError(new Error("boom"))).toBe("boom");
+    expect(describeError(new TypeError("boom"))).toBe("boom");
     expect(describeError(42)).toBe("42");
     expect(describeError(null)).toBe("null");
   });
