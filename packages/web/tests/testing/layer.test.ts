@@ -11,12 +11,14 @@ import * as Effect from "effect/Effect";
 import {
   Battery,
   Broadcast,
+  Fullscreen,
   IdleDetection,
   layer as browserLayer,
   Locks,
   MediaQuery,
   Navigator,
   PageVisibility,
+  ScreenOrientation,
   WakeLock,
 } from "@thomasfosterau/effect-web/browser";
 import {
@@ -24,12 +26,14 @@ import {
   TestBattery,
   TestBroadcast,
   TestClipboard,
+  TestFullscreen,
   TestGeolocation,
   TestIdleDetection,
   TestMediaQuery,
   TestNavigator,
   TestPageVisibility,
   TestPermissions,
+  TestScreenOrientation,
   TestWakeLock,
 } from "@thomasfosterau/effect-web/testing";
 
@@ -45,19 +49,22 @@ const everyService = Effect.all([
   Permissions.Permissions,
   Battery.Battery,
   IdleDetection.IdleDetection,
+  Fullscreen.Fullscreen,
+  ScreenOrientation.ScreenOrientation,
 ]);
 
 describe("browser layer", () => {
   it("builds every live service, degrading where the runtime lacks the API", async () => {
-    const [broadcast, locks, , , , wakeLock, , , , battery, idle] = await Effect.runPromise(
-      Effect.provide(everyService, browserLayer),
-    );
+    const [broadcast, locks, , , , wakeLock, , , , battery, idle, fullscreen, orientation] =
+      await Effect.runPromise(Effect.provide(everyService, browserLayer));
     expect({
       broadcast: broadcast.supported,
       locks: locks.supported,
       wakeLock: wakeLock.supported,
       battery: battery.supported,
       idle: idle.supported,
+      fullscreen: fullscreen.supported,
+      orientation: orientation.supported,
     }).toStrictEqual({
       broadcast: true,
       // Node 24 ships `navigator.locks`; no Node has a wake lock.
@@ -66,6 +73,9 @@ describe("browser layer", () => {
       // No Node has `navigator.getBattery` or `IdleDetector`.
       battery: false,
       idle: false,
+      // Node has neither a `document` nor a `screen`.
+      fullscreen: false,
+      orientation: false,
     });
   });
 });
@@ -75,17 +85,20 @@ describe("testing layer", () => {
     const result = await Effect.runPromise(
       Effect.provide(
         Effect.gen(function* () {
-          const [, locks, , , , wakeLock, , , , battery, idle] = yield* everyService;
+          const [, locks, , , , wakeLock, , , , battery, idle, fullscreen, orientation] =
+            yield* everyService;
           yield* Effect.all([
             TestBattery.Control,
             TestBroadcast.Control,
             TestClipboard.Control,
+            TestFullscreen.Control,
             TestGeolocation.Control,
             TestIdleDetection.Control,
             TestMediaQuery.Control,
             TestNavigator.Control,
             TestPageVisibility.Control,
             TestPermissions.Control,
+            TestScreenOrientation.Control,
             TestWakeLock.Control,
           ]);
           return {
@@ -93,11 +106,20 @@ describe("testing layer", () => {
             wakeLock: wakeLock.supported,
             battery: battery.supported,
             idle: idle.supported,
+            fullscreen: fullscreen.supported,
+            orientation: orientation.supported,
           };
         }),
         testLayer,
       ),
     );
-    expect(result).toStrictEqual({ locks: true, wakeLock: true, battery: true, idle: true });
+    expect(result).toStrictEqual({
+      locks: true,
+      wakeLock: true,
+      battery: true,
+      idle: true,
+      fullscreen: true,
+      orientation: true,
+    });
   });
 });

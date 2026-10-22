@@ -59,3 +59,10 @@ export const ambientGetBattery = (): (() => Promise<BatteryManagerLike>) | undef
   const getBattery = navigator?.getBattery;
   return getBattery === undefined ? undefined : () => getBattery.call(navigator);
 };
+
+/** `globalThis.screen.orientation`, where the context has one (a window, in an agent that ships it). */
+export const ambientScreenOrientation = (): ScreenOrientation | undefined => {
+  const screen: Screen | undefined = globalThis.screen;
+  const orientation: ScreenOrientation | undefined = screen?.orientation;
+  return orientation;
+};

@@ -15,10 +15,12 @@ import type * as Stream from "effect/Stream";
 import {
   Battery,
   Broadcast,
+  Fullscreen,
   IdleDetection,
   Locks,
   Navigator,
   PageVisibility,
+  ScreenOrientation,
   WakeLock,
 } from "@thomasfosterau/effect-web/browser";
 import { observe } from "@thomasfosterau/effect-web/testing";
@@ -70,6 +72,20 @@ export const unparsed = IdleDetection.watch({ threshold: "soon" });
 export type DischargingTime = Option.Option.Value<
   Effect.Success<Battery.Battery["Service"]["status"]>
 >["dischargingTime"];
+// Fullscreen adds its failure and the service, in either argument order.
+export declare const video: Fullscreen.FullscreenElementLike;
+export const fullscreened = work.pipe(Fullscreen.withFullscreen(video));
+export const fullscreenedDirect = Fullscreen.withFullscreen(work, video);
+// An orientation lock adds its failure and the service, and composes inside fullscreen.
+export const landscape = work.pipe(
+  ScreenOrientation.withLock("landscape"),
+  Fullscreen.withFullscreen(video),
+);
+// @ts-expect-error -- not an orientation lock type
+export const sideways = ScreenOrientation.withLock(work, "sideways");
+export type OrientationLockServices = Effect.Services<
+  ReturnType<ScreenOrientation.ScreenOrientation["Service"]["lock"]>
+>;
 
 // Navigator readings that may be absent are Options, never `undefined`.
 export type Connection = Effect.Success<Navigator.Navigator["Service"]["connection"]>;
@@ -109,6 +125,24 @@ export type BrowserChecks = [
   /** _batteryTimesAreOptionalDurations */ Assert<
     Equals<DischargingTime, Option.Option<Duration.Duration>>
   >,
+  /** _withFullscreenAddsFullscreenErrorAndService */ Assert<
+    Equals<
+      typeof fullscreened,
+      Effect.Effect<
+        number,
+        "WorkFailed" | Fullscreen.FullscreenError,
+        "WorkService" | Fullscreen.Fullscreen
+      >
+    >
+  >,
+  /** _withFullscreenIsDual */ Assert<Equals<typeof fullscreenedDirect, typeof fullscreened>>,
+  /** _lockInsideFullscreen */ Assert<
+    Equals<
+      Effect.Error<typeof landscape>,
+      "WorkFailed" | ScreenOrientation.OrientationError | Fullscreen.FullscreenError
+    >
+  >,
+  /** _orientationLockIsScoped */ Assert<Equals<OrientationLockServices, Scope.Scope>>,
   /** _streamsAreServiceFree */ Assert<
     Equals<Stream.Services<Navigator.Navigator["Service"]["onLineChanges"]>, never>
   >,

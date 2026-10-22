@@ -16,8 +16,8 @@
  * - `TestLocks` — a lock manager following the Web Locks request algorithm;
  *   share one between layers to model several tabs.
  * - `TestNavigator`, `TestPageVisibility`, `TestMediaQuery`, `TestWakeLock`,
- *   `TestBroadcast`, `TestIdleDetection`, `TestBattery` — the `./browser`
- *   services.
+ *   `TestBroadcast`, `TestIdleDetection`, `TestBattery`, `TestFullscreen`,
+ *   `TestScreenOrientation` — the `./browser` services.
  * - `TestPermissions`, `TestClipboard`, `TestGeolocation` — the
  *   `@effect/platform-browser` services.
  *
@@ -30,6 +30,7 @@ export { observe } from "./stream.ts";
 export * as TestBattery from "./battery.ts";
 export * as TestBroadcast from "./broadcast.ts";
 export * as TestClipboard from "./clipboard.ts";
+export * as TestFullscreen from "./fullscreen.ts";
 export * as TestGeolocation from "./geolocation.ts";
 export * as TestIdleDetection from "./idle-detection.ts";
 export * as TestLocks from "./locks.ts";
@@ -37,4 +38,5 @@ export * as TestMediaQuery from "./media-query.ts";
 export * as TestNavigator from "./navigator.ts";
 export * as TestPageVisibility from "./page-visibility.ts";
 export * as TestPermissions from "./permissions.ts";
+export * as TestScreenOrientation from "./screen-orientation.ts";
 export * as TestWakeLock from "./wake-lock.ts";
