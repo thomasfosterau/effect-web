@@ -425,6 +425,25 @@ describe("fetchFollowingRedirects (SEC-SSRF-003)", () => {
     );
   });
 
+  // #131: a budget that never lands exactly on 0 used to recurse forever.
+  it.each([
+    [-1, 1],
+    [Number.NaN, 1],
+    [Number.POSITIVE_INFINITY, 1],
+    [1.5, 2],
+  ])("bounds the chain when maxHops is %s (%i requests)", async (maxHops, requests) => {
+    let calls = 0;
+    const stub: typeof fetch = async () => {
+      calls += 1;
+      if (calls > 50) throw plainError("stopped after 50 requests");
+      return redirectTo(`https://example.com/${calls}`);
+    };
+    await expect(
+      fetchFollowingRedirects("https://example.com/start", {}, maxHops, stub),
+    ).rejects.toThrow("too many redirects");
+    expect(calls).toBe(requests);
+  });
+
   /**
    * The adapter's rejection value is the contract its doc comment and the
    * `effect-web/net` module header describe: the original `fetch` cause for

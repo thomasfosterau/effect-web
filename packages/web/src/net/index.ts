@@ -308,12 +308,21 @@ export interface FollowRedirectsOptions {
    * Redirect hops followed before refusing. `0` is the shape for a POST whose
    * redirected replay would land the body at an unvalidated target: the host
    * guard still runs, and any 3xx becomes a rejection rather than a silent
-   * second request. Defaults to 5.
+   * second request. Defaults to 5. A fraction is rounded down; a negative,
+   * `NaN` or infinite value reads as `0`, so every value bounds the chain.
    */
   readonly maxHops?: number | undefined;
   /** The `fetch` to call; defaults to the global. */
   readonly fetch?: typeof globalThis.fetch | undefined;
 }
+
+/**
+ * The hop budget a `maxHops` value allows: whole hops only, and none for a
+ * value that is not a finite non-negative number. The budget counts down to
+ * `0`, so a fraction or `NaN` must never reach it, or the chain never ends.
+ */
+const hopBudget = (maxHops: number): number =>
+  Number.isFinite(maxHops) && maxHops > 0 ? Math.floor(maxHops) : 0;
 
 /**
  * Fetches `url`, following redirects **manually** and re-running
@@ -351,7 +360,7 @@ export const followRedirects = (
   init: RequestInit,
   options: FollowRedirectsOptions = {},
 ): Effect.Effect<FollowedResponse, UnsafeUrl | RedirectRejected | FetchFailed> => {
-  const maxHops = options.maxHops ?? MAX_REDIRECT_HOPS;
+  const maxHops = hopBudget(options.maxHops ?? MAX_REDIRECT_HOPS);
   const fetchImpl = options.fetch ?? globalThis.fetch;
   const hop = (
     currentUrl: string,
@@ -387,7 +396,7 @@ export const followRedirects = (
           message: `redirect with no Location from '${currentUrl}'`,
         });
       }
-      if (remaining === 0) {
+      if (remaining <= 0) {
         return yield* new RedirectRejected({
           url,
           reason: "too-many-hops",
