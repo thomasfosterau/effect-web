@@ -7,6 +7,7 @@ import * as Layer from "effect/Layer";
 import * as TestBattery from "./battery.ts";
 import * as TestBroadcast from "./broadcast.ts";
 import * as TestClipboard from "./clipboard.ts";
+import * as TestFullscreen from "./fullscreen.ts";
 import * as TestGeolocation from "./geolocation.ts";
 import * as TestIdleDetection from "./idle-detection.ts";
 import * as TestLocks from "./locks.ts";
@@ -14,6 +15,7 @@ import * as TestMediaQuery from "./media-query.ts";
 import * as TestNavigator from "./navigator.ts";
 import * as TestPageVisibility from "./page-visibility.ts";
 import * as TestPermissions from "./permissions.ts";
+import * as TestScreenOrientation from "./screen-orientation.ts";
 import * as TestWakeLock from "./wake-lock.ts";
 
 /**
@@ -44,6 +46,7 @@ export const layer = Layer.mergeAll(
   TestBattery.layer(),
   TestBroadcast.layer,
   TestClipboard.layer(),
+  TestFullscreen.layer(),
   TestGeolocation.layer(),
   TestIdleDetection.layer(),
   TestLocks.layer(),
@@ -51,5 +54,6 @@ export const layer = Layer.mergeAll(
   TestNavigator.layer(),
   TestPageVisibility.layer(),
   TestPermissions.layer(),
+  TestScreenOrientation.layer(),
   TestWakeLock.layer(),
 );

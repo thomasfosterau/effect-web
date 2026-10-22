@@ -23,6 +23,9 @@
  * - `IdleDetection` — user idleness and screen lock, as a stream
  *   (Chromium-only, behind a permission).
  * - `Battery` — the battery's charge and charging state (Chromium-only).
+ * - `Fullscreen` — an element shown fullscreen for a `Scope`.
+ * - `ScreenOrientation` — the orientation as values and a stream, and a
+ *   lock held for a `Scope`.
  * - `PermissionStatus` — permission state as a stream, over
  *   `@effect/platform-browser`'s `Permissions`.
  *
@@ -34,6 +37,7 @@
  */
 export * as Battery from "./battery.ts";
 export * as Broadcast from "./broadcast.ts";
+export * as Fullscreen from "./fullscreen.ts";
 export * as IdleDetection from "./idle-detection.ts";
 export { layer } from "./layer.ts";
 export * as Locks from "./locks.ts";
@@ -41,4 +45,5 @@ export * as MediaQuery from "./media-query.ts";
 export * as Navigator from "./navigator.ts";
 export * as PageVisibility from "./page-visibility.ts";
 export * as PermissionStatus from "./permission-status.ts";
+export * as ScreenOrientation from "./screen-orientation.ts";
 export * as WakeLock from "./wake-lock.ts";

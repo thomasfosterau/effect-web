@@ -10,17 +10,19 @@ import * as Permissions from "@effect/platform-browser/Permissions";
 import * as Layer from "effect/Layer";
 import * as Battery from "./battery.ts";
 import * as Broadcast from "./broadcast.ts";
+import * as Fullscreen from "./fullscreen.ts";
 import * as IdleDetection from "./idle-detection.ts";
 import * as Locks from "./locks.ts";
 import * as MediaQuery from "./media-query.ts";
 import * as Navigator from "./navigator.ts";
 import * as PageVisibility from "./page-visibility.ts";
+import * as ScreenOrientation from "./screen-orientation.ts";
 import * as WakeLock from "./wake-lock.ts";
 
 /**
  * Every live service this entry defines (`Battery`, `Broadcast`,
- * `IdleDetection`, `Locks`, `MediaQuery`, `Navigator`, `PageVisibility`,
- * `WakeLock`) and the
+ * `Fullscreen`, `IdleDetection`, `Locks`, `MediaQuery`, `Navigator`,
+ * `PageVisibility`, `ScreenOrientation`, `WakeLock`) and the
  * `@effect/platform-browser` `Clipboard`, `Geolocation` and `Permissions`
  * services, over the ambient globals. Each degrades where its API is
  * missing, so the layer builds in any context — but provide only the
@@ -46,11 +48,13 @@ import * as WakeLock from "./wake-lock.ts";
 export const layer: Layer.Layer<
   | Battery.Battery
   | Broadcast.Broadcast
+  | Fullscreen.Fullscreen
   | IdleDetection.IdleDetection
   | Locks.Locks
   | MediaQuery.MediaQuery
   | Navigator.Navigator
   | PageVisibility.PageVisibility
+  | ScreenOrientation.ScreenOrientation
   | WakeLock.WakeLock
   | Clipboard.Clipboard
   | Geolocation.Geolocation
@@ -58,11 +62,13 @@ export const layer: Layer.Layer<
 > = Layer.mergeAll(
   Battery.layer,
   Broadcast.layer,
+  Fullscreen.layer,
   IdleDetection.layer,
   Locks.layer,
   MediaQuery.layer,
   Navigator.layer,
   PageVisibility.layer,
+  ScreenOrientation.layer,
   WakeLock.layer,
   Clipboard.layer,
   Geolocation.layer,
