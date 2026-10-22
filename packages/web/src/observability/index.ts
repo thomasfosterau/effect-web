@@ -9,6 +9,9 @@
  * - {@link logEvent} / {@link logWarningEvent} / {@link logErrorEvent} /
  *   {@link describeError} — the event trio on `Effect.annotateLogs`.
  * - {@link deriveAuthOutcome} / {@link logAuthOutcome} — the auth-tax signal.
+ * - {@link withRequestMetrics} / {@link incrementRequestMetric} /
+ *   {@link currentRequestMetrics} / {@link countingProxy} — the per-request
+ *   metric scope (a query count per request).
  *
  * @since 0.1.0
  */
@@ -20,6 +23,15 @@ import * as Predicate from "effect/Predicate";
 import * as References from "effect/References";
 import * as Schema from "effect/Schema";
 import * as Tracer from "effect/Tracer";
+
+/**
+ * The per-request metric scope: {@link withRequestMetrics},
+ * {@link incrementRequestMetric}, {@link currentRequestMetrics} and
+ * {@link countingProxy}.
+ *
+ * @since 0.2.0
+ */
+export * from "./request-metrics.ts";
 
 /**
  * The line encoder: `Schema.fromJsonString(Schema.Unknown)` in the encode
