@@ -1,0 +1,55 @@
+{
+  "$schema": "https://www.schemastore.org/package",
+  "name": "@thomasfosterau/effect-css",
+  "version": "0.0.0",
+  "description": "CSS for Effect: the CSS Syntax Level 3 tokenizer and parser (declaration lists for style attributes, stylesheets, rules, component values) with recoverable errors, typed CSS Color 4 colours with sRGB conversion, and lengths with absolute-unit conversion.",
+  "keywords": [
+    "css",
+    "css-color",
+    "css-syntax",
+    "effect",
+    "parser",
+    "style",
+    "typescript"
+  ],
+  "homepage": "https://github.com/thomasfosterau/effect-web#readme",
+  "bugs": {
+    "url": "https://github.com/thomasfosterau/effect-web/issues"
+  },
+  "license": "MIT",
+  "author": "Thomas Foster <me@thomasfoster.au>",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/thomasfosterau/effect-web.git",
+    "directory": "packages/css"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "type": "module",
+  "sideEffects": false,
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "devDependencies": {
+    "@effect/language-service": "catalog:",
+    "@types/node": "catalog:",
+    "@vitest/coverage-istanbul": "catalog:",
+    "effect": "catalog:"
+  },
+  "peerDependencies": {
+    "effect": "catalog:peers"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}

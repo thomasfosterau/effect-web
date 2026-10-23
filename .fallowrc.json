@@ -15,6 +15,7 @@
     "packages/json-feed/src/index.ts",
     "packages/uri-template/src/index.ts",
     "packages/langtag/src/index.ts",
+    "packages/css/src/index.ts",
     "packages/langtag/src/registry/index.ts",
     "packages/*/tests/**/*.test.ts",
     "packages/*/tests/**/*.types.ts",
@@ -98,6 +99,10 @@
       {
         "name": "langtag",
         "patterns": ["packages/langtag/**"]
+      },
+      {
+        "name": "css",
+        "patterns": ["packages/css/**"]
       }
     ],
     "rules": [
@@ -131,6 +136,10 @@
       },
       {
         "from": "langtag",
+        "allow": []
+      },
+      {
+        "from": "css",
         "allow": []
       }
     ]

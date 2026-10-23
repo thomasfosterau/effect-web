@@ -1,0 +1,49 @@
+# @thomasfosterau/effect-css
+
+CSS for [Effect](https://effect.website): the [CSS Syntax Level 3](https://www.w3.org/TR/css-syntax-3/) tokenizer and parser (a `style` attribute's declarations, stylesheets, rules, component values) with error recovery, typed [CSS Color 4](https://www.w3.org/TR/css-color-4/) colours with conversion to sRGB, and [CSS Values 4](https://www.w3.org/TR/css-values-4/) lengths. Checked against the [css-parsing-tests](https://github.com/SimonSapin/css-parsing-tests) suite.
+
+```sh
+pnpm add @thomasfosterau/effect-css effect
+```
+
+```ts
+import * as Option from "effect/Option";
+import { Color, Length, Syntax } from "@thomasfosterau/effect-css";
+
+for (const item of Syntax.parseDeclarationList(
+  "color: oklch(70% 0.1 200); margin-left: 12pt !important",
+)) {
+  if (item._tag !== "Declaration") continue; // a SyntaxError: { kind, offset }
+  const [value] = item.value.filter((component) => component._tag !== "Whitespace");
+  if (value === undefined) continue;
+  if (item.name === "color") Color.parse(value).pipe(Option.flatMap(Color.toSrgb)); // Option.some({ red, green, blue, alpha })
+  if (item.name === "margin-left") Length.parse(value).pipe(Option.flatMap(Length.toPixels)); // Option.some(16)
+}
+```
+
+## `Syntax`
+
+| Export | Specification entry point |
+| --- | --- |
+| `parseDeclarationList(css)` | Parse a list of declarations (a `style` attribute): `Declaration`s and `AtRule`s, with `SyntaxError` items for what was skipped. |
+| `parseStylesheet(css)`, `parseRuleList(css)` | A stylesheet (CDO / CDC skipped at the top level) or a list of rules: `QualifiedRule`s and `AtRule`s, block contents as component values. |
+| `parseRule(css)`, `parseDeclaration(css)`, `parseComponentValue(css)` | Exactly one, or a `SyntaxError` (`empty`, `invalid`, `extra-input`). |
+| `parseComponentValueList(css)` | The input as component values: tokens, `Func`s and `Block`s. |
+
+A `SyntaxError` carries `offset`, the code-point offset in the preprocessed input (CRLF counted as one). The token and component-value types are in `Token`.
+
+## `Color`
+
+`Color.parse(cssOrComponentValue)` takes named colours, `transparent`, `currentcolor`, hex (3, 4, 6, 8 digits), `rgb()` / `rgba()` / `hsl()` / `hsla()` in both comma and space syntaxes, `hwb()`, `lab()`, `lch()`, `oklab()`, `oklch()` and `color()` in the predefined spaces (`srgb`, `srgb-linear`, `display-p3`, `a98-rgb`, `prophoto-rgb`, `rec2020`, `xyz`, `xyz-d50`, `xyz-d65`), with `none` and angle units. The result is a tagged `Color`; `Color.serialize` prints it as CSS Color 4 does, and `Color.toSrgb` converts it to sRGB (0 to 1, not gamut-mapped).
+
+## `Length`
+
+`Length.parse` takes a dimension in a length unit (absolute `px cm mm q in pt pc`, and the font- and viewport-relative ones), a percentage, or a unitless `0`; `toPixels` and `convert` handle the absolute units (1in = 96px = 72pt), `serialize` prints it back.
+
+## Not yet
+
+Shorthand expansion (`font`, `margin`, `padding`, `border`), the typed font, `text-align`, `text-decoration` and `vertical-align` values, a CSSOM serialiser for declarations, `calc()`, and Color 5 (`color-mix()`, `light-dark()`, `device-cmyk()`).
+
+## Licence
+
+MIT. Test vectors from css-parsing-tests (CC0).
