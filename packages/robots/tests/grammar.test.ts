@@ -12,14 +12,15 @@ import { encode, parse, RobotsTxt, RobotsTxtFromString, Rule } from "@thomasfost
 const quoted = Schema.encodeSync(Schema.fromJsonString(Schema.String));
 
 /**
- * The line splitter the grammar replaced: comment cut, CRLF split, trim,
- * split at the first colon, colon-less lines dropped. Its output is the
+ * The line splitter the grammar replaced: comment cut, split at every
+ * RFC 9309 §2.2 line end (CRLF, CR or LF), trim, split at the first colon,
+ * colon-less lines dropped. Its output is the
  * canonical `field: value` text, so `parse` of it is the oracle for `parse`
  * of the original (the grouping layer underneath is shared).
  */
 const referenceLines = (content: string): string =>
   content
-    .split(/\r?\n/)
+    .split(/\r\n|\r|\n/)
     .flatMap((rawLine) => {
       const commentIndex = rawLine.indexOf("#");
       const line = (commentIndex >= 0 ? rawLine.slice(0, commentIndex) : rawLine).trim();
@@ -63,6 +64,25 @@ describe("line grammar", () => {
   it("parses CRLF and an empty document", () => {
     expect(parse("User-agent: *\r\nDisallow: /x\r\n").groups[0]?.rules).toHaveLength(1);
     expect(parse("")).toEqual(new RobotsTxt({ groups: [], sitemaps: [] }));
+  });
+
+  it("ends a line at a bare CR, as RFC 9309 §2.2's EOL allows", () => {
+    expect(parse("User-agent: *\rDisallow: /x\r").groups[0]?.rules).toEqual([
+      new Rule({ path: "/x", allow: false }),
+    ]);
+  });
+
+  it("ends lines at a mix of CR, LF and CRLF, counting CRLF once", () => {
+    const parsed = parse(
+      "User-agent: a\rUser-agent: b\r\nDisallow: /x\nAllow: /y # c\rDisallow: /z",
+    );
+    expect(parsed.groups).toHaveLength(1);
+    expect(parsed.groups[0]?.userAgents).toEqual(["a", "b"]);
+    expect(parsed.groups[0]?.rules).toEqual([
+      new Rule({ path: "/x", allow: false }),
+      new Rule({ path: "/y", allow: true }),
+      new Rule({ path: "/z", allow: false }),
+    ]);
   });
 
   it("decodes any string without a schema issue", () => {
