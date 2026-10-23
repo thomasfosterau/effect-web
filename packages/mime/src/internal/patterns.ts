@@ -1,0 +1,417 @@
+/**
+ * The byte-pattern tables of the MIME Sniffing Standard (§6 and §7.1),
+ * transcribed as literals so nothing is built at import. Each `name`
+ * is the row's description in the specification.
+ */
+
+/** One row of a pattern table (§6, "pattern matching algorithm"). */
+export interface BytePattern {
+  readonly name: string;
+  readonly pattern: ReadonlyArray<number>;
+  readonly mask: ReadonlyArray<number>;
+  readonly mimeType: string;
+  /** Leading whitespace bytes (TAB, LF, FF, CR, SPACE) are skipped first. */
+  readonly skipWhitespace: boolean;
+  /** The match must be followed by a tag-terminating byte (SPACE or `>`). */
+  readonly tagTerminated: boolean;
+}
+
+/** §7.1 step 1: HTML, XML and PDF, matched only when scriptable types may be sniffed. */
+export const SCRIPTABLE: ReadonlyArray<BytePattern> = [
+  {
+    name: "<!DOCTYPE HTML",
+    pattern: [0x3c, 0x21, 0x44, 0x4f, 0x43, 0x54, 0x59, 0x50, 0x45, 0x20, 0x48, 0x54, 0x4d, 0x4c],
+    mask: [0xff, 0xff, 0xdf, 0xdf, 0xdf, 0xdf, 0xdf, 0xdf, 0xdf, 0xff, 0xdf, 0xdf, 0xdf, 0xdf],
+    mimeType: "text/html",
+    skipWhitespace: true,
+    tagTerminated: true,
+  },
+  {
+    name: "<HTML",
+    pattern: [0x3c, 0x48, 0x54, 0x4d, 0x4c],
+    mask: [0xff, 0xdf, 0xdf, 0xdf, 0xdf],
+    mimeType: "text/html",
+    skipWhitespace: true,
+    tagTerminated: true,
+  },
+  {
+    name: "<HEAD",
+    pattern: [0x3c, 0x48, 0x45, 0x41, 0x44],
+    mask: [0xff, 0xdf, 0xdf, 0xdf, 0xdf],
+    mimeType: "text/html",
+    skipWhitespace: true,
+    tagTerminated: true,
+  },
+  {
+    name: "<SCRIPT",
+    pattern: [0x3c, 0x53, 0x43, 0x52, 0x49, 0x50, 0x54],
+    mask: [0xff, 0xdf, 0xdf, 0xdf, 0xdf, 0xdf, 0xdf],
+    mimeType: "text/html",
+    skipWhitespace: true,
+    tagTerminated: true,
+  },
+  {
+    name: "<IFRAME",
+    pattern: [0x3c, 0x49, 0x46, 0x52, 0x41, 0x4d, 0x45],
+    mask: [0xff, 0xdf, 0xdf, 0xdf, 0xdf, 0xdf, 0xdf],
+    mimeType: "text/html",
+    skipWhitespace: true,
+    tagTerminated: true,
+  },
+  {
+    name: "<H1",
+    pattern: [0x3c, 0x48, 0x31],
+    mask: [0xff, 0xdf, 0xff],
+    mimeType: "text/html",
+    skipWhitespace: true,
+    tagTerminated: true,
+  },
+  {
+    name: "<DIV",
+    pattern: [0x3c, 0x44, 0x49, 0x56],
+    mask: [0xff, 0xdf, 0xdf, 0xdf],
+    mimeType: "text/html",
+    skipWhitespace: true,
+    tagTerminated: true,
+  },
+  {
+    name: "<FONT",
+    pattern: [0x3c, 0x46, 0x4f, 0x4e, 0x54],
+    mask: [0xff, 0xdf, 0xdf, 0xdf, 0xdf],
+    mimeType: "text/html",
+    skipWhitespace: true,
+    tagTerminated: true,
+  },
+  {
+    name: "<TABLE",
+    pattern: [0x3c, 0x54, 0x41, 0x42, 0x4c, 0x45],
+    mask: [0xff, 0xdf, 0xdf, 0xdf, 0xdf, 0xdf],
+    mimeType: "text/html",
+    skipWhitespace: true,
+    tagTerminated: true,
+  },
+  {
+    name: "<A",
+    pattern: [0x3c, 0x41],
+    mask: [0xff, 0xdf],
+    mimeType: "text/html",
+    skipWhitespace: true,
+    tagTerminated: true,
+  },
+  {
+    name: "<STYLE",
+    pattern: [0x3c, 0x53, 0x54, 0x59, 0x4c, 0x45],
+    mask: [0xff, 0xdf, 0xdf, 0xdf, 0xdf, 0xdf],
+    mimeType: "text/html",
+    skipWhitespace: true,
+    tagTerminated: true,
+  },
+  {
+    name: "<TITLE",
+    pattern: [0x3c, 0x54, 0x49, 0x54, 0x4c, 0x45],
+    mask: [0xff, 0xdf, 0xdf, 0xdf, 0xdf, 0xdf],
+    mimeType: "text/html",
+    skipWhitespace: true,
+    tagTerminated: true,
+  },
+  {
+    name: "<B",
+    pattern: [0x3c, 0x42],
+    mask: [0xff, 0xdf],
+    mimeType: "text/html",
+    skipWhitespace: true,
+    tagTerminated: true,
+  },
+  {
+    name: "<BODY",
+    pattern: [0x3c, 0x42, 0x4f, 0x44, 0x59],
+    mask: [0xff, 0xdf, 0xdf, 0xdf, 0xdf],
+    mimeType: "text/html",
+    skipWhitespace: true,
+    tagTerminated: true,
+  },
+  {
+    name: "<BR",
+    pattern: [0x3c, 0x42, 0x52],
+    mask: [0xff, 0xdf, 0xdf],
+    mimeType: "text/html",
+    skipWhitespace: true,
+    tagTerminated: true,
+  },
+  {
+    name: "<P",
+    pattern: [0x3c, 0x50],
+    mask: [0xff, 0xdf],
+    mimeType: "text/html",
+    skipWhitespace: true,
+    tagTerminated: true,
+  },
+  {
+    name: "<!--",
+    pattern: [0x3c, 0x21, 0x2d, 0x2d],
+    mask: [0xff, 0xff, 0xff, 0xff],
+    mimeType: "text/html",
+    skipWhitespace: true,
+    tagTerminated: true,
+  },
+  {
+    name: "<?xml",
+    pattern: [0x3c, 0x3f, 0x78, 0x6d, 0x6c],
+    mask: [0xff, 0xff, 0xff, 0xff, 0xff],
+    mimeType: "text/xml",
+    skipWhitespace: true,
+    tagTerminated: false,
+  },
+  {
+    name: "%PDF-",
+    pattern: [0x25, 0x50, 0x44, 0x46, 0x2d],
+    mask: [0xff, 0xff, 0xff, 0xff, 0xff],
+    mimeType: "application/pdf",
+    skipWhitespace: false,
+    tagTerminated: false,
+  },
+];
+
+/** §7.1 step 2: PostScript and the BOM rows. */
+export const TEXT: ReadonlyArray<BytePattern> = [
+  {
+    name: "%!PS-Adobe-",
+    pattern: [0x25, 0x21, 0x50, 0x53, 0x2d, 0x41, 0x64, 0x6f, 0x62, 0x65, 0x2d],
+    mask: [0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff],
+    mimeType: "application/postscript",
+    skipWhitespace: false,
+    tagTerminated: false,
+  },
+  {
+    name: "UTF-16BE BOM",
+    pattern: [0xfe, 0xff, 0x00, 0x00],
+    mask: [0xff, 0xff, 0x00, 0x00],
+    mimeType: "text/plain",
+    skipWhitespace: false,
+    tagTerminated: false,
+  },
+  {
+    name: "UTF-16LE BOM",
+    pattern: [0xff, 0xfe, 0x00, 0x00],
+    mask: [0xff, 0xff, 0x00, 0x00],
+    mimeType: "text/plain",
+    skipWhitespace: false,
+    tagTerminated: false,
+  },
+  {
+    name: "UTF-8 BOM",
+    pattern: [0xef, 0xbb, 0xbf, 0x00],
+    mask: [0xff, 0xff, 0xff, 0x00],
+    mimeType: "text/plain",
+    skipWhitespace: false,
+    tagTerminated: false,
+  },
+];
+
+/** §6.1, the image type pattern. */
+export const IMAGE: ReadonlyArray<BytePattern> = [
+  {
+    name: "ICO",
+    pattern: [0x00, 0x00, 0x01, 0x00],
+    mask: [0xff, 0xff, 0xff, 0xff],
+    mimeType: "image/x-icon",
+    skipWhitespace: false,
+    tagTerminated: false,
+  },
+  {
+    name: "CUR",
+    pattern: [0x00, 0x00, 0x02, 0x00],
+    mask: [0xff, 0xff, 0xff, 0xff],
+    mimeType: "image/x-icon",
+    skipWhitespace: false,
+    tagTerminated: false,
+  },
+  {
+    name: "BMP",
+    pattern: [0x42, 0x4d],
+    mask: [0xff, 0xff],
+    mimeType: "image/bmp",
+    skipWhitespace: false,
+    tagTerminated: false,
+  },
+  {
+    name: "GIF87a",
+    pattern: [0x47, 0x49, 0x46, 0x38, 0x37, 0x61],
+    mask: [0xff, 0xff, 0xff, 0xff, 0xff, 0xff],
+    mimeType: "image/gif",
+    skipWhitespace: false,
+    tagTerminated: false,
+  },
+  {
+    name: "GIF89a",
+    pattern: [0x47, 0x49, 0x46, 0x38, 0x39, 0x61],
+    mask: [0xff, 0xff, 0xff, 0xff, 0xff, 0xff],
+    mimeType: "image/gif",
+    skipWhitespace: false,
+    tagTerminated: false,
+  },
+  {
+    name: "WebP",
+    pattern: [0x52, 0x49, 0x46, 0x46, 0x00, 0x00, 0x00, 0x00, 0x57, 0x45, 0x42, 0x50, 0x56, 0x50],
+    mask: [0xff, 0xff, 0xff, 0xff, 0x00, 0x00, 0x00, 0x00, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff],
+    mimeType: "image/webp",
+    skipWhitespace: false,
+    tagTerminated: false,
+  },
+  {
+    name: "PNG",
+    pattern: [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a],
+    mask: [0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff],
+    mimeType: "image/png",
+    skipWhitespace: false,
+    tagTerminated: false,
+  },
+  {
+    name: "JPEG",
+    pattern: [0xff, 0xd8, 0xff],
+    mask: [0xff, 0xff, 0xff],
+    mimeType: "image/jpeg",
+    skipWhitespace: false,
+    tagTerminated: false,
+  },
+];
+
+/** §6.2, the audio or video type pattern (before the MP4 and WebM algorithms). */
+export const AUDIO_VIDEO: ReadonlyArray<BytePattern> = [
+  {
+    name: "AIFF",
+    pattern: [0x46, 0x4f, 0x52, 0x4d, 0x00, 0x00, 0x00, 0x00, 0x41, 0x49, 0x46, 0x46],
+    mask: [0xff, 0xff, 0xff, 0xff, 0x00, 0x00, 0x00, 0x00, 0xff, 0xff, 0xff, 0xff],
+    mimeType: "audio/aiff",
+    skipWhitespace: false,
+    tagTerminated: false,
+  },
+  {
+    name: "MP3 with ID3",
+    pattern: [0x49, 0x44, 0x33],
+    mask: [0xff, 0xff, 0xff],
+    mimeType: "audio/mpeg",
+    skipWhitespace: false,
+    tagTerminated: false,
+  },
+  {
+    name: "Ogg",
+    pattern: [0x4f, 0x67, 0x67, 0x53, 0x00],
+    mask: [0xff, 0xff, 0xff, 0xff, 0xff],
+    mimeType: "application/ogg",
+    skipWhitespace: false,
+    tagTerminated: false,
+  },
+  {
+    name: "MIDI",
+    pattern: [0x4d, 0x54, 0x68, 0x64, 0x00, 0x00, 0x00, 0x06],
+    mask: [0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff],
+    mimeType: "audio/midi",
+    skipWhitespace: false,
+    tagTerminated: false,
+  },
+  {
+    name: "AVI",
+    pattern: [0x52, 0x49, 0x46, 0x46, 0x00, 0x00, 0x00, 0x00, 0x41, 0x56, 0x49, 0x20],
+    mask: [0xff, 0xff, 0xff, 0xff, 0x00, 0x00, 0x00, 0x00, 0xff, 0xff, 0xff, 0xff],
+    mimeType: "video/avi",
+    skipWhitespace: false,
+    tagTerminated: false,
+  },
+  {
+    name: "WAVE",
+    pattern: [0x52, 0x49, 0x46, 0x46, 0x00, 0x00, 0x00, 0x00, 0x57, 0x41, 0x56, 0x45],
+    mask: [0xff, 0xff, 0xff, 0xff, 0x00, 0x00, 0x00, 0x00, 0xff, 0xff, 0xff, 0xff],
+    mimeType: "audio/wave",
+    skipWhitespace: false,
+    tagTerminated: false,
+  },
+];
+
+/** §6.3, the font type pattern. */
+export const FONT: ReadonlyArray<BytePattern> = [
+  {
+    name: "Embedded OpenType",
+    pattern: [
+      0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+      0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+      0x00, 0x00, 0x00, 0x00, 0x4c, 0x50,
+    ],
+    mask: [
+      0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+      0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+      0x00, 0x00, 0x00, 0x00, 0xff, 0xff,
+    ],
+    mimeType: "application/vnd.ms-fontobject",
+    skipWhitespace: false,
+    tagTerminated: false,
+  },
+  {
+    name: "TrueType",
+    pattern: [0x00, 0x01, 0x00, 0x00],
+    mask: [0xff, 0xff, 0xff, 0xff],
+    mimeType: "font/ttf",
+    skipWhitespace: false,
+    tagTerminated: false,
+  },
+  {
+    name: "OpenType",
+    pattern: [0x4f, 0x54, 0x54, 0x4f],
+    mask: [0xff, 0xff, 0xff, 0xff],
+    mimeType: "font/otf",
+    skipWhitespace: false,
+    tagTerminated: false,
+  },
+  {
+    name: "TrueType collection",
+    pattern: [0x74, 0x74, 0x63, 0x66],
+    mask: [0xff, 0xff, 0xff, 0xff],
+    mimeType: "font/collection",
+    skipWhitespace: false,
+    tagTerminated: false,
+  },
+  {
+    name: "WOFF",
+    pattern: [0x77, 0x4f, 0x46, 0x46],
+    mask: [0xff, 0xff, 0xff, 0xff],
+    mimeType: "font/woff",
+    skipWhitespace: false,
+    tagTerminated: false,
+  },
+  {
+    name: "WOFF2",
+    pattern: [0x77, 0x4f, 0x46, 0x32],
+    mask: [0xff, 0xff, 0xff, 0xff],
+    mimeType: "font/woff2",
+    skipWhitespace: false,
+    tagTerminated: false,
+  },
+];
+
+/** §6.4, the archive type pattern. */
+export const ARCHIVE: ReadonlyArray<BytePattern> = [
+  {
+    name: "GZIP",
+    pattern: [0x1f, 0x8b, 0x08],
+    mask: [0xff, 0xff, 0xff],
+    mimeType: "application/x-gzip",
+    skipWhitespace: false,
+    tagTerminated: false,
+  },
+  {
+    name: "ZIP",
+    pattern: [0x50, 0x4b, 0x03, 0x04],
+    mask: [0xff, 0xff, 0xff, 0xff],
+    mimeType: "application/zip",
+    skipWhitespace: false,
+    tagTerminated: false,
+  },
+  {
+    name: "RAR",
+    pattern: [0x52, 0x61, 0x72, 0x21, 0x1a, 0x07, 0x00],
+    mask: [0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff],
+    mimeType: "application/x-rar-compressed",
+    skipWhitespace: false,
+    tagTerminated: false,
+  },
+];

@@ -94,6 +94,9 @@ importers:
       '@thomasfosterau/effect-langtag':
         specifier: workspace:*
         version: link:packages/langtag
+      '@thomasfosterau/effect-mime':
+        specifier: workspace:*
+        version: link:packages/mime
       '@thomasfosterau/effect-robots':
         specifier: workspace:*
         version: link:packages/robots
@@ -183,6 +186,21 @@ importers:
         version: 4.0.5
 
   packages/langtag:
+    devDependencies:
+      '@effect/language-service':
+        specifier: 'catalog:'
+        version: 0.87.5
+      '@types/node':
+        specifier: 'catalog:'
+        version: 26.6.5
+      '@vitest/coverage-istanbul':
+        specifier: 'catalog:'
+        version: 5.0.5(vitest@5.0.5)
+      effect:
+        specifier: 4.0.5
+        version: 4.0.5
+
+  packages/mime:
     devDependencies:
       '@effect/language-service':
         specifier: 'catalog:'
