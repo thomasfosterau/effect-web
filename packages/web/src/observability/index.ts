@@ -268,9 +268,13 @@ export const logErrorEvent = (
 
 /**
  * Renders any failure value as the one-line text an `error` column and a
- * log annotation carry. Tagged errors render as `Tag: message`; anything
- * else falls back to its `String` form, so a defect from a library is still
- * legible on the row.
+ * log annotation carry. Tagged errors render as `Tag: message`; an
+ * untagged value with a message (an array included) renders as that
+ * message. An error-shaped value whose `message` is the empty string
+ * renders as its `name` (`"Error"`, `"TypeError"`), or as `""` when it has
+ * none (a plain `{ message: "" }`), never as `"[object Object]"`.
+ * Anything else falls back to its `String` form, so a defect from a
+ * library is still legible on the row.
  *
  * @example
  * ```ts
@@ -279,6 +283,8 @@ export const logErrorEvent = (
  * describeError({ _tag: "FetchFailed", message: "timeout" }) // "FetchFailed: timeout"
  * describeError({ _tag: "Interrupted" }) // "Interrupted"
  * describeError(new Error("boom")) // "boom"
+ * describeError(new Error("")) // "Error"
+ * describeError({ message: "" }) // ""
  * describeError(42) // "42"
  * ```
  *
@@ -286,18 +292,28 @@ export const logErrorEvent = (
  * @category logging
  */
 export const describeError = (error: unknown): string => {
-  if (Predicate.isObject(error)) {
-    // SAFETY: a structural read of two optional members on an arbitrary
-    // object; each is checked with `Predicate.isString` before use.
-    const tagged = error as { readonly _tag?: unknown; readonly message?: unknown };
-    const tag = Predicate.isString(tagged._tag) ? Option.some(tagged._tag) : Option.none();
-    const message =
-      Predicate.isString(tagged.message) && tagged.message !== ""
-        ? Option.some(tagged.message)
-        : Option.none();
-    if (Option.isSome(tag) && Option.isSome(message)) return `${tag.value}: ${message.value}`;
-    if (Option.isSome(tag)) return tag.value;
-    if (Option.isSome(message)) return message.value;
+  if (!Predicate.isObjectOrArray(error)) return String(error);
+  // SAFETY: a structural read of three optional members on an arbitrary
+  // object or array; each is checked with `Predicate.isString` before use.
+  const failure = error as {
+    readonly _tag?: unknown;
+    readonly message?: unknown;
+    readonly name?: unknown;
+  };
+  const tag = Predicate.isString(failure._tag) ? Option.some(failure._tag) : Option.none();
+  const message =
+    Predicate.isString(failure.message) && failure.message !== ""
+      ? Option.some(failure.message)
+      : Option.none();
+  if (Option.isSome(tag)) {
+    return Option.match(message, {
+      onNone: () => tag.value,
+      onSome: (text) => `${tag.value}: ${text}`,
+    });
+  }
+  if (Option.isSome(message)) return message.value;
+  if (Predicate.isString(failure.message)) {
+    return Predicate.isString(failure.name) ? failure.name : "";
   }
   return String(error);
 };
