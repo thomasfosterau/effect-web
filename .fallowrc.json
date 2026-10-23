@@ -16,6 +16,7 @@
     "packages/uri-template/src/index.ts",
     "packages/langtag/src/index.ts",
     "packages/css/src/index.ts",
+    "packages/encoding/src/index.ts",
     "packages/langtag/src/registry/index.ts",
     "packages/*/tests/**/*.test.ts",
     "packages/*/tests/**/*.types.ts",
@@ -103,6 +104,10 @@
       {
         "name": "css",
         "patterns": ["packages/css/**"]
+      },
+      {
+        "name": "encoding",
+        "patterns": ["packages/encoding/**"]
       }
     ],
     "rules": [
@@ -140,6 +145,10 @@
       },
       {
         "from": "css",
+        "allow": []
+      },
+      {
+        "from": "encoding",
         "allow": []
       }
     ]

@@ -17,6 +17,7 @@ const packages = [
   "uri-template",
   "langtag",
   "css",
+  "encoding",
 ];
 const forbidden = [/["'`]effect\/(?:unstable|httpapi)(?:\/[^"'`]*)?["'`]/];
 
