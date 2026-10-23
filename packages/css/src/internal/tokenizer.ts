@@ -5,6 +5,7 @@
  * plus the `unicode-range` and attribute-matcher tokens of the 2014 one).
  */
 /* oxlint-disable effect/imperative-loops, effect/no-length-comparison, effect/prefer-arr-match, effect/prefer-match-over-switch, effect/no-known-value-widening -- a transcription of the specification's tokenizer state machine: a cursor over code points, consumed one at a time, is the algorithm as written. */
+import * as Str from "effect/String";
 import type { Token } from "../token.ts";
 
 /** A token and the code-point offset in the preprocessed input it starts at. */
@@ -105,26 +106,33 @@ export const tokenize = (text: string): ReadonlyArray<Located> => {
     }
   };
 
+  /** The run of digits at the cursor. */
+  const consumeDigits = (): string => {
+    let digits = "";
+    while (isDigit(at(0))) digits += String.fromCodePoint(next());
+    return digits;
+  };
+
+  /** Whether an exponent (`e`, an optional sign, a digit) starts at the cursor. */
+  const startsExponent = (): boolean =>
+    (at(0) === 0x45 || at(0) === 0x65) &&
+    (isDigit(at(1)) || ((at(1) === 0x2b || at(1) === 0x2d) && isDigit(at(2))));
+
+  /** A fraction or an exponent: its two leading code points, then digits. */
+  const consumeTail = (): string => String.fromCodePoint(next(), next()) + consumeDigits();
+
   /** §4.3.12: a number's representation, value and type. */
-  const consumeNumber = (): { representation: string; value: number; isInteger: boolean } => {
-    let representation = "";
-    let isInteger = true;
-    if (at(0) === 0x2b || at(0) === 0x2d) representation += String.fromCodePoint(next());
-    while (isDigit(at(0))) representation += String.fromCodePoint(next());
-    if (at(0) === 0x2e && isDigit(at(1))) {
-      representation += String.fromCodePoint(next(), next());
-      isInteger = false;
-      while (isDigit(at(0))) representation += String.fromCodePoint(next());
-    }
-    if (
-      (at(0) === 0x45 || at(0) === 0x65) &&
-      (isDigit(at(1)) || ((at(1) === 0x2b || at(1) === 0x2d) && isDigit(at(2))))
-    ) {
-      representation += String.fromCodePoint(next(), next());
-      isInteger = false;
-      while (isDigit(at(0))) representation += String.fromCodePoint(next());
-    }
-    return { representation, value: Number(representation), isInteger };
+  const consumeNumber = () => {
+    const sign = at(0) === 0x2b || at(0) === 0x2d ? String.fromCodePoint(next()) : "";
+    const integer = sign + consumeDigits();
+    const fraction = at(0) === 0x2e && isDigit(at(1)) ? consumeTail() : "";
+    const exponent = startsExponent() ? consumeTail() : "";
+    const representation = integer + fraction + exponent;
+    return {
+      representation,
+      value: Number(representation),
+      isInteger: Str.isEmpty(fraction) && Str.isEmpty(exponent),
+    };
   };
 
   /** §4.3.3: a number, percentage or dimension. */
@@ -149,6 +157,24 @@ export const tokenize = (text: string): ReadonlyArray<Located> => {
     }
   };
 
+  const badUrl = (): Token => {
+    consumeBadUrlRemnants();
+    return { _tag: "BadUrl" };
+  };
+
+  /** Whether a code point inside an unquoted URL makes it a bad URL. */
+  const isBadUrlPoint = (point: number): boolean =>
+    point === 0x22 || point === 0x27 || point === 0x28 || isNonPrintable(point);
+
+  /** Whitespace inside a URL: only `)` or the end may follow it. */
+  const consumeUrlWhitespace = (value: string): Token => {
+    while (isWhitespace(at(0))) next();
+    if (at(0) === 0x29 || at(0) === EOF) {
+      return { _tag: "Url", value, unterminated: next() === EOF };
+    }
+    return badUrl();
+  };
+
   /** §4.3.6: a URL token, after `url(` and its whitespace. */
   const consumeUrl = (): Token => {
     let value = "";
@@ -157,28 +183,10 @@ export const tokenize = (text: string): ReadonlyArray<Located> => {
       const point = next();
       if (point === 0x29) return { _tag: "Url", value, unterminated: false };
       if (point === EOF) return { _tag: "Url", value, unterminated: true };
-      if (isWhitespace(point)) {
-        while (isWhitespace(at(0))) next();
-        if (at(0) === 0x29 || at(0) === EOF) {
-          return { _tag: "Url", value, unterminated: next() === EOF };
-        }
-        consumeBadUrlRemnants();
-        return { _tag: "BadUrl" };
-      }
-      if (point === 0x22 || point === 0x27 || point === 0x28 || isNonPrintable(point)) {
-        consumeBadUrlRemnants();
-        return { _tag: "BadUrl" };
-      }
-      if (point === 0x5c) {
-        if (isValidEscape(point, at(0))) {
-          value += String.fromCodePoint(consumeEscaped());
-        } else {
-          consumeBadUrlRemnants();
-          return { _tag: "BadUrl" };
-        }
-      } else {
-        value += String.fromCodePoint(point);
-      }
+      if (isWhitespace(point)) return consumeUrlWhitespace(value);
+      if (isBadUrlPoint(point)) return badUrl();
+      if (point === 0x5c && !isValidEscape(point, at(0))) return badUrl();
+      value += String.fromCodePoint(point === 0x5c ? consumeEscaped() : point);
     }
   };
 
@@ -201,6 +209,16 @@ export const tokenize = (text: string): ReadonlyArray<Located> => {
     return { _tag: "Ident", value: name };
   };
 
+  /** A backslash inside a string, after it: the code points it adds. */
+  const consumeStringEscape = (): string => {
+    if (at(0) === EOF) return "";
+    if (at(0) === LF) {
+      next();
+      return "";
+    }
+    return String.fromCodePoint(consumeEscaped());
+  };
+
   /** §4.3.5: a string, after its opening quote. */
   const consumeString = (ending: number): Token => {
     let value = "";
@@ -212,16 +230,7 @@ export const tokenize = (text: string): ReadonlyArray<Located> => {
         position -= 1;
         return { _tag: "BadString" };
       }
-      if (point === 0x5c) {
-        if (at(0) === EOF) continue;
-        if (at(0) === LF) {
-          next();
-          continue;
-        }
-        value += String.fromCodePoint(consumeEscaped());
-      } else {
-        value += String.fromCodePoint(point);
-      }
+      value += point === 0x5c ? consumeStringEscape() : String.fromCodePoint(point);
     }
   };
 
@@ -253,127 +262,97 @@ export const tokenize = (text: string): ReadonlyArray<Located> => {
 
   const delim = (point: number): Token => ({ _tag: "Delim", value: String.fromCodePoint(point) });
 
-  /** §4.3.1: one token. */
-  const consumeToken = (point: number): Token => {
+  /** `token`, if the next code point is `=` (consumed), else a delim for `point`. */
+  const matcher =
+    (tag: "IncludeMatch" | "DashMatch" | "PrefixMatch" | "SuffixMatch" | "SubstringMatch") =>
+    (point: number): Token => {
+      if (at(0) !== 0x3d) return delim(point);
+      next();
+      return { _tag: tag };
+    };
+
+  /** A number if one starts at `point`, else a delim. */
+  const numberOrDelim = (point: number): Token => {
+    if (!startsNumber(point, at(0), at(1))) return delim(point);
+    position -= 1;
+    return consumeNumeric();
+  };
+
+  const fixed = (token: Token) => (): Token => token;
+
+  /** §4.3.1's per-code-point rules, after the code point is consumed. */
+  const RULES: Readonly<Record<number, (point: number) => Token>> = {
+    0x22: consumeString,
+    0x27: consumeString,
+    0x23: (point) => {
+      if (!isName(at(0)) && !isValidEscape(at(0), at(1))) return delim(point);
+      const type = startsIdent(at(0), at(1), at(2)) ? "id" : "unrestricted";
+      return { _tag: "Hash", value: consumeName(), type };
+    },
+    0x24: matcher("SuffixMatch"),
+    0x28: fixed({ _tag: "OpenParen" }),
+    0x29: fixed({ _tag: "CloseParen" }),
+    0x2a: matcher("SubstringMatch"),
+    0x2b: numberOrDelim,
+    0x2e: numberOrDelim,
+    0x2c: fixed({ _tag: "Comma" }),
+    0x2d: (point) => {
+      if (startsNumber(point, at(0), at(1))) return numberOrDelim(point);
+      if (at(0) === 0x2d && at(1) === 0x3e) {
+        position += 2;
+        return { _tag: "CDC" };
+      }
+      if (!startsIdent(point, at(0), at(1))) return delim(point);
+      position -= 1;
+      return consumeIdentLike();
+    },
+    0x3a: fixed({ _tag: "Colon" }),
+    0x3b: fixed({ _tag: "Semicolon" }),
+    0x3c: (point) => {
+      if (at(0) !== 0x21 || at(1) !== 0x2d || at(2) !== 0x2d) return delim(point);
+      position += 3;
+      return { _tag: "CDO" };
+    },
+    0x40: (point) =>
+      startsIdent(at(0), at(1), at(2)) ? { _tag: "AtKeyword", value: consumeName() } : delim(point),
+    0x5b: fixed({ _tag: "OpenSquare" }),
+    0x5c: (point) => {
+      if (!isValidEscape(point, at(0))) return delim(point);
+      position -= 1;
+      return consumeIdentLike();
+    },
+    0x5d: fixed({ _tag: "CloseSquare" }),
+    0x5e: matcher("PrefixMatch"),
+    0x7b: fixed({ _tag: "OpenCurly" }),
+    0x7d: fixed({ _tag: "CloseCurly" }),
+    0x7c: (point) => {
+      if (at(0) === 0x7c) {
+        next();
+        return { _tag: "Column" };
+      }
+      return matcher("DashMatch")(point);
+    },
+    0x7e: matcher("IncludeMatch"),
+  };
+
+  /** The rules for a code point with no entry in {@link RULES}. */
+  const consumeOther = (point: number): Token => {
     if (isWhitespace(point)) {
       while (isWhitespace(at(0))) next();
       return { _tag: "Whitespace" };
     }
-    switch (point) {
-      case 0x22:
-      case 0x27:
-        return consumeString(point);
-      case 0x23:
-        if (isName(at(0)) || isValidEscape(at(0), at(1))) {
-          const type = startsIdent(at(0), at(1), at(2)) ? "id" : "unrestricted";
-          return { _tag: "Hash", value: consumeName(), type };
-        }
-        return delim(point);
-      case 0x24:
-        if (at(0) === 0x3d) {
-          next();
-          return { _tag: "SuffixMatch" };
-        }
-        return delim(point);
-      case 0x28:
-        return { _tag: "OpenParen" };
-      case 0x29:
-        return { _tag: "CloseParen" };
-      case 0x2a:
-        if (at(0) === 0x3d) {
-          next();
-          return { _tag: "SubstringMatch" };
-        }
-        return delim(point);
-      case 0x2b:
-      case 0x2e:
-        if (startsNumber(point, at(0), at(1))) {
-          position -= 1;
-          return consumeNumeric();
-        }
-        return delim(point);
-      case 0x2c:
-        return { _tag: "Comma" };
-      case 0x2d:
-        if (startsNumber(point, at(0), at(1))) {
-          position -= 1;
-          return consumeNumeric();
-        }
-        if (at(0) === 0x2d && at(1) === 0x3e) {
-          position += 2;
-          return { _tag: "CDC" };
-        }
-        if (startsIdent(point, at(0), at(1))) {
-          position -= 1;
-          return consumeIdentLike();
-        }
-        return delim(point);
-      case 0x3a:
-        return { _tag: "Colon" };
-      case 0x3b:
-        return { _tag: "Semicolon" };
-      case 0x3c:
-        if (at(0) === 0x21 && at(1) === 0x2d && at(2) === 0x2d) {
-          position += 3;
-          return { _tag: "CDO" };
-        }
-        return delim(point);
-      case 0x40:
-        if (startsIdent(at(0), at(1), at(2))) return { _tag: "AtKeyword", value: consumeName() };
-        return delim(point);
-      case 0x5b:
-        return { _tag: "OpenSquare" };
-      case 0x5c:
-        if (isValidEscape(point, at(0))) {
-          position -= 1;
-          return consumeIdentLike();
-        }
-        return delim(point);
-      case 0x5d:
-        return { _tag: "CloseSquare" };
-      case 0x5e:
-        if (at(0) === 0x3d) {
-          next();
-          return { _tag: "PrefixMatch" };
-        }
-        return delim(point);
-      case 0x7b:
-        return { _tag: "OpenCurly" };
-      case 0x7d:
-        return { _tag: "CloseCurly" };
-      case 0x7c:
-        if (at(0) === 0x3d) {
-          next();
-          return { _tag: "DashMatch" };
-        }
-        if (at(0) === 0x7c) {
-          next();
-          return { _tag: "Column" };
-        }
-        return delim(point);
-      case 0x7e:
-        if (at(0) === 0x3d) {
-          next();
-          return { _tag: "IncludeMatch" };
-        }
-        return delim(point);
-      default:
-        break;
-    }
-    if (isDigit(point)) {
-      position -= 1;
-      return consumeNumeric();
-    }
+    if (isDigit(point)) return numberOrDelim(point);
     if ((point === 0x55 || point === 0x75) && at(0) === 0x2b && (isHex(at(1)) || at(1) === 0x3f)) {
       next();
       return consumeUnicodeRange();
     }
-    if (isNameStart(point)) {
-      position -= 1;
-      return consumeIdentLike();
-    }
-    return delim(point);
+    if (!isNameStart(point)) return delim(point);
+    position -= 1;
+    return consumeIdentLike();
   };
+
+  /** §4.3.1: one token. */
+  const consumeToken = (point: number): Token => (RULES[point] ?? consumeOther)(point);
 
   const tokens: Array<Located> = [];
   for (;;) {
