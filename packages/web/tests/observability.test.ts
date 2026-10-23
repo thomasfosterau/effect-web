@@ -266,4 +266,18 @@ describe("describeError", () => {
     expect(describeError(42)).toBe("42");
     expect(describeError(null)).toBe("null");
   });
+
+  it("renders an untagged empty-message error by its name, or as the empty string", () => {
+    expect(describeError(new TypeError(""))).toBe("TypeError");
+    expect(describeError(new RangeError(""))).toBe("RangeError");
+    expect(describeError({ message: "" })).toBe("");
+    expect(describeError({ message: "", name: "" })).toBe("");
+    expect(describeError({})).toBe("[object Object]");
+  });
+
+  it("reads a message off an array too", () => {
+    expect(describeError(Object.assign(["a", "b"], { message: "listed" }))).toBe("listed");
+    expect(describeError(Object.assign(["a", "b"], { message: "" }))).toBe("");
+    expect(describeError(["a", "b"])).toBe("a,b");
+  });
 });
