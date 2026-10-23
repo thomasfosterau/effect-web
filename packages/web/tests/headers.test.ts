@@ -80,6 +80,14 @@ describe("appendVary", () => {
     const headers = Headers.fromInput({ vary: "Accept" });
     expect(appendVary(headers, ["accept"])).toBe(headers);
   });
+
+  it.each(["", "   ", " , "])(
+    "treats a Vary with no member (%j) as absent, with no leading empty member",
+    (value) => {
+      const headers = appendVary(Headers.fromInput({ vary: value }), ["Cookie", "Accept"]);
+      expect(vary(headers)).toStrictEqual(Option.some("Cookie, Accept"));
+    },
+  );
 });
 
 describe("responseVary / classifyRoute (PERF-CACHE-001)", () => {
