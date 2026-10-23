@@ -27,6 +27,7 @@
     "@thomasfosterau/effect-encoding": "workspace:*",
     "@thomasfosterau/effect-json-feed": "workspace:*",
     "@thomasfosterau/effect-langtag": "workspace:*",
+    "@thomasfosterau/effect-mime": "workspace:*",
     "@thomasfosterau/effect-robots": "workspace:*",
     "@thomasfosterau/effect-rss-feed": "workspace:*",
     "@thomasfosterau/effect-sitemap": "workspace:*",
