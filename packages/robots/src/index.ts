@@ -140,12 +140,12 @@ interface DirectiveLine {
 /** A line of robots.txt: its directive, or `None` for a blank, comment-only or colon-less line. */
 type Line = Option.Option<DirectiveLine>;
 
-/** The rest of a line up to its comment or line feed. */
-const lineContent = Token.takeTill("#\n");
+/** The rest of a line up to its comment or line end. */
+const lineContent = Token.takeTill("#\r\n");
 
 /** `field: value`; the field ends at the first colon, so a colon in the value is kept. */
 const directive: Parser.Parser<Line> = Parser.separatedPair(
-  Token.takeTill(":#\n"),
+  Token.takeTill(":#\r\n"),
   Token.literal(":"),
   lineContent,
 ).pipe(Parser.map(([field, value]) => Option.some({ field: field.trim(), value: value.trim() })));
@@ -153,12 +153,11 @@ const directive: Parser.Parser<Line> = Parser.separatedPair(
 /**
  * One line: a directive, or else anything at all (RFC 9309 §2.2 ignores a
  * malformed line rather than rejecting the file), then an optional `#`
- * comment. The CR of a CRLF ending stays in the line and is trimmed with
- * the other whitespace.
+ * comment. A line ends at CR, LF or CRLF ({@link lineEnd}).
  */
 const line: Parser.Parser<Line> = Parser.terminated(
   Parser.alt(directive, Parser.as(lineContent, Option.none())),
-  Parser.opt(Parser.preceded(Token.literal("#"), Token.takeTill("\n"))),
+  Parser.opt(Parser.preceded(Token.literal("#"), Token.takeTill("\r\n"))),
 );
 
 /** Prints a line back to text; `None` is a blank line. */
@@ -168,10 +167,16 @@ const printLine: (line: Line) => string = Option.match({
 });
 
 /**
- * robots.txt as its lines, one per line feed. The grammar is total (every
+ * RFC 9309 §2.2's `EOL = %x0A / %x0D / %x0D.0A`: CRLF, a bare CR or a bare
+ * LF. CRLF is tried first, so it is one line end rather than two.
+ */
+const lineEnd = Parser.alt(Token.literal("\r\n"), Token.literal("\r"), Token.literal("\n"));
+
+/**
+ * robots.txt as its lines, one per line end. The grammar is total (every
  * string parses), which is what keeps `parse` from throwing.
  */
-const RobotsTxtLines = ParserSchema.make(Parser.separated(line, Token.literal("\n")), {
+const RobotsTxtLines = ParserSchema.make(Parser.separated(line, lineEnd), {
   encode: (lines) => Arr.map(lines, printLine).join("\n"),
 });
 

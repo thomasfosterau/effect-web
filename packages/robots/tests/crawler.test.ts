@@ -60,6 +60,11 @@ describe("parse — the crawlers' cases", () => {
     expect(parsed.groups[0]?.rules[0]?.path).toBe("/x");
   });
 
+  it("handles bare \\r line endings, failing closed rather than open", () => {
+    const parsed = parse("User-agent: *\rDisallow: /\r");
+    expect(evaluateRobots(parsed, "examplebot", "/x").allowed).toBe(false);
+  });
+
   it("ignores rules and a Crawl-delay that appear before any user-agent line", () => {
     const parsed = parse("Crawl-delay: 5\nDisallow: /orphan\nUser-agent: *\nDisallow: /x");
     expect(parsed.groups).toHaveLength(1);
