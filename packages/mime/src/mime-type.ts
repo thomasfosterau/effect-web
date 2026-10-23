@@ -80,6 +80,36 @@ const collectUntil = (input: string, start: number, stops: string): readonly [st
 };
 
 /**
+ * One parameter of §4.4's loop, from just after its `;`: the parameter if
+ * it is valid, and where the next `;` (or the end) is.
+ */
+const parameterAt = (
+  input: string,
+  start: number,
+): readonly [Option.Option<readonly [string, string]>, number] => {
+  const skipped = input.slice(start).match(LEADING_HTTP_WHITESPACE)?.[0].length ?? 0;
+  const [rawName, afterName] = collectUntil(input, start + skipped, ";=");
+  const name = Str.toLowerCase(rawName);
+  if (afterName >= input.length || input[afterName] === ";") return [Option.none(), afterName];
+  const valueStart = afterName + 1;
+  if (valueStart >= input.length) return [Option.none(), input.length];
+  const [value, next] =
+    input[valueStart] === '"'
+      ? (() => {
+          const [quoted, afterQuoted] = collectQuotedString(input, valueStart);
+          return [quoted, collectUntil(input, afterQuoted, ";")[1]] as const;
+        })()
+      : (() => {
+          const [raw, afterValue] = collectUntil(input, valueStart, ";");
+          return [raw.replace(TRAILING_HTTP_WHITESPACE, ""), afterValue] as const;
+        })();
+  const unquotedEmpty = input[valueStart] !== '"' && Str.isEmpty(value);
+  return unquotedEmpty || !TOKEN.test(name) || !QUOTED_STRING_TOKEN.test(value)
+    ? [Option.none(), next]
+    : [Option.some([name, value] as const), next];
+};
+
+/**
  * Parses a MIME type (§4.4, "parse a MIME type"). `None` when the string
  * has no valid `type/subtype`; a malformed parameter is skipped, and a
  * repeated parameter name keeps its first value.
@@ -110,35 +140,11 @@ export const parse = (input: string): Option.Option<MimeType> => {
   let position = afterSubtype;
   // oxlint-disable-next-line effect/imperative-loops -- the specification's position-cursor algorithm, transcribed step for step.
   while (position < trimmed.length) {
-    position += 1;
-    const skipped = trimmed.slice(position).match(LEADING_HTTP_WHITESPACE);
-    position += skipped?.[0].length ?? 0;
-    const [rawName, afterName] = collectUntil(trimmed, position, ";=");
-    const name = Str.toLowerCase(rawName);
-    position = afterName;
-    if (position < trimmed.length) {
-      if (trimmed[position] === ";") continue;
-      position += 1;
-    }
-    if (position >= trimmed.length) break;
-    let value: string;
-    if (trimmed[position] === '"') {
-      const [quoted, afterQuoted] = collectQuotedString(trimmed, position);
-      value = quoted;
-      position = collectUntil(trimmed, afterQuoted, ";")[1];
-    } else {
-      const [raw, afterValue] = collectUntil(trimmed, position, ";");
-      position = afterValue;
-      value = raw.replace(TRAILING_HTTP_WHITESPACE, "");
-      if (Str.isEmpty(value)) continue;
-    }
-    if (
-      TOKEN.test(name) &&
-      QUOTED_STRING_TOKEN.test(value) &&
-      !parameters.some(([existing]) => existing === name)
-    ) {
-      parameters.push([name, value]);
-    }
+    const [parameter, next] = parameterAt(trimmed, position + 1);
+    position = next;
+    Option.map(parameter, ([name, value]) => {
+      if (!parameters.some(([existing]) => existing === name)) parameters.push([name, value]);
+    });
   }
   return Option.some({
     type: Str.toLowerCase(type),
