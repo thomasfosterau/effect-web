@@ -17,7 +17,7 @@ MimeType.essence(Sniff.sniff(bytes)); // "application/pdf"
 
 Extension.mimeTypeFor("Report.DOCX"); // Option.some("application/vnd.openxmlformats-officedocument.wordprocessingml.document")
 
-DataUrl.parse("data:,Hello%2C%20World").pipe(
+DataUrl.process("data:,Hello%2C%20World").pipe(
   Option.map(({ body }) => new TextDecoder().decode(body)),
 ); // Option.some("Hello, World")
 ```
@@ -45,7 +45,7 @@ DataUrl.parse("data:,Hello%2C%20World").pipe(
 
 ## `DataUrl`
 
-`parse(url)` is Fetch's `data:` URL processor: `Option<{ mimeType, body: Uint8Array }>`, percent-decoding the body or forgiving-base64-decoding it under `;base64`, with `text/plain;charset=US-ASCII` for a missing or malformed type. `forgivingBase64Decode` is exported on its own.
+`process(url)` is Fetch's `data:` URL processor: `Option<{ mimeType, body: Uint8Array }>`, percent-decoding the body or forgiving-base64-decoding it under `;base64`, with `text/plain;charset=US-ASCII` for a missing or malformed type. `forgivingBase64Decode` is exported on its own.
 
 ## Licence
 
