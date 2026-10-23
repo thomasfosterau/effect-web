@@ -32,6 +32,7 @@ import * as Schema from "effect/Schema";
 import * as SchemaTransformation from "effect/SchemaTransformation";
 import * as Str from "effect/String";
 import * as HttpClient from "effect/http/HttpClient";
+import type * as HttpClientError from "effect/http/HttpClientError";
 import * as Parser from "@thomasfosterau/effect-parse/Parser";
 import * as ParserSchema from "@thomasfosterau/effect-parse/ParserSchema";
 import * as Token from "@thomasfosterau/effect-parse/Token";
@@ -593,6 +594,21 @@ export const ROBOTS_UNAVAILABLE_TTL_SECONDS = 60 * 60;
 export const ROBOTS_UNAVAILABLE_SENTINEL = "\0__robots_unavailable__";
 
 /**
+ * What {@link fetchRobots} returns when the request never reached the
+ * origin because the caller's own client refused it (an SSRF guard, or a
+ * DNS lookup inside that guard that failed), as identified by
+ * {@link FetchRobotsOptions.isRefusal}. Unlike
+ * {@link ROBOTS_UNAVAILABLE_SENTINEL} it says nothing about the origin, so
+ * {@link makeRobotsChecker} disallows the one check and never caches it.
+ * Like that sentinel, it starts with a NUL byte so it can never collide
+ * with a real body.
+ *
+ * @since 0.2.0
+ * @category constants
+ */
+export const ROBOTS_REFUSED_SENTINEL = "\0__robots_refused__";
+
+/**
  * The cache value for an origin with no restrictions (a 4xx, 404 included).
  *
  * @since 0.1.0
@@ -690,7 +706,19 @@ export interface FetchRobotsOptions {
   readonly timeout?: Duration.Input | undefined;
   /** The body cap. Defaults to {@link MAX_ROBOTS_BYTES}. */
   readonly maxBytes?: number | undefined;
+  /**
+   * Whether a failed request was refused by the caller's own client (an
+   * SSRF guard, or a DNS failure inside it) rather than by the origin or
+   * the network. A refusal yields {@link ROBOTS_REFUSED_SENTINEL}, which
+   * {@link makeRobotsChecker} does not cache; every other failure stays
+   * {@link ROBOTS_UNAVAILABLE_SENTINEL}. Defaults to treating no failure as
+   * a refusal, which is the behaviour without this option.
+   */
+  readonly isRefusal?: ((error: HttpClientError.HttpClientError) => boolean) | undefined;
 }
+
+/** The default `isRefusal`: no failure is a refusal. */
+const isNeverRefusal = (_error: HttpClientError.HttpClientError): boolean => false;
 
 /**
  * Fetches `<origin>/robots.txt` through the `HttpClient` in context and
@@ -698,7 +726,9 @@ export interface FetchRobotsOptions {
  * 2xx body (capped), {@link ROBOTS_NO_RESTRICTIONS} for a 4xx (404
  * included), and {@link ROBOTS_UNAVAILABLE_SENTINEL} for a 5xx, a transport
  * failure, a timeout or a body that cannot be read — the crawler must
- * assume it is not permitted until it can read the rules. Never fails.
+ * assume it is not permitted until it can read the rules. A failure the
+ * `isRefusal` option identifies as the caller's own client refusing the
+ * request yields {@link ROBOTS_REFUSED_SENTINEL} instead. Never fails.
  *
  * Redirect policy is the client's: provide one whose redirects are
  * revalidated against the SSRF block list (`@thomasfosterau/effect-web/net`).
@@ -738,6 +768,12 @@ export const fetchRobots = (
     }
     return response.status >= 500 ? ROBOTS_UNAVAILABLE_SENTINEL : ROBOTS_NO_RESTRICTIONS;
   }).pipe(
+    // The caller's client refused the request: the origin was never asked.
+    Effect.catch((error) =>
+      (options.isRefusal ?? isNeverRefusal)(error)
+        ? Effect.succeed(ROBOTS_REFUSED_SENTINEL)
+        : Effect.fail(error),
+    ),
     Effect.timeout(options.timeout ?? Duration.seconds(10)),
     // Transport failure, timeout, a redirect the client refused, an
     // unreadable body: the same posture as a 5xx.
@@ -787,6 +823,16 @@ export const ROBOTS_UNAVAILABLE_REASON =
   "robots.txt unavailable (server error) — treating as disallow";
 
 /**
+ * The reason a disallowed decision carries when the caller's own client
+ * refused the robots.txt request ({@link ROBOTS_REFUSED_SENTINEL}).
+ *
+ * @since 0.2.0
+ * @category constants
+ */
+export const ROBOTS_REFUSED_REASON =
+  "robots.txt request refused by the client — treating as disallow, not cached";
+
+/**
  * Builds a crawler's `checkRobots`: whether it may fetch `url` under the
  * origin's robots.txt, reading the origin's body through the cache and
  * fetching on a miss ({@link fetchRobots}), then {@link evaluateRobots}
@@ -794,7 +840,9 @@ export const ROBOTS_UNAVAILABLE_REASON =
  * `allowed: false` decisions, and cache problems are the adapter's to
  * degrade. The fetch outcome is cached with the TTL its posture warrants
  * (unavailability shorter), and a failed cache write is not a failed
- * decision.
+ * decision. A refusal by the caller's own client
+ * ({@link FetchRobotsOptions.isRefusal}) disallows that check and is never
+ * cached, so the next check asks again.
  *
  * @example
  * ```ts
@@ -829,6 +877,7 @@ export const makeRobotsChecker = <R = never>(
       const cached = yield* cache.get(origin);
       if (Option.isSome(cached)) return cached.value;
       const fetched = yield* fetchRobots(origin, options);
+      if (fetched === ROBOTS_REFUSED_SENTINEL) return fetched;
       const ttl =
         fetched === ROBOTS_UNAVAILABLE_SENTINEL
           ? (options.unavailableTtlSeconds ?? ROBOTS_UNAVAILABLE_TTL_SECONDS)
@@ -843,6 +892,9 @@ export const makeRobotsChecker = <R = never>(
       const body = yield* loadRobots(parsed.origin);
       if (body === ROBOTS_UNAVAILABLE_SENTINEL) {
         return { allowed: false, reason: ROBOTS_UNAVAILABLE_REASON } as const;
+      }
+      if (body === ROBOTS_REFUSED_SENTINEL) {
+        return { allowed: false, reason: ROBOTS_REFUSED_REASON } as const;
       }
       if (body === ROBOTS_NO_RESTRICTIONS) {
         return { allowed: true, crawlDelaySeconds: Option.none() } as const;
@@ -958,7 +1010,7 @@ export const LOW_CHURN_CACHE_CONTROL =
 
 /**
  * A guard for the strings the checker treats as sentinels: a real body is
- * neither empty nor the unavailable marker.
+ * neither empty, nor the unavailable marker, nor the refused marker.
  *
  * @example
  * ```ts
@@ -979,4 +1031,5 @@ export const LOW_CHURN_CACHE_CONTROL =
 export const isRobotsBody = (value: string): boolean =>
   Predicate.isString(value) &&
   value !== ROBOTS_NO_RESTRICTIONS &&
-  value !== ROBOTS_UNAVAILABLE_SENTINEL;
+  value !== ROBOTS_UNAVAILABLE_SENTINEL &&
+  value !== ROBOTS_REFUSED_SENTINEL;

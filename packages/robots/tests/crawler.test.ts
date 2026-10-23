@@ -20,6 +20,8 @@ import {
   parse,
   ROBOTS_CACHE_TTL_SECONDS,
   ROBOTS_NO_RESTRICTIONS,
+  ROBOTS_REFUSED_REASON,
+  ROBOTS_REFUSED_SENTINEL,
   ROBOTS_UNAVAILABLE_REASON,
   ROBOTS_UNAVAILABLE_SENTINEL,
   ROBOTS_UNAVAILABLE_TTL_SECONDS,
@@ -196,7 +198,12 @@ describe("evaluateRobots", () => {
 
 // ── The checker over a stub site ────────────────────────────────────────
 
-type Answer = Response | "transport-error";
+type Answer = Response | "transport-error" | "refused";
+
+/** The description the stub's `refused` answer fails with: the caller's guard refusing the request. */
+const REFUSED_BY_GUARD = "refused by the SSRF guard";
+const isRefusal = (error: HttpClientError.HttpClientError): boolean =>
+  error.reason.description === REFUSED_BY_GUARD;
 
 /** A stub `HttpClient` answering from a pathname table, recording every request. */
 const siteFrom = (routes: Record<string, () => Answer>) => {
@@ -204,12 +211,12 @@ const siteFrom = (routes: Record<string, () => Answer>) => {
   const client = HttpClient.make((request, url) => {
     requests.push(url.href);
     const answer = routes[url.pathname]?.() ?? new Response("not found", { status: 404 });
-    return answer === "transport-error"
+    return answer === "transport-error" || answer === "refused"
       ? Effect.fail(
           new HttpClientError.HttpClientError({
             reason: new HttpClientError.TransportError({
               request,
-              description: "connection refused",
+              description: answer === "refused" ? REFUSED_BY_GUARD : "connection refused",
             }),
           }),
         )
@@ -257,6 +264,39 @@ describe("fetchRobots", () => {
     );
   });
 
+  it("reports a failure isRefusal identifies as refused, and any other as unavailable", async () => {
+    const cases = [
+      ["refused", ROBOTS_REFUSED_SENTINEL],
+      ["transport-error", ROBOTS_UNAVAILABLE_SENTINEL],
+    ] as const;
+    await Effect.runPromise(
+      Effect.forEach(
+        cases,
+        ([answer, expected]) =>
+          fetchRobots("https://feed.test", { userAgent: "bot/1.0", isRefusal }).pipe(
+            Effect.provideService(
+              HttpClient.HttpClient,
+              siteFrom({ "/robots.txt": () => answer }).client,
+            ),
+            Effect.tap((got) => Effect.sync(() => expect(got).toBe(expected))),
+          ),
+        { concurrency: 1, discard: true },
+      ),
+    );
+  });
+
+  it("treats a refusal as unavailability without the isRefusal option", async () => {
+    const got = await Effect.runPromise(
+      fetchRobots("https://feed.test", { userAgent: "bot/1.0" }).pipe(
+        Effect.provideService(
+          HttpClient.HttpClient,
+          siteFrom({ "/robots.txt": () => "refused" }).client,
+        ),
+      ),
+    );
+    expect(got).toBe(ROBOTS_UNAVAILABLE_SENTINEL);
+  });
+
   it("caps the body at maxBytes and sends the User-Agent", async () => {
     let userAgent = "";
     const client = HttpClient.make((request) => {
@@ -276,6 +316,7 @@ describe("fetchRobots", () => {
     expect(isRobotsBody("User-agent: *")).toBe(true);
     expect(isRobotsBody(ROBOTS_NO_RESTRICTIONS)).toBe(false);
     expect(isRobotsBody(ROBOTS_UNAVAILABLE_SENTINEL)).toBe(false);
+    expect(isRobotsBody(ROBOTS_REFUSED_SENTINEL)).toBe(false);
   });
 });
 
@@ -333,6 +374,43 @@ describe("makeRobotsChecker", () => {
         { concurrency: 1, discard: true },
       ),
     );
+  });
+
+  it("disallows a refused check without caching it, so the next check asks again", async () => {
+    const cache = memoryRobotsCache();
+    const site = siteFrom({ "/robots.txt": () => "refused" });
+    const checkRobots = makeRobotsChecker({
+      userAgent: "bot/1.0",
+      userAgentToken: UA,
+      cache,
+      isRefusal,
+    });
+    const decisions = await Effect.runPromise(
+      Effect.forEach(["https://feed.test/a", "https://feed.test/b"], checkRobots, {
+        concurrency: 1,
+      }).pipe(Effect.provideService(HttpClient.HttpClient, site.client)),
+    );
+    expect(decisions).toEqual([
+      { allowed: false, reason: ROBOTS_REFUSED_REASON },
+      { allowed: false, reason: ROBOTS_REFUSED_REASON },
+    ]);
+    expect(cache.entries.size).toBe(0);
+    expect(site.requests).toEqual(["https://feed.test/robots.txt", "https://feed.test/robots.txt"]);
+  });
+
+  it("still caches a 5xx for an hour when isRefusal is given", async () => {
+    const cache = memoryRobotsCache();
+    const site = siteFrom({ "/robots.txt": text("boom", 503) });
+    const decision = await Effect.runPromise(
+      makeRobotsChecker({ userAgent: "bot/1.0", userAgentToken: UA, cache, isRefusal })(
+        "https://feed.test/a",
+      ).pipe(Effect.provideService(HttpClient.HttpClient, site.client)),
+    );
+    expect(decision).toEqual({ allowed: false, reason: ROBOTS_UNAVAILABLE_REASON });
+    expect(cache.entries.get("https://feed.test")).toEqual({
+      value: ROBOTS_UNAVAILABLE_SENTINEL,
+      ttlSeconds: ROBOTS_UNAVAILABLE_TTL_SECONDS,
+    });
   });
 
   it("evaluates a fetched body for the path and reports the crawl delay, then serves the cache", async () => {
