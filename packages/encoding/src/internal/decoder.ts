@@ -14,19 +14,19 @@
 import * as Option from "effect/Option";
 import * as Result from "effect/Result";
 import { ISO_8859_16_HIGH } from "./iso-8859-16.ts";
-import type { EncodingName } from "./labels.ts";
+import type { Name as EncodingName } from "./labels.ts";
 
 /** How a byte-order mark at the head of the input is treated. */
-export type BomHandling = "sniff" | "strip" | "keep";
+export type BomMode = "sniff" | "strip" | "keep";
 
 /** A byte-order mark: the encoding it names and its length in bytes. */
-export interface Bom {
+export interface ByteOrderMark {
   readonly encoding: "UTF-8" | "UTF-16LE" | "UTF-16BE";
   readonly length: number;
 }
 
 /** The Encoding Standard's BOM sniff (§6, "BOM sniff"). */
-export const sniffBom = (bytes: Uint8Array): Option.Option<Bom> => {
+export const bomOf = (bytes: Uint8Array): Option.Option<ByteOrderMark> => {
   const [a, b, c] = bytes;
   if (a === 0xef && b === 0xbb && c === 0xbf) return Option.some({ encoding: "UTF-8", length: 3 });
   if (a === 0xfe && b === 0xff) return Option.some({ encoding: "UTF-16BE", length: 2 });
@@ -109,7 +109,7 @@ const backendFor = (
 };
 
 /** Whether this runtime (or a bundled table) can decode the encoding. */
-export const isSupported = (encoding: EncodingName): boolean =>
+export const canDecode = (encoding: EncodingName): boolean =>
   Option.isSome(backendFor(encoding, false, false));
 
 /** A decoding failure: the encoding in use and the byte offset the error was detected at. */
@@ -128,7 +128,7 @@ export interface Decoder {
 export interface DecoderOptions {
   readonly encoding: EncodingName;
   readonly fatal: boolean;
-  readonly bomHandling: BomHandling;
+  readonly bomHandling: BomMode;
 }
 
 /** Concatenates two byte arrays. */
@@ -206,7 +206,7 @@ export const make = (options: DecoderOptions): Result.Result<Decoder, EncodingNa
 
   /** Settles the encoding from the buffered head (BOM sniff), then decodes the head. */
   const settle = (stream: boolean): Result.Result<string, Failure> => {
-    const bom = sniffBom(head);
+    const bom = bomOf(head);
     const settled = Option.match(bom, {
       onNone: () => Result.succeed(initial.success),
       onSome: ({ encoding }) =>

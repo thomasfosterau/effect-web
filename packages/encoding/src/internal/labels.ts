@@ -7,7 +7,7 @@
  */
 
 /** The 40 encoding names, in the specification's order. */
-export const ENCODING_NAMES = [
+export const NAMES = [
   "UTF-8",
   "IBM866",
   "ISO-8859-2",
@@ -50,8 +50,8 @@ export const ENCODING_NAMES = [
   "x-user-defined",
 ] as const;
 
-/** One of {@link ENCODING_NAMES}. */
-export type EncodingName = (typeof ENCODING_NAMES)[number];
+/** One of {@link NAMES}. */
+export type Name = (typeof NAMES)[number];
 
 /** Every label (lower-case, as the specification lists it) to its encoding's name. */
 export const LABELS = {
@@ -283,4 +283,4 @@ export const LABELS = {
   "x-unicode20utf8": "UTF-8",
   "x-user-defined": "x-user-defined",
   "x-x-big5": "Big5",
-} as const satisfies Readonly<Record<string, EncodingName>>;
+} as const satisfies Readonly<Record<string, Name>>;

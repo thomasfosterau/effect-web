@@ -14,7 +14,7 @@ import * as Schema from "effect/Schema";
 import * as Stream from "effect/Stream";
 import * as Str from "effect/String";
 import * as Decoder from "./internal/decoder.ts";
-import { ENCODING_NAMES as NAMES, LABELS, type EncodingName as Name } from "./internal/labels.ts";
+import { LABELS, NAMES, type Name } from "./internal/labels.ts";
 
 /**
  * An encoding's name, as the Encoding Standard spells it (`UTF-8`,
@@ -75,7 +75,7 @@ export const getEncoding = (label: string): Option.Option<EncodingName> =>
  * @since 0.1.0
  * @category models
  */
-export type Bom = Decoder.Bom;
+export type Bom = Decoder.ByteOrderMark;
 
 /**
  * The standard's BOM sniff (§6): `EF BB BF` is UTF-8, `FE FF` UTF-16BE,
@@ -93,7 +93,7 @@ export type Bom = Decoder.Bom;
  * @since 0.1.0
  * @category bom
  */
-export const sniffBom: (bytes: Uint8Array) => Option.Option<Bom> = Decoder.sniffBom;
+export const sniffBom: (bytes: Uint8Array) => Option.Option<Bom> = Decoder.bomOf;
 
 /**
  * What a decoder does with a byte-order mark at the head of the input:
@@ -108,7 +108,7 @@ export const sniffBom: (bytes: Uint8Array) => Option.Option<Bom> = Decoder.sniff
  * @since 0.1.0
  * @category models
  */
-export type BomHandling = Decoder.BomHandling;
+export type BomHandling = Decoder.BomMode;
 
 /**
  * Options for {@link decode} and {@link decodeStream}.
@@ -177,7 +177,7 @@ export class UnsupportedEncodingError extends Schema.TaggedError<UnsupportedEnco
  * @since 0.1.0
  * @category decoding
  */
-export const isSupported: (encoding: EncodingName) => boolean = Decoder.isSupported;
+export const isSupported: (encoding: EncodingName) => boolean = Decoder.canDecode;
 
 const decodeError = (failure: Decoder.Failure): DecodeError =>
   new DecodeError({
