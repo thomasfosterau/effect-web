@@ -94,18 +94,18 @@ export const forgivingBase64Decode = (input: string): Option.Option<Uint8Array> 
  * import * as Option from "effect/Option"
  * import { DataUrl, MimeType } from "@thomasfosterau/effect-mime"
  *
- * const processed = DataUrl.parse("data:image/png;base64,iVBORw0KGgo=")
+ * const processed = DataUrl.process("data:image/png;base64,iVBORw0KGgo=")
  * console.log(Option.map(processed, ({ mimeType }) => MimeType.serialize(mimeType))) // Option.some("image/png")
  * console.log(Option.map(processed, ({ body }) => body.length)) // Option.some(8)
  *
- * const text = DataUrl.parse("data:,Hello%2C%20World")
+ * const text = DataUrl.process("data:,Hello%2C%20World")
  * console.log(Option.map(text, ({ body }) => new TextDecoder().decode(body))) // Option.some("Hello, World")
  * ```
  *
  * @since 0.1.0
  * @category parsing
  */
-export const parse = (input: string | URL): Option.Option<DataUrl> => {
+export const process = (input: string | URL): Option.Option<DataUrl> => {
   const url = URL.parse(input);
   if (url === null || url.protocol !== "data:") return Option.none();
   const serialised = url.href.split("#")[0] ?? "";

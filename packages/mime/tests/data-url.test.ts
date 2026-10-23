@@ -23,12 +23,12 @@ const Base64Vectors = Schema.Array(
 );
 
 const render = (input: string) =>
-  Option.map(DataUrl.parse(input), ({ mimeType, body }) => [
+  Option.map(DataUrl.process(input), ({ mimeType, body }) => [
     MimeType.serialize(mimeType),
     Array.from(body),
   ]);
 
-describe("DataUrl.parse (web-platform-tests)", () => {
+describe("DataUrl.process (web-platform-tests)", () => {
   it("matches every vector in data-urls.json", () => {
     const vectors = Schema.decodeUnknownSync(DataUrlVectors)(dataUrls);
     expect(vectors.length).toBeGreaterThan(50);
@@ -43,22 +43,22 @@ describe("DataUrl.parse (web-platform-tests)", () => {
   it("matches every forgiving-base64 vector in base64.json, through data:;base64,", () => {
     const vectors = Schema.decodeUnknownSync(Base64Vectors)(base64);
     const body = (input: string) =>
-      Option.map(DataUrl.parse(`data:;base64,${input}`), (url) => Array.from(url.body));
+      Option.map(DataUrl.process(`data:;base64,${input}`), (url) => Array.from(url.body));
     expect(Arr.map(vectors, ([input]) => [input, body(input)])).toEqual(
       Arr.map(vectors, ([input, expected]) => [input, Option.fromNullishOr(expected)]),
     );
   });
 });
 
-describe("DataUrl.parse", () => {
+describe("DataUrl.process", () => {
   it("accepts a URL object and rejects other schemes", () => {
-    expect(Option.isSome(DataUrl.parse(new URL("data:,x")))).toBe(true);
-    expect(Option.isNone(DataUrl.parse("https://example.com/,x"))).toBe(true);
-    expect(Option.isNone(DataUrl.parse("not a url"))).toBe(true);
+    expect(Option.isSome(DataUrl.process(new URL("data:,x")))).toBe(true);
+    expect(Option.isNone(DataUrl.process("https://example.com/,x"))).toBe(true);
+    expect(Option.isNone(DataUrl.process("not a url"))).toBe(true);
   });
 
   it("decodes a base64 image", () => {
-    const parsed = DataUrl.parse("data:image/png;base64,iVBORw0KGgo=");
+    const parsed = DataUrl.process("data:image/png;base64,iVBORw0KGgo=");
     expect(Option.map(parsed, ({ mimeType }) => MimeType.essence(mimeType))).toStrictEqual(
       Option.some("image/png"),
     );
