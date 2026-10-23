@@ -99,8 +99,10 @@ export const stageNoindex = (
 
 /**
  * Idempotently appends header names to a response `Vary`, skipping any
- * already present (case-insensitively). The single place the policies here
- * mutate `Vary`, so a front door's `Vary` handling stays in one function.
+ * already present (case-insensitively). An empty or whitespace-only `Vary`
+ * counts as absent, so the result never opens with an empty list member.
+ * The single place the policies here mutate `Vary`, so a front door's
+ * `Vary` handling stays in one function.
  *
  * @example
  * ```ts
@@ -132,10 +134,14 @@ export const appendVary = (
   return Headers.set(
     headers,
     "Vary",
-    Option.match(existing, {
-      onNone: () => additions.join(", "),
-      onSome: (value) => `${value}, ${additions.join(", ")}`,
-    }),
+    // An empty or whitespace-only `Vary` has no member to join onto.
+    Option.match(
+      Option.filter(existing, () => Arr.isReadonlyArrayNonEmpty(present)),
+      {
+        onNone: () => additions.join(", "),
+        onSome: (value) => `${value}, ${additions.join(", ")}`,
+      },
+    ),
   );
 };
 
