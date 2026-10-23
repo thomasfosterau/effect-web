@@ -23,6 +23,7 @@
     "@effect/tsgo": "catalog:",
     "@mpsuesser/oxlint-plugin-effect": "catalog:",
     "@thomasfosterau/effect-atom-feed": "workspace:*",
+    "@thomasfosterau/effect-css": "workspace:*",
     "@thomasfosterau/effect-json-feed": "workspace:*",
     "@thomasfosterau/effect-langtag": "workspace:*",
     "@thomasfosterau/effect-robots": "workspace:*",
