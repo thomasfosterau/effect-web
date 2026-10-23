@@ -4,7 +4,7 @@
  * (`isLocaleInvariantAsset`, `classifyRoute`). Each is a pure function, so it
  * is tested directly, without a request handler's import graph.
  */
-import { describe, expect, it } from "vite-plus/test";
+import { afterEach, describe, expect, it, vi } from "vite-plus/test";
 import * as Arr from "effect/Array";
 import * as Option from "effect/Option";
 import * as Record from "effect/Record";
@@ -156,5 +156,53 @@ describe("the Fetch adapter", () => {
     applyToWebHeaders(headers, (h) => responseVary(securityHeaders(h), "negotiated"));
     expect(headers.get("vary")).toBe("Accept, Cookie, Accept-Language");
     expect(headers.get("referrer-policy")).toBe("strict-origin-when-cross-origin");
+  });
+
+  describe("header-name spelling", () => {
+    // `globalThis.Headers` lower-cases names on read, so the names an adapter
+    // writes are observed at `Headers#set`, the call a runtime sends as written.
+    const recordSetNames = (): Array<string> => {
+      const names: Array<string> = [];
+      const set = globalThis.Headers.prototype.set;
+      vi.spyOn(globalThis.Headers.prototype, "set").mockImplementation(function (
+        this: globalThis.Headers,
+        name: string,
+        value: string,
+      ) {
+        names.push(name);
+        set.call(this, name, value);
+      });
+      return names;
+    };
+
+    afterEach(() => {
+      vi.restoreAllMocks();
+    });
+
+    it("applyToWebHeaders writes each changed header under its canonical name", () => {
+      const headers = new globalThis.Headers({ vary: "Accept" });
+      const names = recordSetNames();
+      applyToWebHeaders(headers, (h) =>
+        stageNoindex(responseVary(securityHeaders(h), "negotiated"), { indexable: false }),
+      );
+      expect(names.toSorted()).toEqual(
+        [...Record.keys(SECURITY_HEADER_DEFAULTS), "Vary", "X-Robots-Tag"].toSorted(),
+      );
+    });
+
+    it("updateWebHeaders writes each changed header under its canonical name", () => {
+      const response = new Response("x", { headers: { "x-frame-options": "DENY" } });
+      const names = recordSetNames();
+      updateWebHeaders(response, (h) =>
+        Headers.set(Headers.set(securityHeaders(h), "etag", '"v1"'), "www-authenticate", "Basic"),
+      );
+      expect(names.toSorted()).toEqual(
+        [
+          ...Record.keys(SECURITY_HEADER_DEFAULTS).filter((name) => name !== "X-Frame-Options"),
+          "ETag",
+          "WWW-Authenticate",
+        ].toSorted(),
+      );
+    });
   });
 });
