@@ -8,13 +8,17 @@
  * application. An absent member is an omitted key, never `null` or
  * `undefined`, so the document a consumer holds is the document it serves.
  *
+ * Reading is the other half: `parseJsonFeed` / `decodeJsonFeed` take a
+ * JSON Feed 1.0 or 1.1 document as found in the wild into the same
+ * {@link JsonFeed} shape, leniently, with a diagnostic for everything they
+ * dropped or repaired.
+ *
  * @since 0.1.0
  */
 import * as Arr from "effect/Array";
 import * as DateTime from "effect/DateTime";
-import * as Predicate from "effect/Predicate";
-import * as Record from "effect/Record";
 import * as HttpServerResponse from "effect/http/HttpServerResponse";
+import { compact } from "./internal/compact.ts";
 
 // ── The document ───────────────────────────────────────────────────────
 
@@ -53,6 +57,23 @@ export type JsonFeedAuthor =
     };
 
 /**
+ * A JSON Feed attachment (an enclosure: a podcast episode's audio, say).
+ * `url` and `mime_type` are required; on input to {@link buildJsonFeedItem}
+ * `url` may be a site-root-relative path, and the built item carries it
+ * absolute.
+ *
+ * @since 0.1.0
+ * @category models
+ */
+export interface JsonFeedAttachment {
+  readonly url: string;
+  readonly mime_type: string;
+  readonly title?: string | undefined;
+  readonly size_in_bytes?: number | undefined;
+  readonly duration_in_seconds?: number | undefined;
+}
+
+/**
  * A JSON Feed 1.1 item, as {@link buildJsonFeed} emits it: member names are
  * the spec's, every URL is absolute, every date RFC 3339 in UTC.
  *
@@ -74,6 +95,7 @@ export interface JsonFeedItem {
   readonly authors?: ReadonlyArray<JsonFeedAuthor> | undefined;
   readonly tags?: ReadonlyArray<string> | undefined;
   readonly language?: string | undefined;
+  readonly attachments?: ReadonlyArray<JsonFeedAttachment> | undefined;
 }
 
 /**
@@ -161,22 +183,14 @@ export type JsonFeedEntry = {
   readonly authors?: ReadonlyArray<JsonFeedAuthor> | undefined;
   readonly tags?: ReadonlyArray<string> | undefined;
   readonly language?: string | undefined;
+  /** Related resources (enclosures); each `url` a site-root-relative path or an absolute URL. */
+  readonly attachments?: ReadonlyArray<JsonFeedAttachment> | undefined;
 } & (
   | { readonly contentHtml: string; readonly contentText?: string | undefined }
   | { readonly contentHtml?: string | undefined; readonly contentText: string }
 );
 
 // ── Building ───────────────────────────────────────────────────────────
-
-/**
- * An `A` built from every one of its members, absent ones as `undefined`,
- * with those keys dropped: the caller lists each member once (the mapped
- * parameter type makes a forgotten one a compile error), and the result
- * carries only the present ones.
- */
-const compact = <A>(record: { readonly [K in keyof A]-?: A[K] | undefined }): A =>
-  // SAFETY: `Record.filter` only removes keys, and only `undefined`-valued ones; every member that can be `undefined` is optional in `A`, so what remains is an `A`. The assertion restores the key set `filter` widens to `string`.
-  Record.filter(record, Predicate.isNotUndefined) as A;
 
 const absolute = (base: string, path: string): string => new URL(path, base).toString();
 
@@ -240,6 +254,18 @@ export const buildJsonFeedItem = (base: string, entry: JsonFeedEntry): JsonFeedI
     authors: authors(base, entry.authors),
     tags: entry.tags,
     language: entry.language,
+    attachments:
+      entry.attachments === undefined
+        ? undefined
+        : Arr.map(entry.attachments, (attachment) =>
+            compact<JsonFeedAttachment>({
+              url: absolute(base, attachment.url),
+              mime_type: attachment.mime_type,
+              title: attachment.title,
+              size_in_bytes: attachment.size_in_bytes,
+              duration_in_seconds: attachment.duration_in_seconds,
+            }),
+          ),
   });
 };
 
@@ -359,3 +385,13 @@ export const jsonFeedResponse = (
         : { "cache-control": cacheControl, "cache-tag": options.cacheTag },
   });
 };
+
+// ── Reading ────────────────────────────────────────────────────────────
+
+/**
+ * Reading a JSON Feed 1.0 or 1.1 document: {@link parseJsonFeed},
+ * {@link decodeJsonFeed} and their result and error types.
+ *
+ * @since 0.1.0
+ */
+export * from "./parse.ts";
