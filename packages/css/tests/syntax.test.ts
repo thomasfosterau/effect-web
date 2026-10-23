@@ -4,6 +4,7 @@
  * through a converter to the suite's JSON representation of the AST.
  */
 import { describe, expect, it } from "vite-plus/test";
+import * as Arr from "effect/Array";
 import * as Match from "effect/Match";
 import * as Option from "effect/Option";
 import * as Predicate from "effect/Predicate";
@@ -140,5 +141,38 @@ describe("error offsets", () => {
       kind: "extra-input",
       offset: 5,
     });
+  });
+});
+
+describe("deep nesting", () => {
+  /** The nesting depth of a component value, measured without recursion. */
+  const depthOf = (value: Option.Option<Token.ComponentValue>): number =>
+    Arr.unfold(value, (current) =>
+      Option.flatMap(current, (node) =>
+        Predicate.isTagged(node, "Block") || Predicate.isTagged(node, "Func")
+          ? Option.some([node, Arr.head(node.value)] as const)
+          : Option.none(),
+      ),
+    ).length;
+
+  it.each(["(", "[", "{", "f("])(
+    "parses 100000 levels of %s without overflowing the stack",
+    (open) => {
+      const css = open.repeat(100_000);
+      expect(depthOf(Arr.head(Syntax.parseComponentValueList(css)))).toBe(100_000);
+    },
+  );
+
+  it("parses deeply nested blocks in a stylesheet and a declaration list", () => {
+    const nested = "{".repeat(100_000);
+    expect(Syntax.parseStylesheet(`a ${nested}`)).toHaveLength(1);
+    expect(Syntax.parseDeclarationList(`a: ${"(".repeat(100_000)}`)).toHaveLength(1);
+    expect(Syntax.parseRule(`@media ${nested}`)._tag).toBe("AtRule");
+  });
+
+  it("closes each level at its own closer", () => {
+    const css = `${"(".repeat(50_000)}${")".repeat(50_000)} x`;
+    const values = Syntax.parseComponentValueList(css);
+    expect(values.map((value) => value._tag)).toEqual(["Block", "Whitespace", "Ident"]);
   });
 });

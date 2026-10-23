@@ -95,43 +95,87 @@ const closer = {
 } as const;
 const associated = { OpenSquare: "[", OpenParen: "(", OpenCurly: "{" } as const;
 
-/** §5.4.9: a simple block, after its opening token. */
-const consumeBlock = (input: Cursor, open: keyof typeof closer): Block => {
-  const value: Array<ComponentValue> = [];
-  for (;;) {
-    const token = input.next();
-    if (token === undefined || token._tag === closer[open]) {
-      return { _tag: "Block", associated: associated[open], value };
-    }
-    input.back();
-    value.push(consumeComponentValue(input));
-  }
-};
+/**
+ * A function or simple block being consumed: what closes it, and how to
+ * build it from its contents.
+ */
+interface Frame {
+  readonly closer: "CloseSquare" | "CloseParen" | "CloseCurly";
+  readonly value: Array<ComponentValue>;
+  readonly build: (value: ReadonlyArray<ComponentValue>) => Func | Block;
+}
 
-/** §5.4.10: a function, after its function-token. */
-const consumeFunction = (input: Cursor, name: string): Func => {
-  const value: Array<ComponentValue> = [];
-  for (;;) {
-    const token = input.next();
-    if (token === undefined || token._tag === "CloseParen") return { _tag: "Func", name, value };
-    input.back();
-    value.push(consumeComponentValue(input));
-  }
-};
+/** A token that opens a function or a simple block. */
+type Opener = Extract<
+  Token,
+  { readonly _tag: "Function" | "OpenSquare" | "OpenParen" | "OpenCurly" }
+>;
 
-/** §5.4.8: one component value. The cursor is not at EOF. */
-const consumeComponentValue = (input: Cursor): ComponentValue => {
-  const token = input.next() ?? { _tag: "Whitespace" };
+const isOpener = (token: Token): token is Opener =>
+  token._tag === "Function" ||
+  token._tag === "OpenSquare" ||
+  token._tag === "OpenParen" ||
+  token._tag === "OpenCurly";
+
+/** The frame an opening token starts. */
+const frameFor = (token: Opener): Frame => {
   switch (token._tag) {
     case "OpenSquare":
     case "OpenParen":
-    case "OpenCurly":
-      return consumeBlock(input, token._tag);
+    case "OpenCurly": {
+      const open = token._tag;
+      return {
+        closer: closer[open],
+        value: [],
+        build: (value) => ({ _tag: "Block", associated: associated[open], value }),
+      };
+    }
     case "Function":
-      return consumeFunction(input, token.value);
-    default:
-      return token;
+      return {
+        closer: "CloseParen",
+        value: [],
+        build: (value) => ({ _tag: "Func", name: token.value, value }),
+      };
   }
+};
+
+/**
+ * §5.4.8 to §5.4.10: one component value, consuming a simple block or a
+ * function to its closing token (or EOF). Nesting is kept on an explicit
+ * stack rather than the call stack, so arbitrarily deep input such as
+ * `((((…` cannot overflow it. The cursor is not at EOF.
+ */
+const consumeComponentValue = (input: Cursor): ComponentValue => {
+  const first: Token = input.next() ?? { _tag: "Whitespace" };
+  if (!isOpener(first)) return first;
+  const root = frameFor(first);
+  const stack: Array<Frame> = [root];
+  for (;;) {
+    const top = stack[stack.length - 1] ?? root;
+    const token = input.next();
+    if (token === undefined || token._tag === top.closer) {
+      stack.pop();
+      const node = top.build(top.value);
+      const parent = stack[stack.length - 1];
+      if (parent === undefined) return node;
+      parent.value.push(node);
+      continue;
+    }
+    if (isOpener(token)) {
+      stack.push(frameFor(token));
+    } else {
+      top.value.push(token);
+    }
+  }
+};
+
+/** §5.4.9: a simple block, after its opening token. */
+const consumeBlock = (input: Cursor, open: keyof typeof closer): Block => {
+  input.back();
+  const block = consumeComponentValue(input);
+  return block._tag === "Block"
+    ? block
+    : { _tag: "Block", associated: associated[open], value: [] };
 };
 
 const skipWhitespace = (input: Cursor): void => {
