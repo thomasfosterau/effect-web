@@ -286,6 +286,10 @@ importers:
         version: 4.0.5
 
   packages/web:
+    dependencies:
+      '@thomasfosterau/effect-mime':
+        specifier: workspace:^
+        version: link:../mime
     devDependencies:
       '@effect/language-service':
         specifier: 'catalog:'

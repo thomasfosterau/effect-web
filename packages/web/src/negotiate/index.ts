@@ -17,6 +17,12 @@
  * `Middleware.negotiate` has no notion of, because a JSON:API-only server
  * never has to choose between representations.
  *
+ * Media types are compared as WHATWG MIME types (MIME Sniffing §4), by
+ * `@thomasfosterau/effect-mime`'s `MimeType`: an `Accept` instance or a
+ * `Content-Type` is parsed and matched on its essence (`type/subtype`, ASCII
+ * lower-cased), so case and HTTP whitespace never decide a verdict, and a
+ * `Content-Type` that is not a MIME type at all carries no media type.
+ *
  * Two consequences, both spec-correct: an `ext` URI the api does not
  * declare in `options.extensions` makes the instance unacceptable (JSON:API
  * §5); and the §6 error documents carry effect-jsonapi's `code` values
@@ -30,6 +36,7 @@ import * as Record from "effect/Record";
 import * as Headers from "effect/http/Headers";
 import * as HttpServerRequest from "effect/http/HttpServerRequest";
 import { Middleware } from "@thomasfosterau/effect-jsonapi";
+import { MimeType } from "@thomasfosterau/effect-mime";
 import { isMutatingMethod, JSONAPI_MEDIA_TYPE, type NegotiationError } from "../jsonapi-error.ts";
 
 /**
@@ -241,15 +248,26 @@ export const makeMarkdownPathMatcher = (
 // ── Accept ranking ──────────────────────────────────────────────────
 
 /**
- * One `Accept` instance: its lowercased base type, the entry (media type,
- * `q` and any accept-extension parameters, each part trimmed and empty `;`
- * parts dropped) and its weight.
+ * One `Accept` instance: its media range's essence (`None` when the range is
+ * not a MIME type: it then matches no target, but still competes as another
+ * media type), the entry (media type, `q` and any accept-extension
+ * parameters, each part trimmed and empty `;` parts dropped) and its weight.
  */
 interface AcceptInstance {
-  readonly base: string;
+  readonly essence: Option.Option<string>;
   readonly entry: string;
   readonly weight: number;
 }
+
+/** The essence (`type/subtype`) of a media type, by effect-mime's §4.4 parse; `None` when it is not one. */
+const essenceOf = (mediaType: string): Option.Option<string> =>
+  Option.map(MimeType.parse(mediaType), MimeType.essence);
+
+/** Whether an `Accept` instance's media range is exactly `mediaType`. */
+const isEssence =
+  (mediaType: string) =>
+  (instance: AcceptInstance): boolean =>
+    Option.contains(instance.essence, mediaType);
 
 const paramName = (param: string): string => (param.split("=")[0] ?? "").trim().toLowerCase();
 
@@ -298,7 +316,7 @@ const parseAccept = (header: Option.Option<string>): ReadonlyArray<AcceptInstanc
           const [type, ...params] = parts;
           if (type === undefined) return Option.none();
           return Option.some({
-            base: type.toLowerCase(),
+            essence: essenceOf(type),
             entry: parts.join(";"),
             weight: weightOf(params),
           });
@@ -350,11 +368,11 @@ const negotiateRead = (
   // pages, an orthogonal media type / path set from the JSON:API surface.
   if (
     options.isMarkdownPath?.(path) === true &&
-    winsAccept(accept, (instance) => instance.base === MARKDOWN_MEDIA_TYPE)
+    winsAccept(accept, isEssence(MARKDOWN_MEDIA_TYPE))
   ) {
     return MARKDOWN;
   }
-  const jsonapi = accept.filter((instance) => instance.base === JSONAPI_MEDIA_TYPE);
+  const jsonapi = accept.filter(isEssence(JSONAPI_MEDIA_TYPE));
   if (Arr.isReadonlyArrayEmpty(jsonapi) || !options.isApiPath(path)) return HTML;
   // §6.3.2 through effect-jsonapi: an instance is clean iff its media-type
   // parameters (the ones before `q`; effect-jsonapi makes that split) are
@@ -369,7 +387,10 @@ const negotiateRead = (
   }
   // A clean, acceptable (q > 0) instance must outrank every other media type;
   // a `q=0` clean instance is an explicit refusal, not a §6 parameterisation.
-  return winsAccept(accept, (instance) => instance.base === JSONAPI_MEDIA_TYPE && isClean(instance))
+  return winsAccept(
+    accept,
+    (instance) => isEssence(JSONAPI_MEDIA_TYPE)(instance) && isClean(instance),
+  )
     ? DISPATCH
     : HTML;
 };
@@ -380,10 +401,8 @@ const negotiateWrite = (
   options: NegotiationOptions,
 ): Negotiation => {
   const contentType = Headers.get(request.headers, "content-type");
-  const base = Option.map(contentType, (value) => (value.split(";")[0] ?? "").trim().toLowerCase());
   if (
-    Option.isNone(base) ||
-    base.value !== JSONAPI_MEDIA_TYPE ||
+    !Option.contains(Option.flatMap(contentType, essenceOf), JSONAPI_MEDIA_TYPE) ||
     !options.isApiPath(pathnameOf(request))
   ) {
     return HTML;
