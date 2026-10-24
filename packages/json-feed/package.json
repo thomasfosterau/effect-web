@@ -1,7 +1,7 @@
 {
   "$schema": "https://www.schemastore.org/package",
   "name": "@thomasfosterau/effect-json-feed",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "JSON Feed 1.1 builder for Effect web applications: the typed feed document, with canonical absolute URLs and omitted absent members, and the served HttpServerResponse.",
   "keywords": [
     "effect",

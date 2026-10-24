@@ -1,7 +1,7 @@
 {
   "$schema": "https://www.schemastore.org/package",
   "name": "@thomasfosterau/effect-langtag",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "BCP 47 language tags (RFC 5646) and language-range matching (RFC 4647) for Effect: parse and canonicalise a tag, read its subtags, filter and look up tags against a priority list, and negotiate a language from Accept-Language.",
   "keywords": [
     "accept-language",

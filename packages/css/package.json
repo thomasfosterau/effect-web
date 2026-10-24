@@ -1,7 +1,7 @@
 {
   "$schema": "https://www.schemastore.org/package",
   "name": "@thomasfosterau/effect-css",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "CSS for Effect: the CSS Syntax Level 3 tokenizer and parser (declaration lists for style attributes, stylesheets, rules, component values) with recoverable errors, typed CSS Color 4 colours with sRGB conversion, and lengths with absolute-unit conversion.",
   "keywords": [
     "css",
