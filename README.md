@@ -15,6 +15,7 @@ A collection of (experimental) utility libraries for using Effect with a variety
 | [`@thomasfosterau/effect-uri-template`](packages/uri-template/README.md) | URI Templates (RFC 6570, all four levels), the `Link` header (RFC 8288: parse against a base, serialise, find by `rel`) and well-known URIs (RFC 8615). | `effect` |
 | [`@thomasfosterau/effect-langtag`](packages/langtag/README.md) | BCP 47 language tags (RFC 5646) and matching (RFC 4647): parse a tag into canonical case, read its subtags and a direction hint, basic and extended filtering, lookup, and `Accept-Language` negotiation. | `effect` |
 | [`@thomasfosterau/effect-css`](packages/css/README.md) | CSS Syntax Level 3 parsing (a `style` attribute's declarations, stylesheets, rules, component values) with recoverable errors, typed CSS Color 4 colours with sRGB conversion, and lengths with absolute-unit conversion. | `effect` |
+| [`@thomasfosterau/effect-mime`](packages/mime/README.md) | MIME types (WHATWG MIME Sniffing): parse and serialise `type/subtype;parameters`, sniff what a resource is from its leading bytes, map file extensions, and process `data:` URLs. | `effect` |
 
 ## Development
 
