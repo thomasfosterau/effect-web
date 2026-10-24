@@ -1,7 +1,7 @@
 {
   "$schema": "https://www.schemastore.org/package",
   "name": "@thomasfosterau/effect-uri-template",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "URI Templates (RFC 6570), Web Linking (RFC 8288) and well-known URIs (RFC 8615) for Effect: parse and expand templates at all four levels, parse and serialise Link headers, and build /.well-known/ URLs.",
   "keywords": [
     "effect",

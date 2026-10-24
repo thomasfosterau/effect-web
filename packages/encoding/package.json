@@ -1,7 +1,7 @@
 {
   "$schema": "https://www.schemastore.org/package",
   "name": "@thomasfosterau/effect-encoding",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "The WHATWG Encoding Standard for Effect: resolve encoding labels, sniff a byte-order mark, and decode bytes or byte streams with fatal errors that carry the byte offset.",
   "keywords": [
     "bom",
