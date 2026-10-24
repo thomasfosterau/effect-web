@@ -89,6 +89,9 @@ importers:
       '@thomasfosterau/effect-css':
         specifier: workspace:*
         version: link:packages/css
+      '@thomasfosterau/effect-encoding':
+        specifier: workspace:*
+        version: link:packages/encoding
       '@thomasfosterau/effect-json-feed':
         specifier: workspace:*
         version: link:packages/json-feed
@@ -154,6 +157,21 @@ importers:
         version: 4.0.5
 
   packages/css:
+    devDependencies:
+      '@effect/language-service':
+        specifier: 'catalog:'
+        version: 0.87.5
+      '@types/node':
+        specifier: 'catalog:'
+        version: 26.6.5
+      '@vitest/coverage-istanbul':
+        specifier: 'catalog:'
+        version: 5.0.5(vitest@5.0.5)
+      effect:
+        specifier: 4.0.5
+        version: 4.0.5
+
+  packages/encoding:
     devDependencies:
       '@effect/language-service':
         specifier: 'catalog:'

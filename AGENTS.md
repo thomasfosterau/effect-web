@@ -15,6 +15,7 @@ This repo publishes the `@thomasfosterau/effect-web` package family, extracted f
 | `@thomasfosterau/effect-uri-template` | `packages/uri-template` | `.` |
 | `@thomasfosterau/effect-langtag` | `packages/langtag` | `.`, `./registry` |
 | `@thomasfosterau/effect-css` | `packages/css` | `.` |
+| `@thomasfosterau/effect-encoding` | `packages/encoding` | `.` |
 
 A new package adds a row here and in the root `README.md`, its own `CLAUDE.md`, a `.fallowrc.json` zone and rule, a root `package.json` devDependency, and its `#check` / `#docgen` / `#build` edges in the root `vite.config.ts` (`check`, `docgen`, `test:coverage`); a published package also joins the `check:dist` task's `dependsOn` and the `packages` list in `scripts/check-dist-imports.mjs`, or its `dist/` is never import-guarded.
 
