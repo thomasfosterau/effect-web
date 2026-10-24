@@ -466,6 +466,32 @@ describe("the Accept q split is positional (RFC 9110 §12.4.2)", () => {
   });
 });
 
+describe("media types are compared as WHATWG MIME types (effect-mime)", () => {
+  it("matches the JSON:API media type by its essence, whatever the case or whitespace", () => {
+    expectDispatch(negotiate(get("/posts", "Application/VND.API+JSON")));
+    expectWriteDispatch(negotiate(write("POST", "/posts", " Application/Vnd.Api+Json ")));
+    expectWriteDispatch(negotiate(write("POST", "/posts", `${JSONAPI_MEDIA_TYPE} ;ext="atomic"`)));
+  });
+
+  it("matches text/markdown by its essence", () => {
+    expectMarkdown(negotiate(get(`/posts/${UUID}`, "Text/Markdown;charset=utf-8")));
+  });
+
+  it("falls through for a write Content-Type that is not a MIME type (no 415)", () => {
+    // `application/vnd.api+json, application/json` has no valid subtype, so it
+    // does not carry the JSON:API media type at all (JSONAPI-NEG-001).
+    expectFallthrough(
+      negotiate(write("POST", "/posts", `${JSONAPI_MEDIA_TYPE}, application/json`)),
+    );
+    expectFallthrough(negotiate(write("POST", "/posts", "application")));
+  });
+
+  it("an Accept entry that is not a MIME type matches nothing but still competes", () => {
+    expectHtmlFallthrough(negotiate(get("/posts", `${JSONAPI_MEDIA_TYPE};q=0.5, garbage`)));
+    expectDispatch(negotiate(get("/posts", `${JSONAPI_MEDIA_TYPE}, garbage;q=0.5`)));
+  });
+});
+
 describe("the §6 errors are effect-jsonapi's, on the wire", () => {
   it("carries ApiError.NotAcceptable's and ApiError.UnsupportedMediaType's status / code / title", () => {
     const [notAcceptable] = ApiError.toDocument(new ApiError.NotAcceptable()).errors;

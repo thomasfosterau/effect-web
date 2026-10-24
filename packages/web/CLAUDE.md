@@ -4,7 +4,7 @@ The framework-neutral half of the family: request/response utilities that serve 
 
 ## Boundary
 
-Imports nothing from this workspace (`.fallowrc.json` zone `web`, no outbound rule). Peer: `effect`; `@thomasfosterau/effect-jsonapi` is an optional peer that only the `./negotiate` entry may import; `@effect/platform-browser` is an optional peer that only the `./browser` and `./testing` entries may import. `./testing` imports `./browser`'s modules (its doubles run the real adapters); nothing outside `./testing` imports `./testing`.
+Imports one workspace package, `@thomasfosterau/effect-mime` (a dependency, consumed through its `dist/` by the build edge), and only from the `./negotiate` entry, which compares media types as its `MimeType`s (#164); `.fallowrc.json` zone `web` allows `mime` and nothing else. Peer: `effect`; `@thomasfosterau/effect-jsonapi` is an optional peer that only the `./negotiate` entry may import; `@effect/platform-browser` is an optional peer that only the `./browser` and `./testing` entries may import. `./testing` imports `./browser`'s modules (its doubles run the real adapters); nothing outside `./testing` imports `./testing`.
 
 ## Invariants
 
