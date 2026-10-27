@@ -50,16 +50,16 @@ catalog:
   # Optional peer of @thomasfosterau/effect-web: only the `./negotiate` entry
   # imports it (the JSON:API §5/§6 media-type rules are adopted from its
   # `Middleware`, never re-implemented here).
-  "@thomasfosterau/effect-jsonapi": ^0.16.3
+  "@thomasfosterau/effect-jsonapi": ^0.19.0
   # Peer of @thomasfosterau/effect-robots: the robots.txt line grammar is an
   # effect-parse parser, decoded through its `ParserSchema` (effect-web#113).
-  "@thomasfosterau/effect-parse": ^0.1.0
+  "@thomasfosterau/effect-parse": ^0.3.0
   "@types/node": ^26.6.5
   # Must equal the vitest that vite-plus bundles (see `vitest` below); vite-plus
   # refuses to run coverage on a mismatch.
   "@vitest/coverage-istanbul": 5.0.5
   effect: 4.0.6
-  fallow: 3.34.1
+  fallow: 3.36.0
   # Runs docgen's compiled examples.
   tsx: ^4.23.15
   # TypeScript 6/7 side-by-side: TS7 (the native Go compiler) ships no JS API
@@ -95,7 +95,7 @@ catalogs:
     "@thomasfosterau/effect-jsonapi": ">=0.16.1"
     # Caret, not `>=`: on 0.x a minor release may break the combinator API
     # the robots grammar is written against.
-    "@thomasfosterau/effect-parse": ^0.1.0
+    "@thomasfosterau/effect-parse": ^0.3.0
     # rc.118 removed every `effect/unstable/*` export path (now `effect/http`,
     # `effect/http-api`, `effect/sql`, ...), so the published dist imports
     # paths that do not exist on anything older: the floor is rc.118
