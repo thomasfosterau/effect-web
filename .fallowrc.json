@@ -118,7 +118,7 @@
     "rules": [
       {
         "from": "web",
-        "allow": []
+        "allow": ["mime"]
       },
       {
         "from": "robots",
