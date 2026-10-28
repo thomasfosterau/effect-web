@@ -18,6 +18,7 @@ const packages = [
   "langtag",
   "css",
   "encoding",
+  "mime",
 ];
 const forbidden = [/["'`]effect\/(?:unstable|httpapi)(?:\/[^"'`]*)?["'`]/];
 

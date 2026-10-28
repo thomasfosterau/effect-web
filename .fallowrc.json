@@ -17,6 +17,7 @@
     "packages/langtag/src/index.ts",
     "packages/css/src/index.ts",
     "packages/encoding/src/index.ts",
+    "packages/mime/src/index.ts",
     "packages/langtag/src/registry/index.ts",
     "packages/*/tests/**/*.test.ts",
     "packages/*/tests/**/*.types.ts",
@@ -108,6 +109,10 @@
       {
         "name": "encoding",
         "patterns": ["packages/encoding/**"]
+      },
+      {
+        "name": "mime",
+        "patterns": ["packages/mime/**"]
       }
     ],
     "rules": [
@@ -149,6 +154,10 @@
       },
       {
         "from": "encoding",
+        "allow": []
+      },
+      {
+        "from": "mime",
         "allow": []
       }
     ]

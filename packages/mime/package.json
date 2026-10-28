@@ -1,0 +1,55 @@
+{
+  "$schema": "https://www.schemastore.org/package",
+  "name": "@thomasfosterau/effect-mime",
+  "version": "0.0.0",
+  "description": "MIME types, MIME sniffing and data: URLs for Effect, after the WHATWG MIME Sniffing and Fetch standards: parse and serialise type/subtype;parameters, identify a resource from its leading bytes, map file extensions, and decode data: URLs.",
+  "keywords": [
+    "content-type",
+    "data-url",
+    "effect",
+    "mime",
+    "mime-sniffing",
+    "typescript",
+    "whatwg"
+  ],
+  "homepage": "https://github.com/thomasfosterau/effect-web#readme",
+  "bugs": {
+    "url": "https://github.com/thomasfosterau/effect-web/issues"
+  },
+  "license": "MIT",
+  "author": "Thomas Foster <me@thomasfoster.au>",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/thomasfosterau/effect-web.git",
+    "directory": "packages/mime"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "type": "module",
+  "sideEffects": false,
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "devDependencies": {
+    "@effect/language-service": "catalog:",
+    "@types/node": "catalog:",
+    "@vitest/coverage-istanbul": "catalog:",
+    "effect": "catalog:"
+  },
+  "peerDependencies": {
+    "effect": "catalog:peers"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}
