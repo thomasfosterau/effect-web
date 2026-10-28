@@ -11,7 +11,7 @@ Peer: `effect`. No workspace dependency (`.fallowrc.json` zone `mime` allows non
 - **The specifications' algorithms are transcribed, and the web-platform-tests vectors pin them.** `tests/fixtures/` vendors `mimesniff/mime-types/resources/*.json` and `fetch/data-urls/resources/*.json` (BSD-3-Clause, provenance in its README); every vector must pass. Refresh them by fetching, never by editing.
 - **A parsed `MimeType` is normalised**: type, subtype and parameter names lower-case, parameters in first-appearance order and unique (first value wins). Values keep their case; `serialize` quotes a value that is empty or not a token.
 - **The sniffing tables are literals**, so nothing is built at import (`"sideEffects": false`). Each row's `name` is its row in the specification.
-- **Custom signatures never override a standard pattern**: `sniff` tries them after the image, audio / video and archive patterns and before the text-or-binary fallback, so a format library refines `application/zip` or `text/plain` without shadowing what the standard already identifies.
+- **Custom signatures never override a specific standard pattern**: `sniff` tries them only where the standard found nothing specific — over a generic container match (`GENERIC_CONTAINERS`: `application/zip`) and before the text-or-binary fallback — so a format library refines `application/zip` or `text/plain` without shadowing what the standard already identifies.
 - **The extension table is curated, not mime-db.** Add an entry only for a format a consumer here needs; `extend` is the hook for the rest. The first extension listed for a type is the one `extensionFor` returns.
 
 ## Terms

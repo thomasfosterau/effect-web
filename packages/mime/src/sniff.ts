@@ -101,20 +101,22 @@ const isPaddedWebm = (bytes: Uint8Array, at: number): boolean => {
 
 /** §6.2.2, "matches the signature for WebM". */
 const isWebm = (bytes: Uint8Array): boolean => {
-  if (bytes.length < 4 || ascii(bytes, 0, 4) !== "\u001aEß£") return false;
-  const docType = Arr.findFirst(
-    Arr.range(4, Math.min(bytes.length, 38) - 1),
-    (at) => bytes[at] === 0x42 && bytes[at + 1] === 0x82,
-  );
-  return Option.match(docType, {
-    onNone: () => false,
-    onSome: (at) => {
-      const sizeAt = at + 2;
-      if (sizeAt >= bytes.length) return false;
-      const valueAt = sizeAt + vintSize(bytes, sizeAt);
-      return valueAt < bytes.length - 4 && isPaddedWebm(bytes, valueAt);
-    },
-  });
+  if (bytes.length < 4 || ascii(bytes, 0, 4) !== "\u001aE\u00df\u00a3") return false;
+  // The §6.2.2 loop: a DocType candidate whose value is not `webm` does not
+  // end the scan, which resumes just after the candidate's size.
+  let iter = 4;
+  // oxlint-disable-next-line effect/imperative-loops -- the specification's bounded cursor scan, transcribed step for step.
+  while (iter < bytes.length && iter < 38) {
+    if (bytes[iter] === 0x42 && bytes[iter + 1] === 0x82) {
+      iter += 2;
+      if (iter >= bytes.length) return false;
+      iter += vintSize(bytes, iter);
+      if (iter >= bytes.length - 4) return false;
+      if (isPaddedWebm(bytes, iter)) return true;
+    }
+    iter += 1;
+  }
+  return false;
 };
 
 /**
@@ -207,46 +209,73 @@ export interface SniffOptions {
   /**
    * Whether HTML, XML and PDF may be detected in an unknown resource (the
    * specification's "sniff-scriptable flag"). Defaults to `true`; a
-   * browser clears it where a scriptable type would be unsafe.
+   * browser clears it where a scriptable type would be unsafe. `noSniff`
+   * clears it too, as §7 requires.
    */
   readonly scriptable?: boolean | undefined;
   /**
-   * Extra signatures for an unknown resource, tried in order after the
-   * standard's image, audio / video and archive patterns and before the
-   * text-or-binary fallback.
+   * Extra signatures for an unknown resource, tried in order where the
+   * standard's patterns found nothing specific: over a generic
+   * `application/zip` match (so a detector that looks inside the archive
+   * can name OOXML, ODF or EPUB), and before the text-or-binary fallback.
    */
   readonly signatures?: ReadonlyArray<Signature> | undefined;
 }
 
 const UNKNOWN_TYPES: ReadonlyArray<string> = ["unknown/unknown", "application/unknown", "*/*"];
 
-/** §7.1, "rules for identifying an unknown MIME type". */
-const identifyUnknown = (bytes: Uint8Array, options: SniffOptions): string =>
-  Option.getOrElse(
-    Arr.findFirst(
-      [
-        options.scriptable === false ? () => Option.none() : matchTable(SCRIPTABLE),
-        matchTable(TEXT),
-        matchImage,
-        matchAudioOrVideo,
-        matchArchive,
-        ...(options.signatures ?? []),
-      ],
-      (signature) => signature(bytes),
-    ),
-    () => (bytes.some(isBinaryDataByte) ? "application/octet-stream" : "text/plain"),
+/**
+ * Standard matches that only name a container: a custom signature that
+ * looks inside it (OOXML, ODF, EPUB in a ZIP) refines them.
+ */
+const GENERIC_CONTAINERS: ReadonlyArray<string> = ["application/zip"];
+
+const firstMatch = (
+  signatures: ReadonlyArray<Signature>,
+  bytes: Uint8Array,
+): Option.Option<string> => Arr.findFirst(signatures, (signature) => signature(bytes));
+
+/**
+ * §7.1, "rules for identifying an unknown MIME type", with the custom
+ * signatures tried where the standard's patterns found nothing specific:
+ * before the text-or-binary fallback, and over a generic container match.
+ */
+const identifyUnknown = (bytes: Uint8Array, options: SniffOptions): string => {
+  const standard = firstMatch(
+    [
+      // §7: the sniff-scriptable flag is the inverse of the no-sniff flag.
+      options.scriptable === false || options.noSniff === true
+        ? () => Option.none()
+        : matchTable(SCRIPTABLE),
+      matchTable(TEXT),
+      matchImage,
+      matchAudioOrVideo,
+      matchArchive,
+    ],
+    bytes,
   );
+  const custom = () => firstMatch(options.signatures ?? [], bytes);
+  return Option.match(standard, {
+    onSome: (type) =>
+      GENERIC_CONTAINERS.includes(type) ? Option.getOrElse(custom(), () => type) : type,
+    onNone: () =>
+      Option.getOrElse(custom(), () =>
+        bytes.some(isBinaryDataByte) ? "application/octet-stream" : "text/plain",
+      ),
+  });
+};
 
 /**
  * Determines a resource's computed MIME type (§7.1), from up to its first
  * 1445 bytes and the type it was supplied with:
  *
  * - no supplied type (or `unknown/unknown`, `application/unknown`, `*\/*`):
- *   the rules for an unknown type, with `signatures` tried before the
- *   text-or-binary fallback;
+ *   the rules for an unknown type, with `signatures` tried over a generic
+ *   `application/zip` match and before the text-or-binary fallback, and
+ *   HTML, XML and PDF not detected under `noSniff`;
  * - `noSniff`, or an XML or HTML supplied type: the supplied type;
- * - a supplied image, audio or video type: the matching pattern, if any,
- *   else the supplied type.
+ * - a supplied image, audio or video type (`application/ogg` included):
+ *   the matching pattern, if any, else the supplied type.
  *
  * A supplied type that does not parse counts as absent.
  *
@@ -285,7 +314,9 @@ export const sniff = (bytes: Uint8Array, options: SniffOptions = {}): MimeType =
         const pattern =
           mimeType.type === "image"
             ? matchImage
-            : mimeType.type === "audio" || mimeType.type === "video"
+            : mimeType.type === "audio" ||
+                mimeType.type === "video" ||
+                essence(mimeType) === "application/ogg"
               ? matchAudioOrVideo
               : undefined;
         return Predicate.isUndefined(pattern)

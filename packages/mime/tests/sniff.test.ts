@@ -189,3 +189,57 @@ describe("Extension", () => {
     expect(Extension.mimeTypeFor("a.jpg")).toStrictEqual(Option.some("image/jpeg"));
   });
 });
+
+describe("review regressions", () => {
+  it("does not sniff scriptable types in an unknown resource under noSniff (§7)", () => {
+    expect(sniffed(ascii("<html>"), { noSniff: true })).toBe("text/plain");
+    expect(sniffed(ascii("<html>"), { supplied: "*/*", noSniff: true })).toBe("text/plain");
+    expect(sniffed(ascii("%PDF-1.7"), { supplied: "not a type", noSniff: true })).toBe(
+      "text/plain",
+    );
+    expect(sniffed(bytes(0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a), { noSniff: true })).toBe(
+      "image/png",
+    );
+  });
+
+  it("keeps scanning after a DocType candidate that is not webm (§6.2.2)", () => {
+    const input = bytes(
+      0x1a,
+      0x45,
+      0xdf,
+      0xa3,
+      0x42,
+      0x82,
+      0x81,
+      0x78,
+      0x42,
+      0x82,
+      0x84,
+      0x77,
+      0x65,
+      0x62,
+      0x6d,
+      0x42,
+    );
+    expect(Sniff.matchAudioOrVideo(input)).toStrictEqual(Option.some("video/webm"));
+  });
+
+  it("lets a custom signature refine a generic ZIP match, but not a specific one", () => {
+    const zip = Uint8Array.from([...ascii("PK\u0003\u0004"), ...ascii("[Content_Types].xml")]);
+    const ooxml: Sniff.Signature = (input) =>
+      String.fromCharCode(...input.subarray(4, 23)) === "[Content_Types].xml"
+        ? Option.some("application/vnd.openxmlformats-officedocument.wordprocessingml.document")
+        : Option.none();
+    expect(sniffed(zip, { signatures: [ooxml] })).toBe(
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    );
+    expect(sniffed(zip)).toBe("application/zip");
+    expect(sniffed(zip, { signatures: [() => Option.none()] })).toBe("application/zip");
+    const png = bytes(0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a);
+    expect(sniffed(png, { signatures: [() => Option.some("x/y")] })).toBe("image/png");
+  });
+
+  it("corrects a supplied application/ogg like any audio or video type (§4.6)", () => {
+    expect(sniffed(ascii("ID3\u0004"), { supplied: "application/ogg" })).toBe("audio/mpeg");
+  });
+});

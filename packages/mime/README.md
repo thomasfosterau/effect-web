@@ -35,9 +35,9 @@ DataUrl.process("data:,Hello%2C%20World").pipe(
 
 | Export | What it does |
 | --- | --- |
-| `sniff(bytes, { supplied?, noSniff?, scriptable? = true, signatures? })` | §7.1's computed MIME type, from the first 1445 bytes: an unknown type is identified (HTML / XML / PDF while `scriptable`, PostScript, BOM-led text, images, audio and video, archives, your `signatures`, then text or binary); a supplied image, audio or video type is corrected from the bytes; anything else (or `noSniff`) keeps the supplied type. |
+| `sniff(bytes, { supplied?, noSniff?, scriptable? = true, signatures? })` | §7.1's computed MIME type, from the first 1445 bytes: an unknown type is identified (HTML / XML / PDF while `scriptable`, PostScript, BOM-led text, images, audio and video, archives, your `signatures`, then text or binary; your `signatures` also refine a generic `application/zip` match; HTML / XML / PDF are not detected under `noSniff`); a supplied image, audio or video type (`application/ogg` included) is corrected from the bytes; anything else (or `noSniff`) keeps the supplied type. |
 | `matchImage`, `matchAudioOrVideo`, `matchFont`, `matchArchive` | The §6 pattern matchers, each a `Signature`: `(bytes) => Option<string>`. Audio / video includes the MP4 and WebM signatures; MP3 without an ID3 tag is not detected yet. |
-| `Signature` | Your own detector: register OOXML / ODF (zip inspection), CFB, RTF and the like through `signatures`, tried after the standard patterns. |
+| `Signature` | Your own detector: register OOXML / ODF (zip inspection), CFB, RTF and the like through `signatures`: tried over a generic `application/zip` match and after every other standard pattern. |
 
 ## `Extension`
 

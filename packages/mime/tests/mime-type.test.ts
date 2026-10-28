@@ -94,3 +94,21 @@ describe("MimeTypeFromString", () => {
     );
   });
 });
+
+describe("review regressions", () => {
+  it("finds parameter delimiters by UTF-16 offset, past supplementary characters", () => {
+    // A quoted value holding astral characters and an escaped quote: the value
+    // is dropped (not HTTP quoted-string token code points), and nothing
+    // inside it may surface as a parameter of its own (`b` did, before).
+    const parsed = MimeType.parse('text/plain;a="\u{1F600}\u{1F600}\\";b=c";d=e');
+    expect(Option.map(parsed, MimeType.serialize)).toStrictEqual(Option.some("text/plain;d=e"));
+  });
+
+  it("rejects a non-ASCII parameter name before lowercasing (the Kelvin sign)", () => {
+    const parsed = MimeType.parse("text/plain;K=bad;k=good");
+    expect(Option.flatMap(parsed, (mimeType) => MimeType.parameter(mimeType, "k"))).toStrictEqual(
+      Option.some("good"),
+    );
+    expect(Option.map(parsed, MimeType.serialize)).toStrictEqual(Option.some("text/plain;k=good"));
+  });
+});

@@ -74,8 +74,11 @@ const collectQuotedString = (input: string, start: number): readonly [string, nu
 
 /** Collects the code points from `position` up to (not including) the first of `stops`. */
 const collectUntil = (input: string, start: number, stops: string): readonly [string, number] => {
-  const offset = Arr.findFirstIndex(input.slice(start), (char) => stops.includes(char));
-  const end = Option.match(offset, { onNone: () => input.length, onSome: (at) => start + at });
+  // UTF-16 offsets throughout, like every other cursor here: a stop is ASCII,
+  // and `indexOf` counts code units, so a supplementary character cannot
+  // shift the cursor.
+  const ends = Array.from(stops, (stop) => input.indexOf(stop, start)).filter((at) => at >= 0);
+  const end = Math.min(input.length, ...ends);
   return [input.slice(start, end), end];
 };
 
@@ -89,6 +92,9 @@ const parameterAt = (
 ): readonly [Option.Option<readonly [string, string]>, number] => {
   const skipped = input.slice(start).match(LEADING_HTTP_WHITESPACE)?.[0].length ?? 0;
   const [rawName, afterName] = collectUntil(input, start + skipped, ";=");
+  // Validated before lowercasing: Unicode lowercasing maps the Kelvin sign
+  // (U+212A) to ASCII `k`, which would make an invalid name look valid.
+  const nameIsToken = TOKEN.test(rawName);
   const name = Str.toLowerCase(rawName);
   if (afterName >= input.length || input[afterName] === ";") return [Option.none(), afterName];
   const valueStart = afterName + 1;
@@ -104,7 +110,7 @@ const parameterAt = (
           return [raw.replace(TRAILING_HTTP_WHITESPACE, ""), afterValue] as const;
         })();
   const unquotedEmpty = input[valueStart] !== '"' && Str.isEmpty(value);
-  return unquotedEmpty || !TOKEN.test(name) || !QUOTED_STRING_TOKEN.test(value)
+  return unquotedEmpty || !nameIsToken || !QUOTED_STRING_TOKEN.test(value)
     ? [Option.none(), next]
     : [Option.some([name, value] as const), next];
 };
