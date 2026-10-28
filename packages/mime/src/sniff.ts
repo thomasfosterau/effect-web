@@ -99,6 +99,18 @@ const isPaddedWebm = (bytes: Uint8Array, at: number): boolean => {
   return ascii(bytes, at + start, 4) === "webm";
 };
 
+/**
+ * One DocType candidate (`0x42 0x82`) at `at` in the §6.2.2 loop: `true` or
+ * `false` ends the scan with that verdict; a number is where it resumes.
+ */
+const webmCandidate = (bytes: Uint8Array, at: number): boolean | number => {
+  const sizeAt = at + 2;
+  if (sizeAt >= bytes.length) return false;
+  const valueAt = sizeAt + vintSize(bytes, sizeAt);
+  if (valueAt >= bytes.length - 4) return false;
+  return isPaddedWebm(bytes, valueAt) || valueAt + 1;
+};
+
 /** §6.2.2, "matches the signature for WebM". */
 const isWebm = (bytes: Uint8Array): boolean => {
   if (bytes.length < 4 || ascii(bytes, 0, 4) !== "\u001aE\u00df\u00a3") return false;
@@ -107,14 +119,10 @@ const isWebm = (bytes: Uint8Array): boolean => {
   let iter = 4;
   // oxlint-disable-next-line effect/imperative-loops -- the specification's bounded cursor scan, transcribed step for step.
   while (iter < bytes.length && iter < 38) {
-    if (bytes[iter] === 0x42 && bytes[iter + 1] === 0x82) {
-      iter += 2;
-      if (iter >= bytes.length) return false;
-      iter += vintSize(bytes, iter);
-      if (iter >= bytes.length - 4) return false;
-      if (isPaddedWebm(bytes, iter)) return true;
-    }
-    iter += 1;
+    const step =
+      bytes[iter] === 0x42 && bytes[iter + 1] === 0x82 ? webmCandidate(bytes, iter) : iter + 1;
+    if (Predicate.isBoolean(step)) return step;
+    iter = step;
   }
   return false;
 };
