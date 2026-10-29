@@ -10,7 +10,7 @@ import * as Option from "effect/Option";
 import * as Result from "effect/Result";
 import * as Str from "effect/String";
 import type { Name as EncodingName } from "./labels.ts";
-import { type CodePointHandler, cjkEncoder, EMPTY, hasCjkEncoder, type Tables } from "./cjk.ts";
+import { type CodePointHandler, cjkEncoder, EMPTY, hasCjkEncoder, type CjkTables } from "./cjk.ts";
 import { singleByteHigh } from "./tables.ts";
 
 /** What an encoder does with a code point its encoding cannot represent. */
@@ -77,7 +77,7 @@ const stateless = (handler: Handler): CodePointHandler => ({
  * A new handler for an encoding (CJK ones from the provided tables), or
  * `None` when there is no encoder for it.
  */
-const handlerFor = (encoding: EncodingName, tables: Tables): Option.Option<CodePointHandler> => {
+const handlerFor = (encoding: EncodingName, tables: CjkTables): Option.Option<CodePointHandler> => {
   if (encoding === "UTF-8") return Option.some(stateless(utf8Handler));
   if (encoding === "x-user-defined") return Option.some(stateless(xUserDefinedHandler));
   return Option.orElse(
@@ -87,7 +87,7 @@ const handlerFor = (encoding: EncodingName, tables: Tables): Option.Option<CodeP
 };
 
 /** Whether there is an encoder for the encoding, with the provided tables. */
-export const hasEncoder = (encoding: EncodingName, tables: Tables = EMPTY): boolean => {
+export const hasEncoder = (encoding: EncodingName, tables: CjkTables = EMPTY): boolean => {
   if (encoding === "UTF-8" || encoding === "x-user-defined") return true;
   if (Option.isSome(singleByteHigh(encoding))) return true;
   return hasCjkEncoder(encoding, tables);
@@ -120,7 +120,7 @@ const codePoints = (text: string): ReadonlyArray<readonly [number, number]> =>
 export const makeEncoder = (options: {
   readonly encoding: EncodingName;
   readonly mode: ErrorMode;
-  readonly tables: Tables;
+  readonly tables: CjkTables;
 }): Result.Result<Encoder, EncodingName> =>
   Option.match(handlerFor(options.encoding, options.tables), {
     onNone: () => Result.fail(options.encoding),

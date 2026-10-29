@@ -317,7 +317,7 @@ export const decodeStream: {
  * @since 0.1.0
  * @category tables
  */
-export type Tables = Cjk.Tables;
+export type Tables = Cjk.CjkTables;
 
 /**
  * One index inside {@link Tables}: its code points from pointer `base` on,
@@ -328,7 +328,7 @@ export type Tables = Cjk.Tables;
  * @since 0.1.0
  * @category tables
  */
-export type IndexData = Cjk.IndexData;
+export type IndexData = Cjk.CjkIndexData;
 
 /**
  * The CJK tables {@link encode}, {@link decode} and their stream forms

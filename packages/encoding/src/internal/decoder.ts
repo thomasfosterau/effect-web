@@ -13,7 +13,7 @@
  */
 import * as Option from "effect/Option";
 import * as Result from "effect/Result";
-import { cjkBackend, EMPTY, type Tables } from "./cjk.ts";
+import { cjkBackend, EMPTY, type CjkTables } from "./cjk.ts";
 import type { Name as EncodingName } from "./labels.ts";
 import { singleByteHigh } from "./tables.ts";
 
@@ -117,7 +117,7 @@ const backendFor = (
   encoding: EncodingName,
   fatal: boolean,
   ignoreBOM: boolean,
-  tables: Tables,
+  tables: CjkTables,
 ): Option.Option<Backend> => {
   if (encoding === "replacement") return Option.some(replacementBackend(fatal));
   return Option.orElse(
@@ -127,7 +127,7 @@ const backendFor = (
 };
 
 /** Whether this runtime (or a bundled table) can decode the encoding. */
-export const canDecode = (encoding: EncodingName, tables: Tables = EMPTY): boolean =>
+export const canDecode = (encoding: EncodingName, tables: CjkTables = EMPTY): boolean =>
   Option.isSome(backendFor(encoding, false, false, tables));
 
 /** A decoding failure: the encoding in use and the byte offset the error was detected at. */
@@ -147,7 +147,7 @@ export interface DecoderOptions {
   readonly encoding: EncodingName;
   readonly fatal: boolean;
   readonly bomHandling: BomMode;
-  readonly tables: Tables;
+  readonly tables: CjkTables;
 }
 
 /** Concatenates two byte arrays. */
