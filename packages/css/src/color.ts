@@ -4,10 +4,11 @@
  * `lch()`, `oklab()`, `oklch()`, `color()`, `transparent`, `currentcolor`)
  * into a typed {@link Color}, serialise it as CSS Color 4 does, and
  * convert it to sRGB. From CSS Color 5: `device-cmyk()`, `color()` in a
- * custom (`--name`) colour space, and `light-dark()`.
+ * custom (`--name`) colour space, `light-dark()` and `color-mix()`.
  *
  * @since 0.1.0
  */
+import * as Arr from "effect/Array";
 import * as Match from "effect/Match";
 import * as Option from "effect/Option";
 import * as Predicate from "effect/Predicate";
@@ -35,6 +36,7 @@ export type PredefinedSpace =
   | "srgb"
   | "srgb-linear"
   | "display-p3"
+  | "display-p3-linear"
   | "a98-rgb"
   | "prophoto-rgb"
   | "rec2020"
@@ -69,6 +71,44 @@ export interface LchChannels {
 }
 
 /**
+ * The colour spaces `color-mix()` interpolates in (CSS Color 4 §12.1):
+ * the rectangular ones and the polar ones, which take a hue method.
+ * `xyz` is `xyz-d65`.
+ *
+ * @since 0.1.0
+ * @category models
+ */
+export type InterpolationSpace =
+  | PredefinedSpace
+  | "lab"
+  | "oklab"
+  | "hsl"
+  | "hwb"
+  | "lch"
+  | "oklch";
+
+/**
+ * How hues interpolate in a polar space (CSS Color 4 §12.4); `shorter`
+ * is the default.
+ *
+ * @since 0.1.0
+ * @category models
+ */
+export type HueMethod = "shorter" | "longer" | "increasing" | "decreasing";
+
+/**
+ * One colour of a `color-mix()`, with its percentage (0 to 100) when
+ * one was given.
+ *
+ * @since 0.1.0
+ * @category models
+ */
+export interface MixComponent {
+  readonly color: Color;
+  readonly percentage: Option.Option<number>;
+}
+
+/**
  * A parsed colour. Named colours, hex, `rgb()`, `hsl()` and `hwb()` all
  * become `Rgb` (red, green and blue from 0 to 255, alpha from 0 to 1;
  * `none` resolved to 0), as CSS Color 4 serialises them. `lab()`, `lch()`,
@@ -79,7 +119,9 @@ export interface LchChannels {
  * `color()` in a custom colour space (`--name`, defined by an
  * `@color-profile` rule) is `CustomColor`, its channels as written (a
  * percentage per 1%); `light-dark()` is `LightDark`, both colours kept,
- * since which one applies depends on the used colour scheme.
+ * since which one applies depends on the used colour scheme;
+ * `color-mix()` is `ColorMix`, its interpolation method and colours as
+ * written (a mix is resolved at computed-value time, not here).
  *
  * @since 0.1.0
  * @category models
@@ -117,6 +159,12 @@ export type Color =
       readonly alpha: Channel;
     }
   | { readonly _tag: "LightDark"; readonly light: Color; readonly dark: Color }
+  | {
+      readonly _tag: "ColorMix";
+      readonly space: InterpolationSpace;
+      readonly hue: HueMethod;
+      readonly colors: ReadonlyArray<MixComponent>;
+    }
   | { readonly _tag: "CurrentColor" };
 
 // ── Arguments ──────────────────────────────────────────────────────────
@@ -367,6 +415,7 @@ const SPACES: Readonly<Record<string, PredefinedSpace>> = {
   srgb: "srgb",
   "srgb-linear": "srgb-linear",
   "display-p3": "display-p3",
+  "display-p3-linear": "display-p3-linear",
   "a98-rgb": "a98-rgb",
   "prophoto-rgb": "prophoto-rgb",
   rec2020: "rec2020",
@@ -468,6 +517,80 @@ const parseLightDark = (args: ReadonlyArray<Arg>): Option.Option<Color> => {
   }));
 };
 
+const POLAR_SPACES: ReadonlyArray<InterpolationSpace> = ["hsl", "hwb", "lch", "oklch"];
+const MIX_SPACES: ReadonlyArray<InterpolationSpace> = ["lab", "oklab", ...POLAR_SPACES];
+const HUE_METHODS: ReadonlyArray<HueMethod> = ["shorter", "longer", "increasing", "decreasing"];
+
+/** The lowercased identifier at `index` in `group`, if there is one. */
+const keywordAt = (group: ReadonlyArray<Arg>, index: number): Option.Option<string> =>
+  Option.flatMap(Arr.get(group, index), (arg) =>
+    Predicate.isTagged(arg, "Ident") ? Option.some(Str.toLowerCase(arg.value)) : Option.none(),
+  );
+
+const interpolationSpace = (name: string): Option.Option<InterpolationSpace> =>
+  Option.orElse(Record.get(SPACES, name), () => Arr.findFirst(MIX_SPACES, (one) => one === name));
+
+const hueMethod = (name: string): Option.Option<HueMethod> =>
+  Arr.findFirst(HUE_METHODS, (one) => one === name);
+
+/** `in <space> [<hue-method> hue]`, the hue method only for a polar space. */
+const interpolationMethod = (
+  group: ReadonlyArray<Arg>,
+): Option.Option<{ readonly space: InterpolationSpace; readonly hue: HueMethod }> => {
+  if (!Option.exists(keywordAt(group, 0), (name) => name === "in") || group.length > 4) {
+    return Option.none();
+  }
+  return Option.flatMap(Option.flatMap(keywordAt(group, 1), interpolationSpace), (space) => {
+    if (group.length === 2) return Option.some({ space, hue: "shorter" as const });
+    const polar = POLAR_SPACES.includes(space);
+    return polar && Option.exists(keywordAt(group, 3), (name) => name === "hue")
+      ? Option.map(Option.flatMap(keywordAt(group, 2), hueMethod), (hue) => ({ space, hue }))
+      : Option.none();
+  });
+};
+
+/** A percentage from 0% to 100%. */
+const mixPercentage = (arg: Arg): Option.Option<number> =>
+  Predicate.isTagged(arg, "Percentage") && arg.value >= 0 && arg.value <= 100
+    ? Option.some(arg.value)
+    : Option.none();
+
+/** `<color> <percentage>?` or `<percentage> <color>`. */
+const mixComponent = (group: ReadonlyArray<Arg>): Option.Option<MixComponent> => {
+  const [first, second, ...rest] = group;
+  if (first === undefined || Arr.isReadonlyArrayNonEmpty(rest)) return Option.none();
+  if (second === undefined)
+    return Option.map(parse(first), (color) => ({ color, percentage: Option.none() }));
+  const leading = Predicate.isTagged(first, "Percentage");
+  return Option.map(
+    Option.all([parse(leading ? second : first), mixPercentage(leading ? first : second)]),
+    ([color, percentage]) => ({ color, percentage: Option.some(percentage) }),
+  );
+};
+
+/**
+ * `color-mix()` (CSS Color 5 §3): an optional interpolation method
+ * (`oklab` by default), then one or more colours, each with an optional
+ * percentage from 0% to 100%.
+ */
+const parseColorMix = (args: ReadonlyArray<Arg>): Option.Option<Color> => {
+  const groups = commaSeparated(args);
+  const [head = []] = groups;
+  const method = interpolationMethod(head);
+  const colors = Option.isSome(method) ? groups.slice(1) : groups;
+  if (Arr.isReadonlyArrayEmpty(colors)) return Option.none();
+  const { space, hue } = Option.getOrElse(method, () => ({
+    space: "oklab" as const,
+    hue: "shorter" as const,
+  }));
+  return Option.map(all(colors.map(mixComponent)), (components) => ({
+    _tag: "ColorMix" as const,
+    space,
+    hue,
+    colors: components,
+  }));
+};
+
 const FUNCTIONS: Readonly<Record<string, (args: ReadonlyArray<Arg>) => Option.Option<Color>>> = {
   rgb: parseRgb,
   rgba: parseRgb,
@@ -481,6 +604,7 @@ const FUNCTIONS: Readonly<Record<string, (args: ReadonlyArray<Arg>) => Option.Op
   color: parseColorFunction,
   "device-cmyk": parseDeviceCmyk,
   "light-dark": parseLightDark,
+  "color-mix": parseColorMix,
 };
 
 const HEX = /^(?:[0-9a-f]{3,4}|[0-9a-f]{6}|[0-9a-f]{8})$/i;
@@ -560,11 +684,56 @@ const serializeLch = (color: LchChannels & { readonly _tag: "Lch" | "Oklch" }): 
   `${Str.toLowerCase(color._tag)}(${number(color.lightness)} ${number(color.chroma)} ${number(color.hue)}${withAlpha(color.alpha)})`;
 
 /**
+ * The percentages a mix serialises with (CSS Color 5 §3.3): a missing one
+ * takes an equal share of what the given ones leave of 100%, and all are
+ * left out when they are all equal and sum to 100%.
+ */
+const mixPercentages = (
+  colors: ReadonlyArray<MixComponent>,
+): ReadonlyArray<Option.Option<number>> => {
+  const given = colors.flatMap(({ percentage }) =>
+    Option.isSome(percentage) ? [percentage.value] : [],
+  );
+  const missing = colors.length - given.length;
+  const share =
+    missing === 0 ? 0 : Math.max(0, 100 - given.reduce((sum, one) => sum + one, 0)) / missing;
+  const filled = colors.map(({ percentage }) => Option.getOrElse(percentage, () => share));
+  const [first = 0] = filled;
+  const sum = filled.reduce((total, one) => total + one, 0);
+  const defaults =
+    filled.every((one) => Math.abs(one - first) < 1e-9) && Math.abs(sum - 100) < 1e-9;
+  return filled.map((one) => (defaults ? Option.none() : Option.some(one)));
+};
+
+const serializeMix = (mix: {
+  readonly space: InterpolationSpace;
+  readonly hue: HueMethod;
+  readonly colors: ReadonlyArray<MixComponent>;
+}): string => {
+  const method =
+    mix.space === "oklab" && mix.hue === "shorter"
+      ? []
+      : [`in ${mix.space}${mix.hue === "shorter" ? "" : ` ${mix.hue} hue`}`];
+  const percentages = mixPercentages(mix.colors);
+  const colors = mix.colors.map(({ color }, index) =>
+    Option.match(percentages[index] ?? Option.none(), {
+      onNone: () => serialize(color),
+      onSome: (percentage) => `${serialize(color)} ${number(percentage)}%`,
+    }),
+  );
+  return `color-mix(${[...method, ...colors].join(", ")})`;
+};
+
+/**
  * Serialises a colour (CSS Color 4 §15): sRGB colours as `rgb(r, g, b)` or
  * `rgba(r, g, b, a)`, the others in their own function with a space-
  * separated alpha when it is not 1, `currentcolor` as itself. CSS Color 5:
  * `device-cmyk()` as `color(device-cmyk c m y k)`, a custom space as
- * `color(--name …)`, `light-dark()` with each colour serialised.
+ * `color(--name …)`, `light-dark()` with each colour serialised, and
+ * `color-mix()` as specified (CSS Color 5 §3.3): the method left out when
+ * it is the default `in oklab`, a `shorter hue` left out, and the
+ * percentages filled in where missing and left out when they are the
+ * default (all equal, summing to 100%).
  *
  * @example
  * ```ts
@@ -598,6 +767,7 @@ export const serialize = (color: Color): string =>
       `color(${custom.space} ${custom.channels.map(number).join(" ")}${withAlpha(custom.alpha)})`,
     LightDark: (lightDark) =>
       `light-dark(${serialize(lightDark.light)}, ${serialize(lightDark.dark)})`,
+    ColorMix: serializeMix,
     CurrentColor: () => "currentcolor",
   });
 
@@ -704,6 +874,7 @@ const SPACE_TO_XYZ = {
   srgb: (c) => multiply(LINEAR_SRGB_TO_XYZ, mapVector(c, srgbToLinear)),
   "srgb-linear": (c) => multiply(LINEAR_SRGB_TO_XYZ, c),
   "display-p3": (c) => multiply(LINEAR_P3_TO_XYZ, mapVector(c, srgbToLinear)),
+  "display-p3-linear": (c) => multiply(LINEAR_P3_TO_XYZ, c),
   "a98-rgb": (c) =>
     multiply(
       LINEAR_A98_TO_XYZ,
@@ -782,6 +953,7 @@ const toXyzD65 = (color: Color): Option.Option<Vector> =>
     },
     CustomColor: () => Option.none(),
     LightDark: () => Option.none(),
+    ColorMix: () => Option.none(),
     CurrentColor: () => Option.none(),
   });
 
@@ -805,8 +977,9 @@ export interface Srgb {
  * algorithms; Lab and LCH through D50 with Bradford adaptation). A `none`
  * channel counts as 0. `device-cmyk()` converts naively (CSS Color 5
  * §8.1, no colour profile). `None` for `currentcolor`, a custom colour
- * space (its profile is a stylesheet's `@color-profile`) and `light-dark()`
- * (which colour applies depends on the used colour scheme).
+ * space (its profile is a stylesheet's `@color-profile`), `light-dark()`
+ * (which colour applies depends on the used colour scheme) and
+ * `color-mix()` (not resolved here).
  *
  * @example
  * ```ts
