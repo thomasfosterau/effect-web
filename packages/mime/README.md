@@ -1,6 +1,6 @@
 # @thomasfosterau/effect-mime
 
-MIME types for [Effect](https://effect.website), after the [WHATWG MIME Sniffing](https://mimesniff.spec.whatwg.org/) and [Fetch](https://fetch.spec.whatwg.org/#data-urls) standards: parse and serialise `type/subtype;name=value`, decide what a resource is from its leading bytes, map file extensions, and process `data:` URLs. Checked against the web-platform-tests vectors for MIME type parsing and `data:` URLs.
+MIME types for [Effect](https://effect.website), after the [WHATWG MIME Sniffing](https://mimesniff.spec.whatwg.org/) and [Fetch](https://fetch.spec.whatwg.org/#data-urls) standards: parse and serialise `type/subtype;name=value`, decide what a resource is from its leading bytes, map file extensions, and process `data:` URLs. Checked against the web-platform-tests vectors for MIME type parsing and `data:` URLs, and against the `mimesniff/` media and sniffing resources.
 
 ```sh
 pnpm add @thomasfosterau/effect-mime effect
@@ -35,8 +35,8 @@ DataUrl.process("data:,Hello%2C%20World").pipe(
 
 | Export | What it does |
 | --- | --- |
-| `sniff(bytes, { supplied?, noSniff?, scriptable? = true, signatures? })` | §7.1's computed MIME type, from the first 1445 bytes: an unknown type is identified (HTML / XML / PDF while `scriptable`, PostScript, BOM-led text, images, audio and video, archives, your `signatures`, then text or binary; your `signatures` also refine a generic `application/zip` match; HTML / XML / PDF are not detected under `noSniff`); a supplied image, audio or video type (`application/ogg` included) is corrected from the bytes; anything else (or `noSniff`) keeps the supplied type. |
-| `matchImage`, `matchAudioOrVideo`, `matchFont`, `matchArchive` | The §6 pattern matchers, each a `Signature`: `(bytes) => Option<string>`. Audio / video includes the MP4 and WebM signatures; MP3 without an ID3 tag is not detected yet. |
+| `sniff(bytes, { supplied?, noSniff?, scriptable? = true, signatures?, checkForApacheBug? = false })` | §7's computed MIME type, from the first 1445 bytes: an unknown type is identified (HTML / XML / PDF while `scriptable`, PostScript, BOM-led text, images, audio and video, archives, your `signatures`, then text or binary; your `signatures` also refine a generic `application/zip` match; HTML / XML / PDF are not detected under `noSniff`); a supplied image, audio or video type (`application/ogg` included) is corrected from the bytes; under `checkForApacheBug`, a supplied type that is byte-for-byte one of old Apache's `text/plain` values becomes `text/plain` or `application/octet-stream` from the bytes, never a scriptable type (set it when `supplied` is an HTTP `Content-Type`); anything else (or `noSniff`) keeps the supplied type, and a supplied `text/html` is never sniffed as a feed (the specification dropped those rules). |
+| `matchImage`, `matchAudioOrVideo`, `matchFont`, `matchArchive` | The §6 pattern matchers, each a `Signature`: `(bytes) => Option<string>`. Audio / video includes the MP4, WebM and MP3-without-ID3 (two consecutive Layer III frames) signatures. |
 | `Signature` | Your own detector: register OOXML / ODF (zip inspection), CFB, RTF and the like through `signatures`: tried over a generic `application/zip` match and after every other standard pattern. |
 
 ## `Extension`

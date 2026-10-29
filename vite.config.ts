@@ -128,6 +128,18 @@ export default defineConfig({
           "effect/avoid-ts-ignore": "off",
         },
       },
+      // The web-platform-tests `mimesniff/` resources are binary files (MP3,
+      // MP4, ZIP, PNG …) vendored as WPT ships them, so the test reads them
+      // from disk. `FileSystem` would need `@effect/platform-node`, which no
+      // package here depends on, for a synchronous read at module load in
+      // one test file.
+      {
+        files: ["packages/mime/tests/wpt-sniffing.test.ts"],
+        rules: {
+          "effect/use-filesystem-service": "off",
+          "effect/avoid-sync-fs": "off",
+        },
+      },
       // Test fixtures are the seams under test, not domain code: a
       // wall-clock `Date` standing in for a publication stamp, a `CI`
       // variable toggled to drive a reporter. Each stays visible as a

@@ -127,6 +127,71 @@ const isWebm = (bytes: Uint8Array): boolean => {
   return false;
 };
 
+/** §6.2.3's mp3-rates table: MPEG-1 Layer III bit rates, by bit-rate index. */
+const MP3_RATES: ReadonlyArray<number> = [
+  0, 32000, 40000, 48000, 56000, 64000, 80000, 96000, 112000, 128000, 160000, 192000, 224000,
+  256000, 320000,
+];
+
+/** §6.2.3's mp2.5-rates table: MPEG-2 and MPEG-2.5 Layer III bit rates, by bit-rate index. */
+const MP25_RATES: ReadonlyArray<number> = [
+  0, 8000, 16000, 24000, 32000, 40000, 48000, 56000, 64000, 80000, 96000, 112000, 128000, 144000,
+  160000,
+];
+
+/** §6.2.3's sample-rate table, by sample-rate index (3 is reserved). */
+const SAMPLE_RATES: ReadonlyArray<number> = [44100, 48000, 32000];
+
+/**
+ * §6.2.3, "match an mp3 header" at `at`: a frame sync, a Layer III frame, and
+ * neither the reserved bit-rate index (15) nor the reserved sample-rate
+ * index (3). The specification's "not 0xFF *and* not 0xE0" is read as the
+ * frame sync it describes: both bytes must carry it.
+ */
+const isMp3Header = (bytes: Uint8Array, at: number): boolean => {
+  if (bytes.length < at + 4) return false;
+  const second = bytes[at + 1] ?? 0;
+  const third = bytes[at + 2] ?? 0;
+  if (bytes[at] !== 0xff || (second & 0xe0) !== 0xe0) return false;
+  const layer = (second & 0x06) >> 1;
+  // `final-layer`, 4 - layer, must be 3: Layer III (the layer field's 1).
+  return layer === 1 && (third & 0xf0) >> 4 !== 15 && (third & 0x0c) >> 2 !== 3;
+};
+
+/**
+ * §6.2.3, "parse an mp3 frame" then "compute an mp3 frame size", for the
+ * header at `at`: the frame's length in bytes. Read as MPEG audio defines
+ * the version field (3 is MPEG-1; 2 MPEG-2 and 0 MPEG-2.5 halve and quarter
+ * the sample rate): MPEG-1 takes the mp3-rates table and a scale of 144,
+ * the others mp2.5-rates and 72. (The specification's text keys both
+ * choices on `version & 1` and `version == 1`, which would measure an
+ * MPEG-1 frame with the MPEG-2 tables; the web-platform-tests MP3 vector
+ * is an MPEG-1 stream whose second frame is found only this way.)
+ */
+const mp3FrameSize = (bytes: Uint8Array, at: number): number => {
+  const second = bytes[at + 1] ?? 0;
+  const third = bytes[at + 2] ?? 0;
+  const version = (second & 0x18) >> 3;
+  const mpeg1 = version === 3;
+  const bitrate = (mpeg1 ? MP3_RATES : MP25_RATES)[(third & 0xf0) >> 4] ?? 0;
+  const base = SAMPLE_RATES[(third & 0x0c) >> 2] ?? 0;
+  const freq = version === 2 ? base / 2 : version === 0 ? base / 4 : base;
+  const padding = (third & 0x02) >> 1;
+  return Math.floor((bitrate * (mpeg1 ? 144 : 72)) / freq) + padding;
+};
+
+/**
+ * §6.2.3, "matches the signature for MP3 without ID3": a valid Layer III
+ * frame header at the start, and another exactly one frame later.
+ */
+const isMp3WithoutId3 = (bytes: Uint8Array): boolean => {
+  if (!isMp3Header(bytes, 0)) return false;
+  const skipped = mp3FrameSize(bytes, 0);
+  // The specification's "greater than s - length" is the remaining length.
+  if (skipped < 4 || skipped > bytes.length) return false;
+  return isMp3Header(bytes, skipped);
+};
+
 /**
  * The image type pattern matching algorithm (§6.1): ICO, CUR, BMP, GIF,
  * WebP, PNG and JPEG.
@@ -147,7 +212,8 @@ export const matchImage: Signature = matchTable(IMAGE);
 /**
  * The audio or video type pattern matching algorithm (§6.2): AIFF, MP3
  * with an ID3 tag, Ogg, MIDI, AVI, WAVE, then the MP4 and WebM
- * signatures. MP3 without an ID3 tag (§6.2.3) is not detected yet.
+ * signatures, then MP3 without an ID3 tag (§6.2.3: two consecutive valid
+ * Layer III frame headers).
  *
  * @example
  * ```ts
@@ -163,6 +229,7 @@ export const matchAudioOrVideo: Signature = (bytes) =>
   Option.orElse(matchTable(AUDIO_VIDEO)(bytes), () => {
     if (isMp4(bytes)) return Option.some("video/mp4");
     if (isWebm(bytes)) return Option.some("video/webm");
+    if (isMp3WithoutId3(bytes)) return Option.some("audio/mpeg");
     return Option.none();
   });
 
@@ -228,7 +295,26 @@ export interface SniffOptions {
    * can name OOXML, ODF or EPUB), and before the text-or-binary fallback.
    */
   readonly signatures?: ReadonlyArray<Signature> | undefined;
+  /**
+   * Whether to apply the specification's check-for-apache-bug flag (§5.1):
+   * when `supplied` is exactly `text/plain`, `text/plain; charset=ISO-8859-1`,
+   * `text/plain; charset=iso-8859-1` or `text/plain; charset=UTF-8` (the
+   * byte-for-byte values old Apache servers sent for unknown files), the
+   * computed type is decided by the rules for distinguishing text or binary
+   * (§7.2): `text/plain` or `application/octet-stream`, never a scriptable
+   * type. The specification sets the flag for a resource fetched over HTTP;
+   * set this when `supplied` is a `Content-Type` header. Defaults to `false`.
+   */
+  readonly checkForApacheBug?: boolean | undefined;
 }
+
+/** The exact `Content-Type` values that set the check-for-apache-bug flag (§5.1). */
+const APACHE_BUG_TYPES: ReadonlyArray<string> = [
+  "text/plain",
+  "text/plain; charset=ISO-8859-1",
+  "text/plain; charset=iso-8859-1",
+  "text/plain; charset=UTF-8",
+];
 
 const UNKNOWN_TYPES: ReadonlyArray<string> = ["unknown/unknown", "application/unknown", "*/*"];
 
@@ -274,6 +360,19 @@ const identifyUnknown = (bytes: Uint8Array, options: SniffOptions): string => {
 };
 
 /**
+ * §7.2, "rules for distinguishing if a resource is text or binary": a
+ * UTF-16 or UTF-8 byte order mark, or no binary data byte, is text.
+ */
+const textOrBinary = (bytes: Uint8Array): string => {
+  const [first, second, third] = bytes;
+  const utf16Bom = (first === 0xfe && second === 0xff) || (first === 0xff && second === 0xfe);
+  const utf8Bom = first === 0xef && second === 0xbb && third === 0xbf;
+  return utf16Bom || utf8Bom || !bytes.some(isBinaryDataByte)
+    ? "text/plain"
+    : "application/octet-stream";
+};
+
+/**
  * Determines a resource's computed MIME type (§7.1), from up to its first
  * 1445 bytes and the type it was supplied with:
  *
@@ -281,7 +380,12 @@ const identifyUnknown = (bytes: Uint8Array, options: SniffOptions): string => {
  *   the rules for an unknown type, with `signatures` tried over a generic
  *   `application/zip` match and before the text-or-binary fallback, and
  *   HTML, XML and PDF not detected under `noSniff`;
- * - `noSniff`, or an XML or HTML supplied type: the supplied type;
+ * - `noSniff`, or an XML or HTML supplied type: the supplied type (a
+ *   supplied `text/html` is never sniffed as a feed: the specification
+ *   dropped its feed-or-HTML rules);
+ * - under `checkForApacheBug`, a supplied type that is exactly one of the
+ *   old Apache `text/plain` values: `text/plain` or
+ *   `application/octet-stream`, from the bytes (§7.2);
  * - a supplied image, audio or video type (`application/ogg` included):
  *   the matching pattern, if any, else the supplied type.
  *
@@ -318,6 +422,12 @@ export const sniff = (bytes: Uint8Array, options: SniffOptions = {}): MimeType =
       onSome: (mimeType) => {
         if (options.noSniff === true || isXml(mimeType) || essence(mimeType) === "text/html") {
           return mimeType;
+        }
+        if (
+          options.checkForApacheBug === true &&
+          APACHE_BUG_TYPES.includes(options.supplied ?? "")
+        ) {
+          return computed(textOrBinary(header));
         }
         const pattern =
           mimeType.type === "image"
