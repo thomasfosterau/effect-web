@@ -8,3 +8,5 @@
 | --- | --- |
 | `valid` | `[input, expected specified value, epsilon]`: `epsilon` is the numeric tolerance `fuzzy_test_valid_color` allows, `null` for an exact match |
 | `invalid` | inputs that must not parse as a `<color>` |
+
+`wpt-color-invalid.json` records, from the same commit, the inputs of every `css/css-color/parsing/color-invalid*.html` file but the `color-mix()`, `contrast-color()`, `color-layers()` and relative-colour ones (`color-invalid-color-function`, `-hex-color`, `-hsl`, `-hwb`, `-lab`, `-named-color`, `-rgb` and `color-invalid`), keyed by file: each must not parse as a `<color>`.
