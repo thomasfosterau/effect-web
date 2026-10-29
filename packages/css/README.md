@@ -45,9 +45,13 @@ A `SyntaxError` carries `offset`, the code-point offset in the preprocessed inpu
 
 `Length.parse` takes a dimension in a length unit (absolute `px cm mm q in pt pc`, and the font- and viewport-relative ones), a percentage, or a unitless `0`; `toPixels` and `convert` handle the absolute units (1in = 96px = 72pt), `serialize` prints it back. `parse` also takes a `calc()` that simplifies to one unit (`calc(1in + 10px)` is `106px`); `parseSum` returns any `calc()` of lengths and percentages simplified to one term per unit (CSS Values 4 §10: `+` and `-` with whitespace around them, `*` by a number, `/` by a non-zero number, nested parentheses), with the absolute units folded into `px`, and `serializeSum` writes it back (`calc(50% - 1em)`).
 
+## `Shorthand`
+
+`Shorthand.expand(declaration)` expands a box shorthand into its longhands, keeping `!important`: `margin`, `padding` and `inset` by the 1 to 4 values rule, `border-width` / `-style` / `-color` likewise, and `border` / `border-top` (and the other sides) into each side's `-width`, `-style` and `-color`, in any order, with an omitted part at its initial value (`medium`, `none`, `currentcolor`). A CSS-wide keyword goes to every longhand. `None` for an invalid value or one holding `var()`. `Shorthand.isShorthand(name)` says whether a property is one of these.
+
 ## Not yet
 
-Shorthand expansion (`font`, `margin`, `padding`, `border`), the typed font, `text-align`, `text-decoration` and `vertical-align` values, a CSSOM serialiser for declarations, the other math functions (`min()`, `max()`, `clamp()`, …), and Color 5's `color-mix()`.
+The `font` shorthand, the typed font, `text-align`, `text-decoration` and `vertical-align` values, a CSSOM serialiser for declarations, the other math functions (`min()`, `max()`, `clamp()`, …), and Color 5's `color-mix()`.
 
 ## Licence
 
