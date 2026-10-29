@@ -137,8 +137,11 @@ export interface MixComponent {
 }
 
 /**
- * A parsed colour. Named colours, hex and `rgb()` become `Rgb` (red, green
- * and blue from 0 to 255, alpha from 0 to 1; `none` resolved to 0).
+ * A parsed colour. Hex and `rgb()` become `Rgb` (red, green and blue from 0
+ * to 255, alpha from 0 to 1); an `rgb()` with a `none` channel is
+ * `color(srgb …)` instead (a `ColorFunction`), which keeps it, as CSS Color
+ * 4 serialises it. A named colour (`transparent` included) is `Named`: its
+ * lowercased name and its sRGB value.
  * `hsl()` is `Hsl` and `hwb()` is `Hwb`, their channels as written (hue in
  * degrees normalised to [0, 360), the others per 1%) with `none` kept, so a
  * `color-mix()` can carry a missing component forward. `lab()`, `lch()`,
@@ -159,6 +162,14 @@ export interface MixComponent {
 export type Color =
   | {
       readonly _tag: "Rgb";
+      readonly red: number;
+      readonly green: number;
+      readonly blue: number;
+      readonly alpha: number;
+    }
+  | {
+      readonly _tag: "Named";
+      readonly name: string;
       readonly red: number;
       readonly green: number;
       readonly blue: number;
@@ -317,7 +328,15 @@ const toRgb = (
   color: ({ readonly _tag: "Hsl" } & HslChannels) | ({ readonly _tag: "Hwb" } & HwbChannels),
 ) =>
   Predicate.isTagged(color, "Hsl")
-    ? rgb(hslToRgb(zero(color.hue), zero(color.saturation), zero(color.lightness)), color.alpha)
+    ? rgb(
+        hslToRgb(
+          zero(color.hue),
+          // CSS Color 4 §7: a negative saturation is 0%, lightness is within [0%, 100%].
+          Math.max(0, zero(color.saturation)),
+          Math.min(100, Math.max(0, zero(color.lightness))),
+        ),
+        color.alpha,
+      )
     : rgb(hwbToRgb(zero(color.hue), zero(color.whiteness), zero(color.blackness)), color.alpha);
 
 const rgb = (
@@ -348,13 +367,25 @@ const parseRgb = (args: ReadonlyArray<Arg>): Option.Option<Color> => {
   });
   return Option.map(
     Option.orElse(modern, () => legacy),
-    ([red, green, blue, alpha]) => ({
-      _tag: "Rgb" as const,
-      red: zero(red ?? 0),
-      green: zero(green ?? 0),
-      blue: zero(blue ?? 0),
-      alpha: zero(alpha ?? 1),
-    }),
+    ([red = 0, green = 0, blue = 0, alpha = 1]): Color => {
+      // A missing channel survives only in `color(srgb …)` (CSS Color 4 §15.2).
+      if ([red, green, blue, alpha].includes("none")) {
+        const unit = (channel: Channel): Channel => (channel === "none" ? channel : channel / 255);
+        return {
+          _tag: "ColorFunction",
+          space: "srgb",
+          channels: [unit(red), unit(green), unit(blue)],
+          alpha,
+        };
+      }
+      return {
+        _tag: "Rgb",
+        red: zero(red),
+        green: zero(green),
+        blue: zero(blue),
+        alpha: zero(alpha),
+      };
+    },
   );
 };
 
@@ -412,6 +443,14 @@ const parseHwb = (args: ReadonlyArray<Arg>): Option.Option<Color> =>
     }),
   );
 
+/** Lightness clamped to [0, `max`] at parse time (CSS Color 4 §9.2, §9.3). */
+const clampLightness = (lightness: Channel, max: number): Channel =>
+  lightness === "none" ? lightness : Math.min(max, Math.max(0, lightness));
+
+/** A negative chroma is 0 (CSS Color 4 §9.3). */
+const clampChroma = (chroma: Channel): Channel =>
+  chroma === "none" ? chroma : Math.max(0, chroma);
+
 /** `lab()` / `oklab()`: lightness per 1% and a / b per 1%. */
 const parseLabLike = (
   tag: "Lab" | "Oklab",
@@ -432,7 +471,7 @@ const parseLabLike = (
     }),
     ([lightness, a, b, alpha]) => ({
       _tag: tag,
-      lightness: lightness ?? 0,
+      lightness: clampLightness(lightness ?? 0, lightnessPercent * 100),
       a: a ?? 0,
       b: b ?? 0,
       alpha: alpha ?? 1,
@@ -459,8 +498,8 @@ const parseLchLike = (
     }),
     ([lightness, chroma, h, alpha]) => ({
       _tag: tag,
-      lightness: lightness ?? 0,
-      chroma: chroma ?? 0,
+      lightness: clampLightness(lightness ?? 0, lightnessPercent * 100),
+      chroma: clampChroma(chroma ?? 0),
       hue: h ?? 0,
       alpha: alpha ?? 1,
     }),
@@ -677,11 +716,11 @@ const parseHex = (value: string): Option.Option<Color> => {
 const parseKeyword = (value: string): Option.Option<Color> => {
   const name = value.replace(/[A-Z]/g, (letter) => letter.toLowerCase());
   if (name === "transparent")
-    return Option.some({ _tag: "Rgb", red: 0, green: 0, blue: 0, alpha: 0 });
+    return Option.some({ _tag: "Named", name, red: 0, green: 0, blue: 0, alpha: 0 });
   if (name === "currentcolor") return Option.some({ _tag: "CurrentColor" });
   return Option.map(
     Record.get<string, readonly [number, number, number]>(NAMED_COLORS, name),
-    ([red, green, blue]) => ({ _tag: "Rgb" as const, red, green, blue, alpha: 1 }),
+    ([red, green, blue]) => ({ _tag: "Named" as const, name, red, green, blue, alpha: 1 }),
   );
 };
 
@@ -695,7 +734,7 @@ const parseKeyword = (value: string): Option.Option<Color> => {
  * import { Color } from "@thomasfosterau/effect-css"
  *
  * console.log(Option.map(Color.parse("hsl(120deg 100% 25% / 50%)"), Color.serialize))
- * // Option.some("rgba(0, 127.5, 0, 0.5)")
+ * // Option.some("rgba(0, 128, 0, 0.5)")
  * console.log(Option.map(Color.parse("oklch(70% 0.1 400)"), Color.serialize))
  * // Option.some("oklch(0.7 0.1 40)")
  * console.log(Option.isNone(Color.parse("rgb(1, 2)"))) // true
@@ -731,6 +770,27 @@ const number = (value: Channel): string => {
 const withAlpha = (alpha: Channel): string => (alpha === 1 ? "" : ` / ${number(alpha)}`);
 
 const clampByte = (value: number): number => Math.min(255, Math.max(0, value));
+
+/** A legacy sRGB colour (CSS Color 4 §15.2): `rgb()` / `rgba()`, each channel a clamped, rounded integer. */
+const serializeRgb = (rgb: {
+  readonly red: number;
+  readonly green: number;
+  readonly blue: number;
+  readonly alpha: number;
+}): string => {
+  const channels = [rgb.red, rgb.green, rgb.blue].map((value) =>
+    String(Math.round(Number(clampByte(value).toFixed(6)))),
+  );
+  return rgb.alpha === 1
+    ? `rgb(${channels.join(", ")})`
+    : `rgba(${channels.join(", ")}, ${number(rgb.alpha)})`;
+};
+
+const hasNone = (channels: ReadonlyArray<Channel>): boolean => channels.includes("none");
+
+/** A channel per 1%, written as a percentage; `none` as itself. */
+const percent = (channel: Channel): string =>
+  channel === "none" ? channel : `${number(channel)}%`;
 
 const serializeLab = (color: LabChannels & { readonly _tag: "Lab" | "Oklab" }): string =>
   `${Str.toLowerCase(color._tag)}(${number(color.lightness)} ${number(color.a)} ${number(color.b)}${withAlpha(color.alpha)})`;
@@ -780,9 +840,15 @@ const serializeMix = (mix: {
 };
 
 /**
- * Serialises a colour (CSS Color 4 §15): sRGB colours as `rgb(r, g, b)` or
- * `rgba(r, g, b, a)`, the others in their own function with a space-
- * separated alpha when it is not 1, `currentcolor` as itself. CSS Color 5:
+ * Serialises a colour's specified value as today's CSS Color 4 does (§15):
+ * a named colour as its name; hex, `rgb()`, `hsl()` and `hwb()` as
+ * `rgb(r, g, b)` or `rgba(r, g, b, a)`, each channel rounded to an integer
+ * and clamped to [0, 255]; but an `rgb()` with a `none` channel as
+ * `color(srgb …)`, and an `hsl()` or `hwb()` with one in its own
+ * function, so the `none` survives. The other functions use their own
+ * function with a space-separated alpha when it is not 1, and
+ * `currentcolor` is written as itself. Numbers print with at most six
+ * decimals. CSS Color 5:
  * `device-cmyk()` as `color(device-cmyk c m y k)`, a custom space as
  * `color(--name …)`, `light-dark()` with each colour serialised, and
  * `color-mix()` as specified (CSS Color 5 §3.3): the method left out when
@@ -796,6 +862,8 @@ const serializeMix = (mix: {
  * import { Color } from "@thomasfosterau/effect-css"
  *
  * console.log(Option.map(Color.parse("#0088"), Color.serialize)) // Option.some("rgba(0, 0, 136, 0.533333)")
+ * console.log(Option.map(Color.parse("Red"), Color.serialize)) // Option.some("red")
+ * console.log(Option.map(Color.parse("hsl(none 50% 50%)"), Color.serialize)) // Option.some("hsl(none 50% 50%)")
  * console.log(Option.map(Color.parse("color(xyz 50% 0 1)"), Color.serialize)) // Option.some("color(xyz-d65 0.5 0 1)")
  * ```
  *
@@ -804,14 +872,16 @@ const serializeMix = (mix: {
  */
 export const serialize = (color: Color): string =>
   Match.valueTags(color, {
-    Rgb: (rgb) => {
-      const channels = [rgb.red, rgb.green, rgb.blue].map((value) => number(clampByte(value)));
-      return rgb.alpha === 1
-        ? `rgb(${channels.join(", ")})`
-        : `rgba(${channels.join(", ")}, ${number(rgb.alpha)})`;
-    },
-    Hsl: (hsl) => serialize(toRgb(hsl)),
-    Hwb: (hwb) => serialize(toRgb(hwb)),
+    Rgb: serializeRgb,
+    Named: (named) => named.name,
+    Hsl: (hsl) =>
+      hasNone([hsl.hue, hsl.saturation, hsl.lightness, hsl.alpha])
+        ? `hsl(${number(hsl.hue)} ${percent(hsl.saturation)} ${percent(hsl.lightness)}${withAlpha(hsl.alpha)})`
+        : serializeRgb(toRgb(hsl)),
+    Hwb: (hwb) =>
+      hasNone([hwb.hue, hwb.whiteness, hwb.blackness, hwb.alpha])
+        ? `hwb(${number(hwb.hue)} ${percent(hwb.whiteness)} ${percent(hwb.blackness)}${withAlpha(hwb.alpha)})`
+        : serializeRgb(toRgb(hwb)),
     Lab: serializeLab,
     Oklab: serializeLab,
     Lch: serializeLch,
@@ -973,16 +1043,24 @@ const lchToXyz = (
 const labD65 = (l: number, a: number, b: number): Vector =>
   multiply(D50_TO_D65, labToXyzD50(l, a, b));
 
+/** XYZ D65 for an sRGB colour with channels from 0 to 255. */
+const rgbToXyz = (rgb: {
+  readonly red: number;
+  readonly green: number;
+  readonly blue: number;
+}): Option.Option<Vector> =>
+  Option.some(
+    multiply(
+      LINEAR_SRGB_TO_XYZ,
+      mapVector([rgb.red, rgb.green, rgb.blue], (c) => srgbToLinear(c / 255)),
+    ),
+  );
+
 /** XYZ D65 for a colour, `None` for `currentcolor`. */
 const toXyzD65 = (color: Color): Option.Option<Vector> =>
   Match.valueTags(color, {
-    Rgb: (rgb) =>
-      Option.some(
-        multiply(
-          LINEAR_SRGB_TO_XYZ,
-          mapVector([rgb.red, rgb.green, rgb.blue], (c) => srgbToLinear(c / 255)),
-        ),
-      ),
+    Rgb: (rgb) => rgbToXyz(rgb),
+    Named: (named) => rgbToXyz(named),
     Hsl: (hsl) => toXyzD65(toRgb(hsl)),
     Hwb: (hwb) => toXyzD65(toRgb(hwb)),
     Lab: (lab) => Option.some(labD65(zero(lab.lightness), zero(lab.a), zero(lab.b))),
@@ -1056,7 +1134,7 @@ export const toSrgb = (color: Color): Option.Option<Srgb> => {
   if (Predicate.isTagged(color, "Hsl") || Predicate.isTagged(color, "Hwb")) {
     return toSrgb(toRgb(color));
   }
-  if (Predicate.isTagged(color, "Rgb")) {
+  if (Predicate.isTagged(color, "Rgb") || Predicate.isTagged(color, "Named")) {
     return Option.some({
       red: color.red / 255,
       green: color.green / 255,
