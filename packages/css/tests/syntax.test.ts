@@ -8,9 +8,11 @@ import * as Arr from "effect/Array";
 import * as Match from "effect/Match";
 import * as Option from "effect/Option";
 import * as Predicate from "effect/Predicate";
-import { Syntax, Token } from "@thomasfosterau/effect-css";
+import { AnPlusB, Syntax, Token } from "@thomasfosterau/effect-css";
 
 type ComponentValue = Token.ComponentValue;
+import anPlusB from "./fixtures/css-parsing-tests/An+B.json" with { type: "json" };
+import blocksContents from "./fixtures/css-parsing-tests/blocks_contents.json" with { type: "json" };
 import componentValueList from "./fixtures/css-parsing-tests/component_value_list.json" with { type: "json" };
 import declarationList from "./fixtures/css-parsing-tests/declaration_list.json" with { type: "json" };
 import oneComponentValue from "./fixtures/css-parsing-tests/one_component_value.json" with { type: "json" };
@@ -122,6 +124,13 @@ describe("css-parsing-tests", () => {
     ["one_rule", oneRule, (css: string) => item(Syntax.parseRule(css))],
     ["rule_list", ruleList, (css: string) => Syntax.parseRuleList(css).map(item)],
     ["stylesheet", stylesheet, (css: string) => Syntax.parseStylesheet(css).map(item)],
+    ["blocks_contents", blocksContents, (css: string) => Syntax.parseBlockContents(css).map(item)],
+    [
+      "An+B",
+      anPlusB,
+      (css: string) =>
+        Option.getOrNull(Option.map(AnPlusB.parse(css), ([a, b]) => [num(a), num(b)])),
+    ],
   ] as const)("%s", (_, fixture, run) => {
     const cases = pairs(fixture);
     expect(cases.length).toBeGreaterThan(0);
@@ -174,5 +183,23 @@ describe("deep nesting", () => {
     const css = `${"(".repeat(50_000)}${")".repeat(50_000)} x`;
     const values = Syntax.parseComponentValueList(css);
     expect(values.map((value) => value._tag)).toEqual(["Block", "Whitespace", "Ident"]);
+  });
+});
+
+describe("parseBlockContents offsets", () => {
+  it("reports an invalid nested rule where it starts", () => {
+    expect(Syntax.parseBlockContents("a: b; c d; e: f")[1]).toEqual({
+      _tag: "SyntaxError",
+      kind: "invalid",
+      offset: 6,
+    });
+  });
+});
+
+describe("AnPlusB.parse", () => {
+  it("takes component values already parsed", () => {
+    expect(AnPlusB.parse(Syntax.parseComponentValueList("-2n+ 3"))).toStrictEqual(
+      Option.some([-2, 3]),
+    );
   });
 });
