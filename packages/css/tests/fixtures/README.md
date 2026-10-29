@@ -10,3 +10,5 @@
 | `invalid` | inputs that must not parse as a `<color>` |
 
 `wpt-color-invalid.json` records, from the same commit, the inputs of every `css/css-color/parsing/color-invalid*.html` file but the `color-mix()`, `contrast-color()`, `color-layers()` and relative-colour ones (`color-invalid-color-function`, `-hex-color`, `-hsl`, `-hwb`, `-lab`, `-named-color`, `-rgb` and `color-invalid`), keyed by file: each must not parse as a `<color>`.
+
+`wpt-color-valid.json` records, from the same commit, the vectors of the `css/css-color/parsing/color-valid*.html` files, again leaving out the `color-mix()`, `contrast-color()`, `color-layers()`, relative-colour and system-colour ones. It covers `color-valid-color-function`, `-hsl`, `-hwb`, `-lab`, `-rgb` and `color-valid`, keyed by file, with entries shaped like `wpt-color-mix.json`'s `valid` ones: `[input, expected specified value, epsilon]`.
