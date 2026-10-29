@@ -103,6 +103,8 @@ const pairs = (fixture: ReadonlyArray<unknown>): ReadonlyArray<readonly [string,
     index % 2 === 0 && Predicate.isString(input) ? [[input, fixture[index + 1]] as const] : [],
   );
 
+// `stylesheet_bytes.json` is not run: the parsers take text, and decoding bytes
+// (the Syntax 3 §3.2 encoding sniff) is left to the caller (#186).
 describe("css-parsing-tests", () => {
   it.each([
     [

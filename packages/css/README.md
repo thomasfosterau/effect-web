@@ -33,13 +33,28 @@ for (const item of Syntax.parseDeclarationList(
 
 A `SyntaxError` carries `offset`, the code-point offset in the preprocessed input (CRLF counted as one). The token and component-value types are in `Token`.
 
+The parsers take text, not bytes. To parse a stylesheet fetched as bytes, decode it first, for example with [`@thomasfosterau/effect-encoding`](https://www.npmjs.com/package/@thomasfosterau/effect-encoding). Pass it the encoding Syntax 3 §3.2 would pick: the protocol's `charset`, then an `@charset` rule, then the referring document's encoding, then UTF-8. A byte-order mark overrides that encoding, which is the decoder's default BOM sniff.
+
+```ts
+import * as Effect from "effect/Effect";
+import { Encoding } from "@thomasfosterau/effect-encoding";
+import { Syntax } from "@thomasfosterau/effect-css";
+
+const bytes = new Uint8Array([
+  0x70, 0x20, 0x7b, 0x20, 0x63, 0x6f, 0x6c, 0x6f, 0x72, 0x3a, 0x20, 0x72, 0x65, 0x64, 0x20, 0x7d,
+]);
+const rules = await Effect.runPromise(
+  Effect.map(Encoding.decode(bytes, { encoding: "UTF-8" }), Syntax.parseStylesheet),
+);
+```
+
 ## `AnPlusB`
 
 `AnPlusB.parse(cssOrComponentValues)` reads the `An+B` microsyntax (Syntax 3 §6) of `:nth-child()` and its relatives into `[a, b]`: `odd`, `even`, an integer, or `An` with an optional `+ B` / `- B` (`2n+1`, `-n + 3`, `+N-2`), case-insensitive, whitespace allowed around the sign but not inside `+n` or a number.
 
 ## `Color`
 
-`Color.parse(cssOrComponentValue)` takes named colours, `transparent`, `currentcolor`, hex (3, 4, 6, 8 digits), `rgb()` / `rgba()` / `hsl()` / `hsla()` in both comma and space syntaxes, `hwb()`, `lab()`, `lch()`, `oklab()`, `oklch()` and `color()` in the predefined spaces (`srgb`, `srgb-linear`, `display-p3`, `display-p3-linear`, `a98-rgb`, `prophoto-rgb`, `rec2020`, `xyz`, `xyz-d50`, `xyz-d65`), with `none` and angle units. The result is a tagged `Color`; `Color.serialize` prints it as CSS Color 4 does, and `Color.toSrgb` converts it to sRGB (0 to 1, not gamut-mapped). From [CSS Color 5](https://www.w3.org/TR/css-color-5/): `device-cmyk()` (space and legacy comma syntaxes, channels clamped to [0, 1], serialised as `color(device-cmyk …)`, converted to sRGB naively), `color()` in a custom `--name` space (channels kept as written, no sRGB without its `@color-profile`) `light-dark()` (both colours kept; no sRGB, since which applies depends on the used colour scheme) and `color-mix()` (an optional `in <space> [<method> hue]`, `oklab` by default, then one or more colours with optional percentages from 0% to 100%; kept as written and serialised as its specified value, with the default method left out and the percentages filled in, or left out when all equal and summing to 100%; not yet resolved to a colour, so no sRGB, see [#184](https://github.com/thomasfosterau/effect-web/issues/184)). The `color-mix()` vectors of web-platform-tests' `css/css-color/parsing` (valid and invalid) run in `tests/color-mix.test.ts`.
+`Color.parse(cssOrComponentValue)` takes named colours, `transparent`, `currentcolor`, hex (3, 4, 6, 8 digits), `rgb()` / `rgba()` / `hsl()` / `hsla()` in both comma and space syntaxes, `hwb()`, `lab()`, `lch()`, `oklab()`, `oklch()` and `color()` in the predefined spaces (`srgb`, `srgb-linear`, `display-p3`, `display-p3-linear`, `a98-rgb`, `prophoto-rgb`, `rec2020`, `xyz`, `xyz-d50`, `xyz-d65`), with `none` and angle units. The result is a tagged `Color` (`hsl()` and `hwb()` keep their own channels, `none` included, as `Hsl` and `Hwb`); `Color.serialize` prints it as CSS Color 4 does, and `Color.toSrgb` converts it to sRGB (0 to 1, not gamut-mapped). From [CSS Color 5](https://www.w3.org/TR/css-color-5/): `device-cmyk()` (space and legacy comma syntaxes, channels clamped to [0, 1], serialised as `color(device-cmyk …)`, converted to sRGB naively), `color()` in a custom `--name` space (channels kept as written, no sRGB without its `@color-profile`) `light-dark()` (both colours kept; no sRGB, since which applies depends on the used colour scheme) and `color-mix()` (an optional `in <space> [<method> hue]`, `oklab` by default, then one or more colours with optional percentages from 0% to 100%; kept as written and serialised as its specified value, with the default method left out and the percentages filled in, or left out when all equal and summing to 100%; not yet resolved to a colour, so no sRGB, see [#184](https://github.com/thomasfosterau/effect-web/issues/184)). The `color-mix()` vectors of web-platform-tests' `css/css-color/parsing` (valid and invalid) run in `tests/color-mix.test.ts`.
 
 ## `Length`
 

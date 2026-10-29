@@ -14,9 +14,9 @@ import vectors from "./fixtures/wpt-color-mix.json" with { type: "json" };
  *
  * - `calc()` and `var()` as a percentage need the math functions and
  *   custom properties, which `Color` does not parse.
- * - `hsl()` and `hwb()` resolve to `Rgb` at parse time (the package's
- *   colour serialisation invariant, a `none` channel as 0), so a specified
- *   value that keeps one, `none` and all, cannot be written back.
+ * - `hsl()` and `hwb()` serialise as `rgb()` (the 2021 edition the
+ *   package's colour serialisation follows, a `none` channel as 0), so a
+ *   specified value that keeps one, `none` and all, is not written back.
  * - The css-parsing-tests suite this package follows pins `lab()`-family
  *   lightness unclamped (`oklab(100 …)` stays 100), where WPT clamps it.
  * - That suite also pins `rgb()` channels with their decimals

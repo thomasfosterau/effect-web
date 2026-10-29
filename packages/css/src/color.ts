@@ -71,6 +71,34 @@ export interface LchChannels {
 }
 
 /**
+ * The channels of `hsl()`: hue in degrees (normalised to [0, 360)),
+ * saturation and lightness per 1% (`50%` is 50), alpha from 0 to 1.
+ *
+ * @since 0.1.0
+ * @category models
+ */
+export interface HslChannels {
+  readonly hue: Channel;
+  readonly saturation: Channel;
+  readonly lightness: Channel;
+  readonly alpha: Channel;
+}
+
+/**
+ * The channels of `hwb()`: hue in degrees (normalised to [0, 360)),
+ * whiteness and blackness per 1%, alpha from 0 to 1.
+ *
+ * @since 0.1.0
+ * @category models
+ */
+export interface HwbChannels {
+  readonly hue: Channel;
+  readonly whiteness: Channel;
+  readonly blackness: Channel;
+  readonly alpha: Channel;
+}
+
+/**
  * The colour spaces `color-mix()` interpolates in (CSS Color 4 §12.1):
  * the rectangular ones and the polar ones, which take a hue method.
  * `xyz` is `xyz-d65`.
@@ -109,9 +137,11 @@ export interface MixComponent {
 }
 
 /**
- * A parsed colour. Named colours, hex, `rgb()`, `hsl()` and `hwb()` all
- * become `Rgb` (red, green and blue from 0 to 255, alpha from 0 to 1;
- * `none` resolved to 0), as CSS Color 4 serialises them. `lab()`, `lch()`,
+ * A parsed colour. Named colours, hex and `rgb()` become `Rgb` (red, green
+ * and blue from 0 to 255, alpha from 0 to 1; `none` resolved to 0).
+ * `hsl()` is `Hsl` and `hwb()` is `Hwb`, their channels as written (hue in
+ * degrees normalised to [0, 360), the others per 1%) with `none` kept, so a
+ * `color-mix()` can carry a missing component forward. `lab()`, `lch()`,
  * `oklab()` and `oklch()` keep their own space (lightness, and hue in
  * degrees normalised to [0, 360)); `color()` keeps its predefined space.
  * `currentcolor` has no value of its own. From CSS Color 5:
@@ -134,6 +164,8 @@ export type Color =
       readonly blue: number;
       readonly alpha: number;
     }
+  | ({ readonly _tag: "Hsl" } & HslChannels)
+  | ({ readonly _tag: "Hwb" } & HwbChannels)
   | ({ readonly _tag: "Lab" } & LabChannels)
   | ({ readonly _tag: "Oklab" } & LabChannels)
   | ({ readonly _tag: "Lch" } & LchChannels)
@@ -280,7 +312,18 @@ const hwbToRgb = (h: number, w: number, b: number): readonly [number, number, nu
   return [scale(red), scale(green), scale(blue)];
 };
 
-const rgb = (channels: readonly [number, number, number], alpha: Channel): Color => ({
+/** An `hsl()` or `hwb()` colour as `Rgb`, `none` channels as 0. */
+const toRgb = (
+  color: ({ readonly _tag: "Hsl" } & HslChannels) | ({ readonly _tag: "Hwb" } & HwbChannels),
+) =>
+  Predicate.isTagged(color, "Hsl")
+    ? rgb(hslToRgb(zero(color.hue), zero(color.saturation), zero(color.lightness)), color.alpha)
+    : rgb(hwbToRgb(zero(color.hue), zero(color.whiteness), zero(color.blackness)), color.alpha);
+
+const rgb = (
+  channels: readonly [number, number, number],
+  alpha: Channel,
+): Extract<Color, { readonly _tag: "Rgb" }> => ({
   _tag: "Rgb",
   red: channels[0] * 255,
   green: channels[1] * 255,
@@ -338,7 +381,13 @@ const parseHsl = (args: ReadonlyArray<Arg>): Option.Option<Color> => {
   });
   return Option.map(
     Option.orElse(modern, () => legacy),
-    ([h, s, l, alpha]) => rgb(hslToRgb(zero(h ?? 0), zero(s ?? 0), zero(l ?? 0)), alpha ?? 1),
+    ([hue = 0, saturation = 0, lightness = 0, alpha = 1]): Color => ({
+      _tag: "Hsl",
+      hue,
+      saturation,
+      lightness,
+      alpha,
+    }),
   );
 };
 
@@ -354,7 +403,13 @@ const parseHwb = (args: ReadonlyArray<Arg>): Option.Option<Color> =>
         alphaOf(alpha, true),
       ]);
     }),
-    ([h, w, b, alpha]) => rgb(hwbToRgb(zero(h ?? 0), zero(w ?? 0), zero(b ?? 0)), alpha ?? 1),
+    ([hue = 0, whiteness = 0, blackness = 0, alpha = 1]): Color => ({
+      _tag: "Hwb",
+      hue,
+      whiteness,
+      blackness,
+      alpha,
+    }),
   );
 
 /** `lab()` / `oklab()`: lightness per 1% and a / b per 1%. */
@@ -755,6 +810,8 @@ export const serialize = (color: Color): string =>
         ? `rgb(${channels.join(", ")})`
         : `rgba(${channels.join(", ")}, ${number(rgb.alpha)})`;
     },
+    Hsl: (hsl) => serialize(toRgb(hsl)),
+    Hwb: (hwb) => serialize(toRgb(hwb)),
     Lab: serializeLab,
     Oklab: serializeLab,
     Lch: serializeLch,
@@ -926,6 +983,8 @@ const toXyzD65 = (color: Color): Option.Option<Vector> =>
           mapVector([rgb.red, rgb.green, rgb.blue], (c) => srgbToLinear(c / 255)),
         ),
       ),
+    Hsl: (hsl) => toXyzD65(toRgb(hsl)),
+    Hwb: (hwb) => toXyzD65(toRgb(hwb)),
     Lab: (lab) => Option.some(labD65(zero(lab.lightness), zero(lab.a), zero(lab.b))),
     Lch: (lch) => Option.some(lchToXyz(lch.lightness, lch.chroma, lch.hue, labD65)),
     Oklab: (lab) => Option.some(oklabToXyz(zero(lab.lightness), zero(lab.a), zero(lab.b))),
@@ -994,6 +1053,9 @@ export interface Srgb {
  * @category converting
  */
 export const toSrgb = (color: Color): Option.Option<Srgb> => {
+  if (Predicate.isTagged(color, "Hsl") || Predicate.isTagged(color, "Hwb")) {
+    return toSrgb(toRgb(color));
+  }
   if (Predicate.isTagged(color, "Rgb")) {
     return Option.some({
       red: color.red / 255,
