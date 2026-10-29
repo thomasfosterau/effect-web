@@ -154,7 +154,7 @@ const toPolar = ([l, a, b]: Vector): Vector => {
 };
 
 /** CSS Color 4 §7.1 `hslToRgb`: hue in degrees, saturation and lightness per 1%, to [0, 1]. */
-const hslToSrgb = ([h, s, l]: Vector): Vector => {
+export const hslToSrgb = ([h, s, l]: Vector): Vector => {
   const saturation = s / 100;
   const lightness = l / 100;
   const f = (n: number): number => {
@@ -194,7 +194,7 @@ const hueOf = (red: number, green: number, blue: number, max: number, d: number)
 };
 
 /** CSS Color 4 §8.1 `hwbToRgb`. */
-const hwbToSrgb = ([h, w, b]: Vector): Vector => {
+export const hwbToSrgb = ([h, w, b]: Vector): Vector => {
   const white = w / 100;
   const black = b / 100;
   if (white + black >= 1) {
@@ -257,7 +257,7 @@ const srgbToXyz = (rgb: Vector): Vector =>
   multiply(LINEAR_SRGB_TO_XYZ, mapVector(rgb, srgbToLinear));
 
 /** Each space's channels to and from XYZ D65. */
-export const CONVERSIONS = {
+const CONVERSIONS = {
   srgb: { toXyz: srgbToXyz, fromXyz: fromSrgbXyz },
   "srgb-linear": {
     toXyz: (c) => multiply(LINEAR_SRGB_TO_XYZ, c),
@@ -312,3 +312,7 @@ export const CONVERSIONS = {
     fromXyz: (xyz) => srgbToHwb(fromSrgbXyz(xyz)),
   },
 } satisfies { readonly [S in Space]: Conversion };
+
+/** Channels from one space to another, through XYZ D65; the same space is no change. */
+export const convert = (from: Space, to: Space, channels: Vector): Vector =>
+  from === to ? channels : CONVERSIONS[to].fromXyz(CONVERSIONS[from].toXyz(channels));

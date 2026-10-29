@@ -5,20 +5,20 @@
  * premultiplied alpha and the hue method, two colours at a time.
  */
 import * as Option from "effect/Option";
-import { CONVERSIONS, type Space, type Vector } from "./spaces.ts";
+import { convert as convertChannels, type Space, type Vector } from "./spaces.ts";
 
 /** A channel, or `none` (a missing component). */
-export type Channel = number | "none";
+export type MixChannel = number | "none";
 
 /** A colour in one of the interpolation spaces. */
 export interface Working {
   readonly space: Space;
-  readonly channels: readonly [Channel, Channel, Channel];
-  readonly alpha: Channel;
+  readonly channels: readonly [MixChannel, MixChannel, MixChannel];
+  readonly alpha: MixChannel;
 }
 
 /** How hues interpolate (CSS Color 4 §12.4). */
-export type HueMethod = "shorter" | "longer" | "increasing" | "decreasing";
+export type HueInterpolation = "shorter" | "longer" | "increasing" | "decreasing";
 
 /** The analogous-component categories of CSS Color 4 §12.2, per channel. */
 type Category =
@@ -67,9 +67,9 @@ const hueIndex = (space: Space): number => {
   return categories.indexOf("hue");
 };
 
-const zero = (channel: Channel): number => (channel === "none" ? 0 : channel);
+const zero = (channel: MixChannel): number => (channel === "none" ? 0 : channel);
 
-const numbers = (channels: readonly [Channel, Channel, Channel]): Vector => [
+const numbers = (channels: readonly [MixChannel, MixChannel, MixChannel]): Vector => [
   zero(channels[0]),
   zero(channels[1]),
   zero(channels[2]),
@@ -113,17 +113,15 @@ const pairMissing = (color: Working, target: Space): ReadonlyArray<number> => {
  * `color` in `target`: converted through XYZ, a component missing in
  * `color` missing in its analogue, and an achromatic colour's hue missing.
  */
-export const convert = (color: Working, target: Space): Working => {
+export const toSpace = (color: Working, target: Space): Working => {
   if (color.space === target) return color;
-  const converted = CONVERSIONS[target].fromXyz(
-    CONVERSIONS[color.space].toXyz(numbers(color.channels)),
-  );
+  const converted = convertChannels(color.space, target, numbers(color.channels));
   const source: Categories = CATEGORIES[color.space];
   const targetCategories: Categories = CATEGORIES[target];
   const hue = hueIndex(target);
   const achromatic = isAchromatic(target, converted);
   const missingPair = pairMissing(color, target);
-  const channel = (index: number): Channel => {
+  const channel = (index: number): MixChannel => {
     if (missingPair.includes(index)) return "none";
     const analogue = source.indexOf(targetCategories[index] ?? "x");
     if (analogue >= 0 && color.channels[analogue] === "none") return "none";
@@ -133,28 +131,31 @@ export const convert = (color: Working, target: Space): Working => {
 };
 
 /** Both values with a missing one taken from the other; `None` when both are missing. */
-const filled = (a: Channel, b: Channel): Option.Option<readonly [number, number]> =>
+const filled = (a: MixChannel, b: MixChannel): Option.Option<readonly [number, number]> =>
   a === "none" && b === "none"
     ? Option.none()
     : Option.some([a === "none" ? zero(b) : a, b === "none" ? zero(a) : b]);
 
 const lerp = (a: number, b: number, t: number): number => a + (b - a) * t;
 
-/** Hues adjusted for the method (CSS Color 4 §12.4), each in [0, 360) first. */
-const fixHues = (a: number, b: number, method: HueMethod): readonly [number, number] => {
+/**
+ * Which hue each method moves up a turn, given the difference `d` from
+ * the first hue to the second (CSS Color 4 §12.4): `1` the first, `2` the
+ * second, `0` neither.
+ */
+const HUE_FIXUPS = {
+  shorter: (d: number) => (d > 180 ? 1 : d < -180 ? 2 : 0),
+  longer: (d: number) => (d > 0 && d < 180 ? 1 : d > -180 && d <= 0 ? 2 : 0),
+  increasing: (d: number) => (d < 0 ? 2 : 0),
+  decreasing: (d: number) => (d > 0 ? 1 : 0),
+} satisfies { readonly [M in HueInterpolation]: (d: number) => 0 | 1 | 2 };
+
+/** Hues adjusted for the method, each in [0, 360) first. */
+const fixHues = (a: number, b: number, method: HueInterpolation): readonly [number, number] => {
   const h1 = ((a % 360) + 360) % 360;
   const h2 = ((b % 360) + 360) % 360;
-  const d = h2 - h1;
-  if (method === "shorter") {
-    if (d > 180) return [h1 + 360, h2];
-    return d < -180 ? [h1, h2 + 360] : [h1, h2];
-  }
-  if (method === "longer") {
-    if (d > 0 && d < 180) return [h1 + 360, h2];
-    return d > -180 && d <= 0 ? [h1, h2 + 360] : [h1, h2];
-  }
-  if (method === "increasing") return d < 0 ? [h1, h2 + 360] : [h1, h2];
-  return d > 0 ? [h1 + 360, h2] : [h1, h2];
+  const fixup = HUE_FIXUPS[method](h2 - h1);
+  return [fixup === 1 ? h1 + 360 : h1, fixup === 2 ? h2 + 360 : h2];
 };
 
 /** One channel of a pairwise mix, premultiplied by its colour's alpha unless it is the hue. */
@@ -163,10 +164,10 @@ const mixChannel = (
   alphas: readonly [number, number],
   isHue: boolean,
   t: number,
-  method: HueMethod,
-): Channel =>
+  method: HueInterpolation,
+): MixChannel =>
   Option.match(values, {
-    onNone: (): Channel => "none",
+    onNone: (): MixChannel => "none",
     onSome: (pair) => mixValues(pair, alphas, isHue, t, method),
   });
 
@@ -175,7 +176,7 @@ const mixValues = (
   alphas: readonly [number, number],
   isHue: boolean,
   t: number,
-  method: HueMethod,
+  method: HueInterpolation,
 ): number => {
   if (isHue) {
     const [h1, h2] = fixHues(values[0], values[1], method);
@@ -187,11 +188,11 @@ const mixValues = (
 };
 
 /** Two colours in the same space, `t` of the way from `a` to `b`. */
-const mixPair = (a: Working, b: Working, t: number, method: HueMethod): Working => {
+const mixPair = (a: Working, b: Working, t: number, method: HueInterpolation): Working => {
   const alphas = filled(a.alpha, b.alpha);
   const [alphaA, alphaB] = Option.getOrElse(alphas, (): readonly [number, number] => [1, 1]);
   const hue = hueIndex(a.space);
-  const channel = (index: 0 | 1 | 2): Channel =>
+  const channel = (index: 0 | 1 | 2): MixChannel =>
     mixChannel(
       filled(a.channels[index], b.channels[index]),
       [alphaA, alphaB],
@@ -217,7 +218,10 @@ export interface Part {
  * percentages so far (equal halves while they are all 0%). The result's
  * alpha is scaled by the total percentage when it is under 100%.
  */
-export const mix = (parts: readonly [Part, ...ReadonlyArray<Part>], method: HueMethod): Working => {
+export const mix = (
+  parts: readonly [Part, ...ReadonlyArray<Part>],
+  method: HueInterpolation,
+): Working => {
   const [first, ...rest] = parts;
   const { color, total } = rest.reduce(
     (state, part) => {
