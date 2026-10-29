@@ -33,6 +33,21 @@ for (const item of Syntax.parseDeclarationList(
 
 A `SyntaxError` carries `offset`, the code-point offset in the preprocessed input (CRLF counted as one). The token and component-value types are in `Token`.
 
+The parsers take text, not bytes. To parse a stylesheet fetched as bytes, decode it first, for example with [`@thomasfosterau/effect-encoding`](https://www.npmjs.com/package/@thomasfosterau/effect-encoding). Pass it the encoding Syntax 3 §3.2 would pick: the protocol's `charset`, then an `@charset` rule, then the referring document's encoding, then UTF-8. A byte-order mark overrides that encoding, which is the decoder's default BOM sniff.
+
+```ts
+import * as Effect from "effect/Effect";
+import { Encoding } from "@thomasfosterau/effect-encoding";
+import { Syntax } from "@thomasfosterau/effect-css";
+
+const bytes = new Uint8Array([
+  0x70, 0x20, 0x7b, 0x20, 0x63, 0x6f, 0x6c, 0x6f, 0x72, 0x3a, 0x20, 0x72, 0x65, 0x64, 0x20, 0x7d,
+]);
+const rules = await Effect.runPromise(
+  Effect.map(Encoding.decode(bytes, { encoding: "UTF-8" }), Syntax.parseStylesheet),
+);
+```
+
 ## `AnPlusB`
 
 `AnPlusB.parse(cssOrComponentValues)` reads the `An+B` microsyntax (Syntax 3 §6) of `:nth-child()` and its relatives into `[a, b]`: `odd`, `even`, an integer, or `An` with an optional `+ B` / `- B` (`2n+1`, `-n + 3`, `+N-2`), case-insensitive, whitespace allowed around the sign but not inside `+n` or a number.
