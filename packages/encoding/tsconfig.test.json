@@ -7,7 +7,11 @@
     // resolves that name to `src/` so the type gate never needs this
     // package's `dist/` first. Relative to this file.
     "paths": {
-      "@thomasfosterau/effect-encoding": ["./src/index.ts"]
+      "@thomasfosterau/effect-encoding": ["./src/index.ts"],
+      "@thomasfosterau/effect-encoding/japanese": ["./src/japanese/index.ts"],
+      "@thomasfosterau/effect-encoding/gb18030": ["./src/gb18030/index.ts"],
+      "@thomasfosterau/effect-encoding/big5": ["./src/big5/index.ts"],
+      "@thomasfosterau/effect-encoding/euc-kr": ["./src/euc-kr/index.ts"]
     }
   },
   "include": ["src", "tests"]

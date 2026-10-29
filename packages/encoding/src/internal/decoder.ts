@@ -13,6 +13,7 @@
  */
 import * as Option from "effect/Option";
 import * as Result from "effect/Result";
+import { cjkBackend, EMPTY, type Tables } from "./cjk.ts";
 import type { Name as EncodingName } from "./labels.ts";
 import { singleByteHigh } from "./tables.ts";
 
@@ -109,23 +110,25 @@ const replacementBackend = (fatal: boolean): Backend => {
  * The backend for an encoding: a bundled table for every single-byte
  * encoding and `x-user-defined` (whatever the runtime has: Node's ICU
  * decodes IBM866, KOI8-U, windows-874, windows-1253 and windows-1255
- * differently from the standard's indexes), else the runtime's
- * `TextDecoder`, else `None`.
+ * differently from the standard's indexes), the standard's decoder over
+ * provided CJK tables, else the runtime's `TextDecoder`, else `None`.
  */
 const backendFor = (
   encoding: EncodingName,
   fatal: boolean,
   ignoreBOM: boolean,
+  tables: Tables,
 ): Option.Option<Backend> => {
   if (encoding === "replacement") return Option.some(replacementBackend(fatal));
-  return Option.orElse(bundledBackend(encoding, fatal), () =>
-    textDecoderBackend(encoding, fatal, ignoreBOM),
+  return Option.orElse(
+    Option.orElse(bundledBackend(encoding, fatal), () => cjkBackend(encoding, tables, fatal)),
+    () => textDecoderBackend(encoding, fatal, ignoreBOM),
   );
 };
 
 /** Whether this runtime (or a bundled table) can decode the encoding. */
-export const canDecode = (encoding: EncodingName): boolean =>
-  Option.isSome(backendFor(encoding, false, false));
+export const canDecode = (encoding: EncodingName, tables: Tables = EMPTY): boolean =>
+  Option.isSome(backendFor(encoding, false, false, tables));
 
 /** A decoding failure: the encoding in use and the byte offset the error was detected at. */
 export interface Failure {
@@ -144,6 +147,7 @@ export interface DecoderOptions {
   readonly encoding: EncodingName;
   readonly fatal: boolean;
   readonly bomHandling: BomMode;
+  readonly tables: Tables;
 }
 
 /** Concatenates two byte arrays. */
@@ -170,13 +174,13 @@ interface Pair {
 export const make = (options: DecoderOptions): Result.Result<Decoder, EncodingName> => {
   const { fatal, bomHandling } = options;
   const pairFor = (encoding: EncodingName, ignoreBOM: boolean): Result.Result<Pair, EncodingName> =>
-    Option.match(backendFor(encoding, fatal, ignoreBOM), {
+    Option.match(backendFor(encoding, fatal, ignoreBOM, options.tables), {
       onNone: () => Result.fail(encoding),
       onSome: (primary) =>
         Result.succeed({
           encoding,
           primary,
-          shadow: fatal ? backendFor(encoding, fatal, ignoreBOM) : Option.none(),
+          shadow: fatal ? backendFor(encoding, fatal, ignoreBOM, options.tables) : Option.none(),
         }),
     });
 

@@ -1,10 +1,10 @@
 # @thomasfosterau/effect-encoding
 
-The WHATWG Encoding Standard: `Encoding` (labels to encoding names, BOM sniffing, fatal decoding of bytes and byte streams with a typed `DecodeError` carrying the byte offset, `isSupported` for runtimes whose `TextDecoder` lacks the legacy encodings, and encoding text to UTF-8 and the single-byte encodings with a typed `EncodeError` or the `html` error mode).
+The WHATWG Encoding Standard: `Encoding` (labels to encoding names, BOM sniffing, fatal decoding of bytes and byte streams with a typed `DecodeError` carrying the byte offset, `isSupported` for runtimes whose `TextDecoder` lacks the legacy encodings, and encoding text to UTF-8, the single-byte and (with their opt-in tables) the CJK encodings with a typed `EncodeError` or the `html` error mode). The CJK indexes are the opt-in entries `./japanese`, `./gb18030`, `./big5` and `./euc-kr`, provided through `Encoding.tablesLayer`.
 
 ## Boundary
 
-Peer: `effect`. No workspace dependency (`.fallowrc.json` zone `encoding` allows none). The single-byte encodings and `x-user-defined` decode and encode through the bundled indexes (in the main entry, by owner decision on #160); UTF-8, UTF-16 and the CJK encodings decode through the runtime's `TextDecoder`. `src/internal/` holds the label table, the single-byte indexes (`single-byte.ts`, with `tables.ts` over them), the incremental decoder and the incremental encoder; nothing outside `src/` imports it.
+Peer: `effect`. No workspace dependency (`.fallowrc.json` zone `encoding` allows none). The single-byte encodings and `x-user-defined` decode and encode through the bundled indexes (in the main entry, by owner decision on #160); The CJK encodings decode by the standard's algorithms (`src/internal/cjk.ts`) when their tables are provided, else through the runtime's `TextDecoder`, and encode only with their tables; UTF-8 and UTF-16 decode through the runtime's `TextDecoder`. `src/internal/` holds the label table, the single-byte indexes (`single-byte.ts`, with `tables.ts` over them), the incremental decoder and the incremental encoder; nothing outside `src/` imports it.
 
 ## Invariants
 
@@ -13,8 +13,9 @@ Peer: `effect`. No workspace dependency (`.fallowrc.json` zone `encoding` allows
 - **Decoding is fatal by default.** Malformed input fails with `DecodeError`, never U+FFFD, unless the caller passes `fatal: false`.
 - **A `DecodeError`'s offset is exact for every encoding.** A fatal decoder runs a shadow backend in lockstep, fed only accepted input; on a failure the shadow is fed the failing chunk a byte at a time. Only fatal decoding pays for the shadow, and only the failing chunk is fed byte-wise. Offsets count from the start of the input, a BOM included; a sequence cut short by the end of input reports the input's length.
 - **`"sniff"` is the standard's "decode"**: a BOM overrides the requested encoding and is removed by the decoder here (the backend is built with `ignoreBOM: true`), so a second BOM survives as U+FEFF. `"strip"` leaves the requested encoding's own BOM to `TextDecoder`.
-- **Encoding is fatal by default** (`EncodeError { encoding, offset, codePoint }`, the offset in UTF-16 code units); `errorMode: "html"` writes `&#N;`. A lone surrogate encodes as U+FFFD; a stream keeps a trailing high surrogate for the next chunk. `replacement` and UTF-16 have no encoder (the standard's `getOutputEncoding` maps them to UTF-8); the CJK encoders are not here yet.
+- **Encoding is fatal by default** (`EncodeError { encoding, offset, codePoint }`, the offset in UTF-16 code units); `errorMode: "html"` writes `&#N;`. A lone surrogate encodes as U+FFFD; a stream keeps a trailing high surrogate for the next chunk. `replacement` and UTF-16 have no encoder (the standard's `getOutputEncoding` maps them to UTF-8).
 - **Each stream run gets its own decoder or encoder** (`Stream.unwrap`), so a `decodeStream` or `encodeStream` can be run twice.
+- **The CJK tables never reach the main entry.** `src/<entry>/index.ts` holds each opt-in index as generated literal data (`index-<name>.txt`, identifier in a comment); the main entry imports only their type. A provided table set wins over the runtime's `TextDecoder`, as the single-byte tables do. An encoder builds its reverse index (an `Int32Array` over the Basic Multilingual Plane) once per `encode` call or stream run.
 - **Nothing runs at import** (`"sideEffects": false`): the bundled tables are string literals, and backends are built on first use.
 
 ## Terms
