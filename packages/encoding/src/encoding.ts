@@ -1,7 +1,8 @@
 /**
- * The WHATWG Encoding Standard on Effect: labels, BOM sniffing, and fatal
- * decoding of bytes and byte streams, with a typed error that says where
- * the input went wrong.
+ * The WHATWG Encoding Standard on Effect: labels, BOM sniffing, fatal
+ * decoding of bytes and byte streams, and encoding text to UTF-8 and the
+ * legacy single-byte encodings, with typed errors that say where the input
+ * went wrong.
  *
  * @since 0.1.0
  */
@@ -14,6 +15,7 @@ import * as Schema from "effect/Schema";
 import * as Stream from "effect/Stream";
 import * as Str from "effect/String";
 import * as Decoder from "./internal/decoder.ts";
+import * as Encoder from "./internal/encoder.ts";
 import { LABELS, NAMES, type Name } from "./internal/labels.ts";
 
 /**
@@ -145,10 +147,10 @@ export class DecodeError extends Schema.TaggedError<DecodeError>()("DecodeError"
 }) {}
 
 /**
- * The runtime cannot decode this encoding, and none of its tables is
- * bundled here. Some runtimes ship a `TextDecoder` without the legacy
- * encodings (small-ICU Node builds, some edge runtimes); see
- * {@link isSupported}.
+ * The encoding is not available for the operation: the runtime cannot
+ * decode it and its table is not bundled here (a CJK encoding on a runtime
+ * whose `TextDecoder` lacks it; see {@link isSupported}), or there is no
+ * encoder for it (see {@link canEncode}).
  *
  * @since 0.1.0
  * @category errors
@@ -163,8 +165,9 @@ export class UnsupportedEncodingError extends Schema.TaggedError<UnsupportedEnco
 
 /**
  * Whether this runtime can decode the encoding: its `TextDecoder` knows
- * it, or the table is bundled here (`ISO-8859-16` and `x-user-defined`,
- * which Node's `TextDecoder` lacks), or it is `replacement`.
+ * it, or the table is bundled here (every single-byte encoding and
+ * `x-user-defined`, used when the runtime's `TextDecoder` lacks one, as
+ * small-ICU builds and some edge runtimes do), or it is `replacement`.
  *
  * @example
  * ```ts
@@ -291,6 +294,218 @@ export const decodeStream: {
           Stream.mapEffect((bytes) => lift(decoder.push(bytes))),
           Stream.concat(Stream.fromEffect(Effect.suspend(() => lift(decoder.flush())))),
           Stream.filter((text) => text !== ""),
+        ),
+      ),
+    ),
+);
+
+/**
+ * The encoding to encode with in place of the given one (§4.3, "get an
+ * output encoding"): `replacement`, `UTF-16BE` and `UTF-16LE`, which have
+ * no encoder, become `UTF-8`; any other encoding is itself. What a URL
+ * parser or an HTML form does with a document's encoding.
+ *
+ * @example
+ * ```ts
+ * import { Encoding } from "@thomasfosterau/effect-encoding"
+ *
+ * console.log(Encoding.getOutputEncoding("UTF-16LE")) // "UTF-8"
+ * console.log(Encoding.getOutputEncoding("windows-1252")) // "windows-1252"
+ * ```
+ *
+ * @since 0.1.0
+ * @category encoding
+ */
+export const getOutputEncoding = (encoding: EncodingName): EncodingName =>
+  encoding === "replacement" || encoding === "UTF-16BE" || encoding === "UTF-16LE"
+    ? "UTF-8"
+    : encoding;
+
+/**
+ * Whether {@link encode} can encode to the encoding: UTF-8, every
+ * single-byte encoding and `x-user-defined`. `replacement` and UTF-16 have
+ * no encoder in the standard (see {@link getOutputEncoding}); the CJK
+ * encoders are not here yet.
+ *
+ * @example
+ * ```ts
+ * import { Encoding } from "@thomasfosterau/effect-encoding"
+ *
+ * console.log(Encoding.canEncode("windows-1252")) // true
+ * console.log(Encoding.canEncode("UTF-16LE")) // false
+ * ```
+ *
+ * @since 0.1.0
+ * @category encoding
+ */
+export const canEncode: (encoding: EncodingName) => boolean = Encoder.hasEncoder;
+
+/**
+ * What {@link encode} does with a code point the encoding cannot represent
+ * (§4.1, "error mode"):
+ *
+ * - `"fatal"` (the default) — fail with an {@link EncodeError}.
+ * - `"html"` — write the decimal character reference `&#N;`, as an HTML
+ *   form does. The reference cannot be told apart from the same text
+ *   written literally, so this loses information silently.
+ *
+ * @since 0.1.0
+ * @category models
+ */
+export type EncodeErrorMode = Encoder.ErrorMode;
+
+/**
+ * Options for {@link encode} and {@link encodeStream}.
+ *
+ * @since 0.1.0
+ * @category models
+ */
+export interface EncodeOptions {
+  /** The encoding to encode to. Defaults to `UTF-8`. */
+  readonly encoding?: EncodingName | undefined;
+  /** What to do with an unmappable code point. Defaults to `"fatal"`. */
+  readonly errorMode?: EncodeErrorMode | undefined;
+}
+
+/**
+ * A code point the encoding cannot represent, under the `"fatal"` error
+ * mode. `offset` is its UTF-16 code-unit offset (a JavaScript string
+ * index) from the start of the input; `codePoint` is the code point (a
+ * lone surrogate in the input is encoded as U+FFFD, so it reports 0xFFFD).
+ *
+ * @since 0.1.0
+ * @category errors
+ */
+export class EncodeError extends Schema.TaggedError<EncodeError>()("EncodeError", {
+  encoding: Schema.String,
+  offset: Schema.Number,
+  codePoint: Schema.Number,
+  message: Schema.String,
+}) {}
+
+const encodeError = (failure: Encoder.EncodeFailure): EncodeError =>
+  new EncodeError({
+    encoding: failure.encoding,
+    offset: failure.offset,
+    codePoint: failure.codePoint,
+    message: `U+${failure.codePoint.toString(16).toUpperCase().padStart(4, "0")} at offset ${failure.offset} cannot be encoded in ${failure.encoding}`,
+  });
+
+const makeEncoder = (
+  options: EncodeOptions,
+): Effect.Effect<Encoder.Encoder, UnsupportedEncodingError> =>
+  Effect.suspend(() =>
+    Effect.mapError(
+      Effect.fromResult(
+        Encoder.makeEncoder({
+          encoding: options.encoding ?? "UTF-8",
+          mode: options.errorMode ?? "fatal",
+        }),
+      ),
+      (encoding) =>
+        new UnsupportedEncodingError({
+          encoding,
+          message: `There is no encoder for ${encoding}`,
+        }),
+    ),
+  );
+
+const liftEncoded = (
+  result: Result.Result<Uint8Array, Encoder.EncodeFailure>,
+): Effect.Effect<Uint8Array, EncodeError> =>
+  Effect.mapError(Effect.fromResult(result), encodeError);
+
+/**
+ * Encodes text to bytes (§4.3, "encode"). Fatal by default: a code point
+ * the encoding cannot represent fails with an {@link EncodeError} carrying
+ * its offset; `errorMode: "html"` writes `&#N;` instead. A lone surrogate
+ * is encoded as U+FFFD. An encoding with no encoder (see {@link canEncode})
+ * fails with an {@link UnsupportedEncodingError}.
+ *
+ * @example
+ * ```ts
+ * import * as Effect from "effect/Effect"
+ * import { Encoding } from "@thomasfosterau/effect-encoding"
+ *
+ * const bytes = await Effect.runPromise(Encoding.encode("café €5", { encoding: "windows-1252" }))
+ * console.log(Array.from(bytes, (byte) => byte.toString(16))) // ["63", "61", "66", "e9", "20", "80", "35"]
+ *
+ * const error = await Effect.runPromise(
+ *   Effect.flip(Encoding.encode("a→b", { encoding: "windows-1252" })),
+ * )
+ * if (error instanceof Encoding.EncodeError) console.log(error.offset, error.codePoint) // 1 8594
+ *
+ * const html = await Effect.runPromise(
+ *   Encoding.encode("a→b", { encoding: "windows-1252", errorMode: "html" }),
+ * )
+ * console.log(new TextDecoder().decode(html)) // "a&#8594;b"
+ * ```
+ *
+ * @since 0.1.0
+ * @category encoding
+ */
+export const encode = (
+  text: string,
+  options: EncodeOptions = {},
+): Effect.Effect<Uint8Array, EncodeError | UnsupportedEncodingError> =>
+  Effect.flatMap(makeEncoder(options), (encoder) =>
+    Effect.flatMap(liftEncoded(encoder.push(text)), (head) =>
+      Effect.map(liftEncoded(encoder.flush()), (rest) => {
+        if (rest.byteLength === 0) return head;
+        const joined = new Uint8Array(head.byteLength + rest.byteLength);
+        joined.set(head);
+        joined.set(rest, head.byteLength);
+        return joined;
+      }),
+    ),
+  );
+
+/**
+ * Encodes a stream of text chunks to a stream of byte chunks, a surrogate
+ * pair split across chunks included. Fatal by default, failing the stream
+ * with an {@link EncodeError} whose offset counts UTF-16 code units from
+ * the start of the stream. Each run of the stream gets its own encoder.
+ * Empty chunks are not emitted.
+ *
+ * @example
+ * ```ts
+ * import * as Effect from "effect/Effect"
+ * import * as Stream from "effect/Stream"
+ * import { Encoding } from "@thomasfosterau/effect-encoding"
+ *
+ * const chunks = await Effect.runPromise(
+ *   Stream.runCollect(
+ *     Encoding.encodeStream(Stream.make("naïve, ", "€1"), { encoding: "ISO-8859-15" }),
+ *   ),
+ * )
+ * console.log(chunks.map((chunk) => chunk.length)) // [7, 2]
+ * ```
+ *
+ * @since 0.1.0
+ * @category encoding
+ */
+export const encodeStream: {
+  (
+    options?: EncodeOptions,
+  ): <E, R>(
+    self: Stream.Stream<string, E, R>,
+  ) => Stream.Stream<Uint8Array, E | EncodeError | UnsupportedEncodingError, R>;
+  <E, R>(
+    self: Stream.Stream<string, E, R>,
+    options?: EncodeOptions,
+  ): Stream.Stream<Uint8Array, E | EncodeError | UnsupportedEncodingError, R>;
+} = dual(
+  (args) => Stream.isStream(args[0]),
+  <E, R>(
+    self: Stream.Stream<string, E, R>,
+    options: EncodeOptions = {},
+  ): Stream.Stream<Uint8Array, E | EncodeError | UnsupportedEncodingError, R> =>
+    Stream.unwrap(
+      Effect.map(makeEncoder(options), (encoder) =>
+        self.pipe(
+          Stream.mapEffect((text) => liftEncoded(encoder.push(text))),
+          Stream.concat(Stream.fromEffect(Effect.suspend(() => liftEncoded(encoder.flush())))),
+          Stream.filter((bytes) => bytes.byteLength > 0),
         ),
       ),
     ),

@@ -1,6 +1,6 @@
 # @thomasfosterau/effect-encoding
 
-The [WHATWG Encoding Standard](https://encoding.spec.whatwg.org/) on [Effect](https://effect.website): resolve an encoding label, sniff a byte-order mark, and decode bytes or a byte stream. Decoding is fatal by default: malformed input fails with a typed `DecodeError` that says which byte went wrong, never a silent U+FFFD.
+The [WHATWG Encoding Standard](https://encoding.spec.whatwg.org/) on [Effect](https://effect.website): resolve an encoding label, sniff a byte-order mark, decode bytes or a byte stream, and encode text to UTF-8 or a legacy single-byte encoding. Both directions are fatal by default: malformed input fails with a typed `DecodeError` that says which byte went wrong, and an unmappable character with an `EncodeError` that says which character, never a silent U+FFFD or `?`.
 
 ```sh
 pnpm add @thomasfosterau/effect-encoding effect
@@ -21,6 +21,8 @@ const decoded = Stream.make(new Uint8Array([0xe2, 0x82]), new Uint8Array([0xac])
   Encoding.decodeStream(),
   Stream.runCollect,
 ); // ["€"]
+
+const csv = await Effect.runPromise(Encoding.encode("Café;5 €", { encoding: "windows-1252" })); // Uint8Array [0x43, 0x61, 0x66, 0xe9, …]
 ```
 
 ## API
@@ -34,7 +36,12 @@ const decoded = Stream.make(new Uint8Array([0xe2, 0x82]), new Uint8Array([0xac])
 | `decodeStream(stream, options?)` / `stream.pipe(decodeStream(options?))` | A `Stream<Uint8Array>` to a `Stream<string>`, with sequences split across chunks handled. Offsets count from the start of the stream. |
 | `isSupported(encoding)` | Whether this runtime can decode the encoding. |
 | `DecodeError` | `{ encoding, offset, message }`: the byte offset the error was detected at (the input's length for a sequence cut short by the end of input). |
-| `UnsupportedEncodingError` | `{ encoding, message }`: the runtime's `TextDecoder` lacks the encoding and no table for it is bundled. |
+| `encode(text, options?)` | Text to bytes (§4.3). `Effect<Uint8Array, EncodeError \| UnsupportedEncodingError>`. A lone surrogate is encoded as U+FFFD. |
+| `encodeStream(stream, options?)` / `stream.pipe(encodeStream(options?))` | A `Stream<string>` to a `Stream<Uint8Array>`, with surrogate pairs split across chunks handled. Offsets count from the start of the stream. |
+| `canEncode(encoding)` | Whether there is an encoder: UTF-8, every single-byte encoding and `x-user-defined`. |
+| `getOutputEncoding(encoding)` | §4.3's "get an output encoding": `replacement`, `UTF-16BE` and `UTF-16LE` (which have no encoder) become `UTF-8`. |
+| `EncodeError` | `{ encoding, offset, codePoint, message }`: the unmappable code point and its UTF-16 code-unit offset (a string index). |
+| `UnsupportedEncodingError` | `{ encoding, message }`: the runtime's `TextDecoder` lacks the encoding and no table for it is bundled, or there is no encoder for it. |
 
 `DecodeOptions`:
 
@@ -42,12 +49,17 @@ const decoded = Stream.make(new Uint8Array([0xe2, 0x82]), new Uint8Array([0xac])
 - `fatal` — defaults to `true`; `false` decodes malformed input to U+FFFD.
 - `bomHandling` — `"sniff"` (default: the standard's "decode", where a BOM overrides `encoding` and is removed), `"strip"` (the requested encoding stands, its own BOM removed) or `"keep"` (a BOM decodes as U+FEFF).
 
+`EncodeOptions`:
+
+- `encoding` — defaults to `UTF-8`.
+- `errorMode` — `"fatal"` (default) fails on an unmappable code point; `"html"` writes `&#N;`, as an HTML form does (which silently loses the difference from text that already read `&#N;`).
+
 ## Runtime support
 
-Decoding uses the runtime's `TextDecoder`. Some runtimes ship it without the legacy encodings (small-ICU Node builds, some edge runtimes), and even full-ICU Node lacks `ISO-8859-16` and `x-user-defined`; those two are decoded from tables bundled here. Any other missing encoding fails with `UnsupportedEncodingError`; check with `isSupported` first if you need to choose.
+The single-byte encodings and `x-user-defined` are decoded and encoded from the standard's indexes, bundled here (about 25 KB of source), whatever the runtime has: some runtimes ship a `TextDecoder` without the legacy encodings (small-ICU Node builds, some edge runtimes), full-ICU Node lacks `ISO-8859-16` and `x-user-defined`, and Node's ICU decodes `IBM866`, `KOI8-U`, `windows-874`, `windows-1253` and `windows-1255` differently from the standard. UTF-8, UTF-16 and the CJK encodings are decoded with the runtime's `TextDecoder`; a CJK encoding it lacks fails with `UnsupportedEncodingError` (check with `isSupported` first if you need to choose).
 
-Encoding to the legacy encodings (`TextEncoder` only does UTF-8) is not here yet.
+Encoding to the CJK encodings (Shift_JIS, EUC-JP, ISO-2022-JP, GBK / gb18030, Big5, EUC-KR) is not here yet.
 
 ## Licence
 
-MIT. The label table and the ISO-8859-16 index come from the Encoding Standard (© WHATWG, CC BY 4.0). Some test vectors come from web-platform-tests (BSD-3-Clause).
+MIT. The label table and the single-byte indexes come from the Encoding Standard (© WHATWG, CC BY 4.0). Some test vectors come from web-platform-tests (BSD-3-Clause).

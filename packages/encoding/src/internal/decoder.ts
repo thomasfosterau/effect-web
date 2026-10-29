@@ -1,8 +1,8 @@
 /**
  * The incremental decoder behind `decode` and `decodeStream`: a backend per
- * encoding (the runtime's `TextDecoder`, or a bundled table where the
- * runtime lacks one), BOM sniffing at the head of the input, and exact
- * error offsets.
+ * encoding (a bundled table for the single-byte encodings, the runtime's
+ * `TextDecoder` for the rest), BOM sniffing at the head of the input, and
+ * exact error offsets.
  *
  * A fatal decoder runs a second, "shadow" backend in lockstep, fed only
  * input the primary accepted. When the primary rejects a chunk, the shadow
@@ -13,8 +13,8 @@
  */
 import * as Option from "effect/Option";
 import * as Result from "effect/Result";
-import { ISO_8859_16_HIGH } from "./iso-8859-16.ts";
 import type { Name as EncodingName } from "./labels.ts";
+import { singleByteHigh } from "./tables.ts";
 
 /** How a byte-order mark at the head of the input is treated. */
 export type BomMode = "sniff" | "strip" | "keep";
@@ -63,21 +63,32 @@ const textDecoderBackend = (
   );
 
 /**
- * A stateless single-byte backend: ASCII as itself, every other byte
- * through `high` (character `n` is byte `0x80 + n`).
+ * A stateless single-byte backend (§9.1, "single-byte decoder"): ASCII as
+ * itself, every other byte through `high` (character `n` is byte
+ * `0x80 + n`), where U+FFFD is an unmapped pointer: an error, which a
+ * non-fatal decoder renders as U+FFFD.
  */
-const singleByteBackend = (high: (byte: number) => string): Backend => ({
-  decode: (bytes) =>
-    Result.succeed(
-      Array.from(bytes, (byte) => (byte < 0x80 ? String.fromCharCode(byte) : high(byte))).join(""),
-    ),
+const singleByteBackend = (high: string, fatal: boolean): Backend => ({
+  decode: (bytes) => {
+    const text = Array.from(bytes, (byte) =>
+      byte < 0x80 ? String.fromCharCode(byte) : high.charAt(byte - 0x80),
+    ).join("");
+    return fatal && text.includes("\uFFFD") ? Result.fail(undefined) : Result.succeed(text);
+  },
 });
 
-/** `x-user-defined` (§14.5): bytes 0x80 to 0xFF map to U+F780 to U+F7FF. */
-const xUserDefinedHigh = (byte: number): string => String.fromCharCode(0xf700 + byte);
+/** `x-user-defined` (§14.5): bytes 0x80 to 0xFF map to U+F780 to U+F7FF. Built on use. */
+const xUserDefinedHigh = (): string =>
+  Array.from({ length: 128 }, (_, n) => String.fromCharCode(0xf780 + n)).join("");
 
-/** ISO-8859-16 through its bundled index. */
-const iso885916High = (byte: number): string => ISO_8859_16_HIGH.charAt(byte - 0x80);
+/**
+ * The backend from this package's bundled tables (every single-byte
+ * encoding and `x-user-defined`), `None` for any other encoding.
+ */
+const bundledBackend = (encoding: EncodingName, fatal: boolean): Option.Option<Backend> =>
+  encoding === "x-user-defined"
+    ? Option.some(singleByteBackend(xUserDefinedHigh(), fatal))
+    : Option.map(singleByteHigh(encoding), (high) => singleByteBackend(high, fatal));
 
 /**
  * `replacement` (§14.1): any non-empty input is one error, which a
@@ -94,18 +105,22 @@ const replacementBackend = (fatal: boolean): Backend => {
   };
 };
 
-/** The backend for an encoding: the runtime's, else a bundled one, else `None`. */
+/**
+ * The backend for an encoding: a bundled table for every single-byte
+ * encoding and `x-user-defined` (whatever the runtime has: Node's ICU
+ * decodes IBM866, KOI8-U, windows-874, windows-1253 and windows-1255
+ * differently from the standard's indexes), else the runtime's
+ * `TextDecoder`, else `None`.
+ */
 const backendFor = (
   encoding: EncodingName,
   fatal: boolean,
   ignoreBOM: boolean,
 ): Option.Option<Backend> => {
   if (encoding === "replacement") return Option.some(replacementBackend(fatal));
-  return Option.orElse(textDecoderBackend(encoding, fatal, ignoreBOM), () => {
-    if (encoding === "x-user-defined") return Option.some(singleByteBackend(xUserDefinedHigh));
-    if (encoding === "ISO-8859-16") return Option.some(singleByteBackend(iso885916High));
-    return Option.none();
-  });
+  return Option.orElse(bundledBackend(encoding, fatal), () =>
+    textDecoderBackend(encoding, fatal, ignoreBOM),
+  );
 };
 
 /** Whether this runtime (or a bundled table) can decode the encoding. */
