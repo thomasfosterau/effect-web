@@ -1,7 +1,8 @@
 /**
- * CSS Color 4 parsing and serialisation against the css-parsing-tests
- * colour vectors (CC0), plus `rgb()` (which the suite does not cover),
- * `currentcolor` and the conversion to sRGB.
+ * CSS Color 4 parsing against the css-parsing-tests colour vectors (CC0),
+ * serialisation by today's CSS Color 4 / 5 (the WPT vectors in
+ * `color-mix.test.ts` and `color-valid.test.ts` pin it), `rgb()` (which
+ * the suite does not cover), `currentcolor` and the conversion to sRGB.
  */
 import { describe, expect, it } from "vite-plus/test";
 import * as Option from "effect/Option";
@@ -32,6 +33,28 @@ const pairs = (
 const serialized = (input: string): string | null =>
   Option.getOrNull(Option.map(Color.parse(input), Color.serialize));
 
+/**
+ * The colour a vector's input and its expected serialisation both stand
+ * for, as sRGB rounded to six decimals, or the serialisation for a colour
+ * with no sRGB value.
+ */
+const meaning = (css: string): Option.Option<string> =>
+  Option.map(Color.parse(css), (color) =>
+    Option.match(Color.toSrgb(color), {
+      onNone: () => Color.serialize(color),
+      onSome: ({ red, green, blue, alpha }) =>
+        [red, green, blue, alpha].map((channel) => Math.round(channel * 1e6) / 1e6 + 0).join(" "),
+    }),
+  );
+
+/**
+ * The suite pins the 2021 serialisation edition (`hsl()` and named colours
+ * written as `rgb()`, channels with decimals, `lab()` lightness
+ * unclamped). This package serialises by today's CSS Color 4 / 5, which
+ * the WPT vectors pin. So each vector here checks parsing only: an input
+ * the suite rejects must not parse, and an accepted one must parse to the
+ * same colour as the suite's expected serialisation does.
+ */
 describe("css-parsing-tests colour vectors", () => {
   it.each([
     ["color_hexadecimal_3", hex3],
@@ -49,7 +72,12 @@ describe("css-parsing-tests colour vectors", () => {
   ] as const)("%s", (_, fixture) => {
     const cases = pairs(fixture);
     expect(cases.length).toBeGreaterThan(0);
-    expect(cases.map(([input]) => [input, serialized(input)])).toEqual(cases);
+    expect(cases.map(([input]) => [input, Option.getOrNull(meaning(input))])).toEqual(
+      cases.map(([input, expected]) => [
+        input,
+        expected === null ? null : Option.getOrNull(meaning(expected)),
+      ]),
+    );
   });
 });
 
@@ -62,6 +90,7 @@ describe("css-parsing-tests colour vectors", () => {
 const level5 = (input: string): (typeof functions5)[number] => {
   const inColorForm = (color: Color.Color): string =>
     Predicate.isTagged(color, "Rgb") ||
+    Predicate.isTagged(color, "Named") ||
     Predicate.isTagged(color, "Hsl") ||
     Predicate.isTagged(color, "Hwb")
       ? Option.getOrElse(
@@ -101,9 +130,7 @@ describe("css-parsing-tests Color 5 vectors (color_functions_5)", () => {
 
 describe("Color 5 beyond the vectors", () => {
   it("serialises light-dark() with both colours", () => {
-    expect(serialized("light-dark(red, #00f8)")).toBe(
-      "light-dark(rgb(255, 0, 0), rgba(0, 0, 255, 0.533333))",
-    );
+    expect(serialized("light-dark(red, #00f8)")).toBe("light-dark(red, rgba(0, 0, 255, 0.533333))");
   });
 
   it("rejects light-dark() without exactly two colours", () => {
@@ -141,9 +168,10 @@ describe("Color 5 beyond the vectors", () => {
 describe("rgb()", () => {
   it.each([
     ["rgb(255, 0, 0)", "rgb(255, 0, 0)"],
-    ["rgba(100%, 50%, 0%, 0.5)", "rgba(255, 127.5, 0, 0.5)"],
+    ["rgba(100%, 50%, 0%, 0.5)", "rgba(255, 128, 0, 0.5)"],
     ["RGB(1 2 3 / 25%)", "rgba(1, 2, 3, 0.25)"],
-    ["rgb(10% 20 none)", "rgb(25.5, 20, 0)"],
+    ["rgb(10% 51 none)", "color(srgb 0.1 0.2 none)"],
+    ["rgb(1 2 3 / none)", "color(srgb 0.003922 0.007843 0.011765 / none)"],
     ["rgb(300 -5 0)", "rgb(255, 0, 0)"],
   ])("%s → %s", (input, expected) => {
     expect(serialized(input)).toBe(expected);
@@ -160,6 +188,15 @@ describe("rgb()", () => {
 describe("keywords and component values", () => {
   it("parses currentcolor in any case, and serialises it lower-case", () => {
     expect(serialized("CurrentColor")).toBe("currentcolor");
+  });
+
+  it("keeps a named colour's name, lower-cased, and writes hex as rgb()", () => {
+    expect(serialized("RebeccaPurple")).toBe("rebeccapurple");
+    expect(serialized("TRANSPARENT")).toBe("transparent");
+    expect(serialized("#FEDCBA")).toBe("rgb(254, 220, 186)");
+    expect(Option.flatMap(Color.parse("red"), Color.toSrgb)).toStrictEqual(
+      Option.some({ red: 1, green: 0, blue: 0, alpha: 1 }),
+    );
   });
 
   it("parses a component value already produced by Syntax", () => {
@@ -255,10 +292,15 @@ describe("hsl() and hwb()", () => {
     );
   });
 
-  it("serialise and convert as sRGB, none as 0", () => {
-    expect(Option.map(Color.parse("hsl(120 100% 25%)"), Color.serialize)).toStrictEqual(
-      Option.some("rgb(0, 127.5, 0)"),
-    );
+  it("serialise as rgb(), or as themselves while a channel is none", () => {
+    expect(serialized("hsl(120 100% 25%)")).toBe("rgb(0, 128, 0)");
+    expect(serialized("hsl(120 -10% 120%)")).toBe("rgb(255, 255, 255)");
+    expect(serialized("hsl(120 none 50 / 0.5)")).toBe("hsl(120 none 50% / 0.5)");
+    expect(serialized("hwb(120 30% 50%)")).toBe("rgb(77, 128, 77)");
+    expect(serialized("hwb(none 10 20%)")).toBe("hwb(none 10% 20%)");
+  });
+
+  it("convert to sRGB with none as 0", () => {
     expect(Option.flatMap(Color.parse("hwb(none 100% 0%)"), Color.toSrgb)).toStrictEqual(
       Option.some({ red: 1, green: 1, blue: 1, alpha: 1 }),
     );

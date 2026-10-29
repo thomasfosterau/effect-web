@@ -10,26 +10,11 @@ import { Color } from "@thomasfosterau/effect-css";
 import vectors from "./fixtures/wpt-color-mix.json" with { type: "json" };
 
 /**
- * Vectors this parser does not cover, by reason:
- *
- * - `calc()` and `var()` as a percentage need the math functions and
- *   custom properties, which `Color` does not parse.
- * - `hsl()` and `hwb()` serialise as `rgb()` (the 2021 edition the
- *   package's colour serialisation follows, a `none` channel as 0), so a
- *   specified value that keeps one, `none` and all, is not written back.
- * - The css-parsing-tests suite this package follows pins `lab()`-family
- *   lightness unclamped (`oklab(100 …)` stays 100), where WPT clamps it.
- * - That suite also pins `rgb()` channels with their decimals
- *   (`rgb(45.9, 56.1, 45.9)`); WPT rounds them to integers, which only the
- *   two vectors with no tolerance tell apart.
+ * Vectors this parser does not cover: `calc()` and `var()` as a
+ * percentage need the math functions and custom properties, which `Color`
+ * does not parse.
  */
-const unsupported = ({ input, expected, epsilon }: Vector): boolean =>
-  /calc\(|var\(/u.test(input) ||
-  /(?:hsl|hwb)\(/u.test(expected) ||
-  /oklab\(100 |oklch\(100 /u.test(input) ||
-  (Option.isNone(epsilon) &&
-    /rgb\(\d+, \d+, \d+\)/u.test(expected) &&
-    /(?:hsl|hwb)\(/u.test(input));
+const unsupported = ({ input }: Vector): boolean => /calc\(|var\(/u.test(input);
 
 /** A `valid` entry: the input, its expected specified value and the tolerance it gives, if any. */
 interface Vector {
@@ -46,12 +31,6 @@ const toVector = (entry: ReadonlyArray<string | number | null>): Vector => {
     epsilon: Predicate.isNumber(epsilon) ? Option.some(epsilon) : Option.none(),
   };
 };
-
-/** Named colours in `expected`, written the way `Color.serialize` writes them (it resolves names). */
-const resolveNames = (expected: string): string =>
-  expected.replace(/(?<=[(,]\s*)([a-z]+)(?=\s*(?:\d+(?:\.\d+)?%\s*)?[,)])/gu, (name) =>
-    Option.getOrElse(Option.map(Color.parse(name), Color.serialize), () => name),
-  );
 
 const NUMBER = /-?\d*\.?\d+(?:e[+-]?\d+)?/giu;
 
@@ -71,7 +50,7 @@ const fuzzyEqual = (actual: string, expected: string, epsilon: number): boolean 
 const valid = vectors.valid.map(toVector).filter((vector) => !unsupported(vector));
 
 /** The vectors left once the unsupported ones are set aside; a change that drops one fails here. */
-const VALID_COUNT = 644;
+const VALID_COUNT = 669;
 
 describe("WPT color-valid-color-mix-function", () => {
   it("covers the vectors that need no math functions", () => {
@@ -83,15 +62,14 @@ describe("WPT color-valid-color-mix-function", () => {
       Option.map(Color.parse(input), Color.serialize),
       () => "(none)",
     );
-    const resolved = resolveNames(expected);
     // WPT's fuzzy_test_valid_color tolerance: 0.01 unless the vector gives one.
     expect(
       fuzzyEqual(
         actual,
-        resolved,
+        expected,
         Option.getOrElse(epsilon, () => 0.01),
       ),
-      `${actual} ≈ ${resolved}`,
+      `${actual} ≈ ${expected}`,
     ).toBe(true);
   });
 });
@@ -111,11 +89,11 @@ describe("Color.parse color-mix()", () => {
         hue: "longer",
         colors: [
           {
-            color: { _tag: "Rgb", red: 255, green: 0, blue: 0, alpha: 1 },
+            color: { _tag: "Named", name: "red", red: 255, green: 0, blue: 0, alpha: 1 },
             percentage: Option.some(30),
           },
           {
-            color: { _tag: "Rgb", red: 0, green: 0, blue: 255, alpha: 1 },
+            color: { _tag: "Named", name: "blue", red: 0, green: 0, blue: 255, alpha: 1 },
             percentage: Option.none(),
           },
         ],
@@ -125,7 +103,7 @@ describe("Color.parse color-mix()", () => {
 
   it("defaults to oklab and leaves the default method out", () => {
     expect(Option.map(Color.parse("color-mix(red, blue)"), Color.serialize)).toStrictEqual(
-      Option.some("color-mix(rgb(255, 0, 0), rgb(0, 0, 255))"),
+      Option.some("color-mix(red, blue)"),
     );
   });
 
@@ -136,9 +114,7 @@ describe("Color.parse color-mix()", () => {
         Color.serialize,
       ),
     ).toStrictEqual(
-      Option.some(
-        "color-mix(in xyz-d65, color-mix(in srgb, rgb(255, 0, 0), rgb(0, 0, 255)) 20%, rgb(255, 255, 255) 80%)",
-      ),
+      Option.some("color-mix(in xyz-d65, color-mix(in srgb, red, blue) 20%, white 80%)"),
     );
   });
 
