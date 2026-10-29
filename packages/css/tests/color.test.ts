@@ -19,6 +19,7 @@ import lab4 from "./fixtures/css-parsing-tests/color_lab_4.json" with { type: "j
 import lch4 from "./fixtures/css-parsing-tests/color_lch_4.json" with { type: "json" };
 import oklab4 from "./fixtures/css-parsing-tests/color_oklab_4.json" with { type: "json" };
 import oklch4 from "./fixtures/css-parsing-tests/color_oklch_4.json" with { type: "json" };
+import functions5 from "./fixtures/css-parsing-tests/color_functions_5.json" with { type: "json" };
 
 /** The suite's alternating input / expected pairs. */
 const pairs = (
@@ -49,6 +50,84 @@ describe("css-parsing-tests colour vectors", () => {
     const cases = pairs(fixture);
     expect(cases.length).toBeGreaterThan(0);
     expect(cases.map(([input]) => [input, serialized(input)])).toEqual(cases);
+  });
+});
+
+/**
+ * `color_functions_5.json` writes a `light-dark()` result as the list of
+ * its two colours, each serialised in `color()` form (an sRGB colour as
+ * `color(srgb r g b)`, channels from 0 to 1), and an invalid one as
+ * `[null, null]`; everything else as a single serialisation.
+ */
+const level5 = (input: string): (typeof functions5)[number] => {
+  const inColorForm = (color: Color.Color): string =>
+    Predicate.isTagged(color, "Rgb")
+      ? Color.serialize({
+          _tag: "ColorFunction",
+          space: "srgb",
+          channels: [color.red / 255, color.green / 255, color.blue / 255],
+          alpha: color.alpha,
+        })
+      : Color.serialize(color);
+  const parsed = Color.parse(input);
+  if (input.startsWith("light-dark(")) {
+    return Option.match(parsed, {
+      onNone: () => [null, null],
+      onSome: (color) =>
+        Predicate.isTagged(color, "LightDark")
+          ? [inColorForm(color.light), inColorForm(color.dark)]
+          : [null, null],
+    });
+  }
+  return Option.getOrNull(Option.map(parsed, Color.serialize));
+};
+
+describe("css-parsing-tests Color 5 vectors (color_functions_5)", () => {
+  it("matches every vector", () => {
+    const cases = functions5.flatMap((input, index) =>
+      index % 2 === 0 && Predicate.isString(input) ? [[input, functions5[index + 1]] as const] : [],
+    );
+    expect(cases.length).toBe(20);
+    expect(cases.map(([input]) => [input, level5(input)])).toEqual(cases);
+  });
+});
+
+describe("Color 5 beyond the vectors", () => {
+  it("serialises light-dark() with both colours", () => {
+    expect(serialized("light-dark(red, #00f8)")).toBe(
+      "light-dark(rgb(255, 0, 0), rgba(0, 0, 255, 0.533333))",
+    );
+  });
+
+  it("rejects light-dark() without exactly two colours", () => {
+    expect(serialized("light-dark(red)")).toBeNull();
+    expect(serialized("light-dark(red, blue, green)")).toBeNull();
+    expect(serialized("light-dark(red blue)")).toBeNull();
+  });
+
+  it("takes none in device-cmyk() and a custom space, and any channel count in a custom space", () => {
+    expect(serialized("device-cmyk(none 0 0 1)")).toBe("color(device-cmyk none 0 0 1)");
+    expect(serialized("color(--profile 1 none)")).toBe("color(--profile 1 none)");
+    expect(serialized("color(--profile 0.5 / 25%)")).toBe("color(--profile 0.5 / 0.25)");
+    expect(serialized("color(--profile)")).toBeNull();
+    expect(serialized("color(-- 1 2 3)")).toBeNull();
+  });
+
+  it("converts device-cmyk() to sRGB naively, and has no sRGB for a custom space or light-dark()", () => {
+    const srgb = (input: string) =>
+      Option.map(
+        Option.flatMap(Color.parse(input), Color.toSrgb),
+        ({ red, green, blue, alpha }) => [
+          Math.round(red * 100) / 100 + 0,
+          Math.round(green * 100) / 100 + 0,
+          Math.round(blue * 100) / 100 + 0,
+          alpha,
+        ],
+      );
+    expect(srgb("device-cmyk(0 1 1 0 / 0.5)")).toStrictEqual(Option.some([1, 0, 0, 0.5]));
+    expect(srgb("device-cmyk(0 0 0 50%)")).toStrictEqual(Option.some([0.5, 0.5, 0.5, 1]));
+    expect(srgb("color(--profile 1 2 3)")).toStrictEqual(Option.none());
+    expect(srgb("light-dark(white, black)")).toStrictEqual(Option.none());
   });
 });
 

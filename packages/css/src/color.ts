@@ -3,7 +3,8 @@
  * `rgb()` / `hsl()` / `hwb()` in both comma and space syntaxes, `lab()`,
  * `lch()`, `oklab()`, `oklch()`, `color()`, `transparent`, `currentcolor`)
  * into a typed {@link Color}, serialise it as CSS Color 4 does, and
- * convert it to sRGB.
+ * convert it to sRGB. From CSS Color 5: `device-cmyk()`, `color()` in a
+ * custom (`--name`) colour space, and `light-dark()`.
  *
  * @since 0.1.0
  */
@@ -73,7 +74,12 @@ export interface LchChannels {
  * `none` resolved to 0), as CSS Color 4 serialises them. `lab()`, `lch()`,
  * `oklab()` and `oklch()` keep their own space (lightness, and hue in
  * degrees normalised to [0, 360)); `color()` keeps its predefined space.
- * `currentcolor` has no value of its own.
+ * `currentcolor` has no value of its own. From CSS Color 5:
+ * `device-cmyk()` is `DeviceCmyk` (each channel clamped to [0, 1]); a
+ * `color()` in a custom colour space (`--name`, defined by an
+ * `@color-profile` rule) is `CustomColor`, its channels as written (a
+ * percentage per 1%); `light-dark()` is `LightDark`, both colours kept,
+ * since which one applies depends on the used colour scheme.
  *
  * @since 0.1.0
  * @category models
@@ -96,6 +102,21 @@ export type Color =
       readonly channels: readonly [Channel, Channel, Channel];
       readonly alpha: Channel;
     }
+  | {
+      readonly _tag: "DeviceCmyk";
+      readonly cyan: Channel;
+      readonly magenta: Channel;
+      readonly yellow: Channel;
+      readonly black: Channel;
+      readonly alpha: Channel;
+    }
+  | {
+      readonly _tag: "CustomColor";
+      readonly space: string;
+      readonly channels: ReadonlyArray<Channel>;
+      readonly alpha: Channel;
+    }
+  | { readonly _tag: "LightDark"; readonly light: Color; readonly dark: Color }
   | { readonly _tag: "CurrentColor" };
 
 // ── Arguments ──────────────────────────────────────────────────────────
@@ -118,14 +139,18 @@ const spaceArgs = (
 /** A function's arguments in the legacy comma syntax (`a, b, c[, alpha]`), or `None`. */
 const commaArgs = (
   args: ReadonlyArray<Arg>,
+  count = 3,
 ): Option.Option<{ channels: ReadonlyArray<Arg>; alpha: Option.Option<Arg> }> => {
   const values = args.filter((_, index) => index % 2 === 0);
   const commas = args.filter((_, index) => index % 2 === 1);
   if (!commas.every((arg) => Predicate.isTagged(arg, "Comma"))) return Option.none();
-  if (values.length < 3 || values.length > 4 || args.length !== values.length * 2 - 1) {
+  if (values.length < count || values.length > count + 1 || args.length !== values.length * 2 - 1) {
     return Option.none();
   }
-  return Option.some({ channels: values.slice(0, 3), alpha: Option.fromNullishOr(values[3]) });
+  return Option.some({
+    channels: values.slice(0, count),
+    alpha: Option.fromNullishOr(values[count]),
+  });
 };
 
 const isNone = (arg: Arg): boolean =>
@@ -353,6 +378,9 @@ const SPACES: Readonly<Record<string, PredefinedSpace>> = {
 const parseColorFunction = (args: ReadonlyArray<Arg>): Option.Option<Color> => {
   const [first, ...rest] = args;
   if (!Predicate.isTagged(first, "Ident")) return Option.none();
+  if (first.value.startsWith("--") && first.value.length > 2) {
+    return parseCustomColor(first.value, rest);
+  }
   return Option.flatMap(Record.get(SPACES, Str.toLowerCase(first.value)), (space) =>
     Option.map(
       Option.flatMap(spaceArgs(rest, 3), ({ channels, alpha }) =>
@@ -368,6 +396,78 @@ const parseColorFunction = (args: ReadonlyArray<Arg>): Option.Option<Color> => {
   );
 };
 
+const clampUnit = (channel: Channel): Channel =>
+  channel === "none" ? channel : Math.min(1, Math.max(0, channel));
+
+/**
+ * `device-cmyk()` (CSS Color 5 §8): four numbers or percentages (or
+ * `none`) in the space syntax, or four numbers in the legacy comma syntax,
+ * each clamped to [0, 1].
+ */
+const parseDeviceCmyk = (args: ReadonlyArray<Arg>): Option.Option<Color> => {
+  const modern = Option.flatMap(spaceArgs(args, 4), ({ channels, alpha }) =>
+    all([...channels.map((arg) => numberOrPercentage(arg, 0.01, true)), alphaOf(alpha, true)]),
+  );
+  const legacy = Option.flatMap(commaArgs(args, 4), ({ channels, alpha }) =>
+    channels.every((arg) => Predicate.isTagged(arg, "Number"))
+      ? all([...channels.map((arg) => numberOrPercentage(arg, 1, false)), alphaOf(alpha, false)])
+      : Option.none(),
+  );
+  return Option.map(
+    Option.orElse(modern, () => legacy),
+    ([cyan = 0, magenta = 0, yellow = 0, black = 0, alpha = 1]) => ({
+      _tag: "DeviceCmyk" as const,
+      cyan: clampUnit(cyan),
+      magenta: clampUnit(magenta),
+      yellow: clampUnit(yellow),
+      black: clampUnit(black),
+      alpha,
+    }),
+  );
+};
+
+/**
+ * `color()` in a custom colour space (CSS Color 5 §10): a `<dashed-ident>`
+ * then one or more numbers or percentages (or `none`), as written.
+ */
+const parseCustomColor = (space: string, rest: ReadonlyArray<Arg>): Option.Option<Color> => {
+  const slash = rest.findIndex((arg) => Predicate.isTagged(arg, "Delim") && arg.value === "/");
+  const count = slash < 0 ? rest.length : slash;
+  if (count === 0) return Option.none();
+  return Option.map(
+    Option.flatMap(spaceArgs(rest, count), ({ channels, alpha }) =>
+      Option.all([
+        all(channels.map((arg) => numberOrPercentage(arg, 0.01, true))),
+        alphaOf(alpha, true),
+      ]),
+    ),
+    ([channels, alpha]): Color => ({ _tag: "CustomColor", space, channels, alpha }),
+  );
+};
+
+/** The arguments split at top-level commas, each without surrounding whitespace. */
+const commaSeparated = (args: ReadonlyArray<Arg>): ReadonlyArray<ReadonlyArray<Arg>> =>
+  args.reduce<ReadonlyArray<ReadonlyArray<Arg>>>(
+    (groups, arg) =>
+      Predicate.isTagged(arg, "Comma")
+        ? [...groups, []]
+        : [...groups.slice(0, -1), [...(groups.at(-1) ?? []), arg]],
+    [[]],
+  );
+
+/** `light-dark()` (CSS Color 5 §11): two colours, separated by a comma. */
+const parseLightDark = (args: ReadonlyArray<Arg>): Option.Option<Color> => {
+  const groups = commaSeparated(args);
+  if (groups.length !== 2 || groups.some((group) => group.length !== 1)) return Option.none();
+  const [light, dark] = groups.flat();
+  if (light === undefined || dark === undefined) return Option.none();
+  return Option.map(Option.all([parse(light), parse(dark)]), ([lightColor, darkColor]) => ({
+    _tag: "LightDark" as const,
+    light: lightColor,
+    dark: darkColor,
+  }));
+};
+
 const FUNCTIONS: Readonly<Record<string, (args: ReadonlyArray<Arg>) => Option.Option<Color>>> = {
   rgb: parseRgb,
   rgba: parseRgb,
@@ -379,6 +479,8 @@ const FUNCTIONS: Readonly<Record<string, (args: ReadonlyArray<Arg>) => Option.Op
   lch: (args) => parseLchLike("Lch", 1, 1.5, args),
   oklch: (args) => parseLchLike("Oklch", 0.01, 0.004, args),
   color: parseColorFunction,
+  "device-cmyk": parseDeviceCmyk,
+  "light-dark": parseLightDark,
 };
 
 const HEX = /^(?:[0-9a-f]{3,4}|[0-9a-f]{6}|[0-9a-f]{8})$/i;
@@ -460,7 +562,9 @@ const serializeLch = (color: LchChannels & { readonly _tag: "Lch" | "Oklch" }): 
 /**
  * Serialises a colour (CSS Color 4 §15): sRGB colours as `rgb(r, g, b)` or
  * `rgba(r, g, b, a)`, the others in their own function with a space-
- * separated alpha when it is not 1, `currentcolor` as itself.
+ * separated alpha when it is not 1, `currentcolor` as itself. CSS Color 5:
+ * `device-cmyk()` as `color(device-cmyk c m y k)`, a custom space as
+ * `color(--name …)`, `light-dark()` with each colour serialised.
  *
  * @example
  * ```ts
@@ -488,6 +592,12 @@ export const serialize = (color: Color): string =>
     Oklch: serializeLch,
     ColorFunction: (function_) =>
       `color(${function_.space} ${function_.channels.map(number).join(" ")}${withAlpha(function_.alpha)})`,
+    DeviceCmyk: (cmyk) =>
+      `color(device-cmyk ${[cmyk.cyan, cmyk.magenta, cmyk.yellow, cmyk.black].map(number).join(" ")}${withAlpha(cmyk.alpha)})`,
+    CustomColor: (custom) =>
+      `color(${custom.space} ${custom.channels.map(number).join(" ")}${withAlpha(custom.alpha)})`,
+    LightDark: (lightDark) =>
+      `light-dark(${serialize(lightDark.light)}, ${serialize(lightDark.dark)})`,
     CurrentColor: () => "currentcolor",
   });
 
@@ -657,6 +767,21 @@ const toXyzD65 = (color: Color): Option.Option<Vector> =>
           zero(function_.channels[2]),
         ]),
       ),
+    // Naive CMYK to sRGB (CSS Color 5 §8.1), without a colour profile.
+    DeviceCmyk: (cmyk) => {
+      const black = zero(cmyk.black);
+      const channel = (ink: Channel): number =>
+        srgbToLinear(1 - Math.min(1, zero(ink) * (1 - black) + black));
+      return Option.some(
+        multiply(LINEAR_SRGB_TO_XYZ, [
+          channel(cmyk.cyan),
+          channel(cmyk.magenta),
+          channel(cmyk.yellow),
+        ]),
+      );
+    },
+    CustomColor: () => Option.none(),
+    LightDark: () => Option.none(),
     CurrentColor: () => Option.none(),
   });
 
@@ -678,7 +803,10 @@ export interface Srgb {
 /**
  * Converts a colour to sRGB through CIE XYZ (CSS Color 4 §18's sample
  * algorithms; Lab and LCH through D50 with Bradford adaptation). A `none`
- * channel counts as 0. `None` for `currentcolor`.
+ * channel counts as 0. `device-cmyk()` converts naively (CSS Color 5
+ * §8.1, no colour profile). `None` for `currentcolor`, a custom colour
+ * space (its profile is a stylesheet's `@color-profile`) and `light-dark()`
+ * (which colour applies depends on the used colour scheme).
  *
  * @example
  * ```ts

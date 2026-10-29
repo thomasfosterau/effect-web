@@ -1,6 +1,6 @@
 # @thomasfosterau/effect-css
 
-CSS on Effect: `Syntax` (CSS Syntax Level 3 tokenizer and parser entry points), `Token` (tokens and component values), `Color` (CSS Color 4 `<color>` parsing, serialisation and sRGB conversion) and `Length` (CSS Values 4 lengths, absolute-unit conversion).
+CSS on Effect: `Syntax` (CSS Syntax Level 3 tokenizer and parser entry points), `Token` (tokens and component values), `Color` (CSS Color 4 `<color>` parsing, serialisation and sRGB conversion, plus Color 5's `device-cmyk()`, custom colour spaces and `light-dark()`) and `Length` (CSS Values 4 lengths, absolute-unit conversion).
 
 ## Boundary
 
