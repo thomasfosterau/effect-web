@@ -14,6 +14,7 @@ import * as Option from "effect/Option";
 import * as Predicate from "effect/Predicate";
 import * as Record from "effect/Record";
 import * as Str from "effect/String";
+import * as Mix from "./internal/mix.ts";
 import { NAMED_COLORS } from "./internal/named-colors.ts";
 import { parseComponentValue } from "./syntax.ts";
 import type { ComponentValue } from "./token.ts";
@@ -803,16 +804,21 @@ const serializeLch = (color: LchChannels & { readonly _tag: "Lch" | "Oklch" }): 
  * takes an equal share of what the given ones leave of 100%, and all are
  * left out when they are all equal and sum to 100%.
  */
-const mixPercentages = (
-  colors: ReadonlyArray<MixComponent>,
-): ReadonlyArray<Option.Option<number>> => {
+/** Each colour's percentage, a missing one taking an equal share of what the given ones leave of 100%. */
+const fillPercentages = (colors: ReadonlyArray<MixComponent>): ReadonlyArray<number> => {
   const given = colors.flatMap(({ percentage }) =>
     Option.isSome(percentage) ? [percentage.value] : [],
   );
   const missing = colors.length - given.length;
   const share =
     missing === 0 ? 0 : Math.max(0, 100 - given.reduce((sum, one) => sum + one, 0)) / missing;
-  const filled = colors.map(({ percentage }) => Option.getOrElse(percentage, () => share));
+  return colors.map(({ percentage }) => Option.getOrElse(percentage, () => share));
+};
+
+const mixPercentages = (
+  colors: ReadonlyArray<MixComponent>,
+): ReadonlyArray<Option.Option<number>> => {
+  const filled = fillPercentages(colors);
   const [first = 0] = filled;
   const sum = filled.reduce((total, one) => total + one, 0);
   const defaults =
@@ -1090,7 +1096,7 @@ const toXyzD65 = (color: Color): Option.Option<Vector> =>
     },
     CustomColor: () => Option.none(),
     LightDark: () => Option.none(),
-    ColorMix: () => Option.none(),
+    ColorMix: (mix) => Option.flatMap(resolveMix(mix), toXyzD65),
     CurrentColor: () => Option.none(),
   });
 
@@ -1147,3 +1153,150 @@ export const toSrgb = (color: Color): Option.Option<Srgb> => {
     return { red, green, blue, alpha: "alpha" in color ? zero(color.alpha) : 1 };
   });
 };
+
+// ── Resolving color-mix() ──────────────────────────────────────────────
+
+/** A colour's own space and channels (`none` kept), or `None` for one with no value of its own. */
+const working = (color: Color): Option.Option<Mix.Working> =>
+  Match.valueTags(color, {
+    Rgb: (rgb) => Option.some(srgbWorking(rgb)),
+    Named: (named) => Option.some(srgbWorking(named)),
+    Hsl: (hsl) =>
+      Option.some<Mix.Working>({
+        space: "hsl",
+        channels: [hsl.hue, hsl.saturation, hsl.lightness],
+        alpha: hsl.alpha,
+      }),
+    Hwb: (hwb) =>
+      Option.some<Mix.Working>({
+        space: "hwb",
+        channels: [hwb.hue, hwb.whiteness, hwb.blackness],
+        alpha: hwb.alpha,
+      }),
+    Lab: (lab) => Option.some(labWorking("lab", lab)),
+    Oklab: (lab) => Option.some(labWorking("oklab", lab)),
+    Lch: (lch) => Option.some(lchWorking("lch", lch)),
+    Oklch: (lch) => Option.some(lchWorking("oklch", lch)),
+    ColorFunction: (function_) =>
+      Option.some<Mix.Working>({
+        space: function_.space,
+        channels: function_.channels,
+        alpha: function_.alpha,
+      }),
+    DeviceCmyk: (cmyk) =>
+      Option.map(toSrgb(cmyk), (srgb) =>
+        srgbWorking({
+          ...srgb,
+          red: srgb.red * 255,
+          green: srgb.green * 255,
+          blue: srgb.blue * 255,
+        }),
+      ),
+    ColorMix: (mix) => Option.flatMap(resolveMix(mix), working),
+    CustomColor: () => Option.none(),
+    LightDark: () => Option.none(),
+    CurrentColor: () => Option.none(),
+  });
+
+const srgbWorking = (rgb: {
+  readonly red: number;
+  readonly green: number;
+  readonly blue: number;
+  readonly alpha: number;
+}): Mix.Working => ({
+  space: "srgb",
+  channels: [rgb.red / 255, rgb.green / 255, rgb.blue / 255],
+  alpha: rgb.alpha,
+});
+
+const labWorking = (space: "lab" | "oklab", lab: LabChannels): Mix.Working => ({
+  space,
+  channels: [lab.lightness, lab.a, lab.b],
+  alpha: lab.alpha,
+});
+
+const lchWorking = (space: "lch" | "oklch", lch: LchChannels): Mix.Working => ({
+  space,
+  channels: [lch.lightness, lch.chroma, lch.hue],
+  alpha: lch.alpha,
+});
+
+/**
+ * A mixed colour as a `Color` in its interpolation space. A mix in `hsl`
+ * or `hwb` with no missing component is written as `color(srgb …)`, as
+ * CSS Color 5 serialises it; one with a missing component keeps its space,
+ * so the `none` survives.
+ */
+const fromWorking = ({ space, channels, alpha }: Mix.Working): Color => {
+  const [c1, c2, c3] = channels;
+  if (space === "lab" || space === "oklab") {
+    return { _tag: space === "lab" ? "Lab" : "Oklab", lightness: c1, a: c2, b: c3, alpha };
+  }
+  if (space === "lch" || space === "oklch") {
+    return { _tag: space === "lch" ? "Lch" : "Oklch", lightness: c1, chroma: c2, hue: c3, alpha };
+  }
+  if (space === "hsl" || space === "hwb") {
+    return [c1, c2, c3, alpha].includes("none")
+      ? polarSrgb(space, channels, alpha)
+      : {
+          _tag: "ColorFunction",
+          space: "srgb",
+          channels: Mix.convert({ space, channels, alpha }, "srgb").channels,
+          alpha,
+        };
+  }
+  return { _tag: "ColorFunction", space, channels, alpha };
+};
+
+const polarSrgb = (
+  space: "hsl" | "hwb",
+  [hue, second, third]: readonly [Channel, Channel, Channel],
+  alpha: Channel,
+): Color =>
+  space === "hsl"
+    ? { _tag: "Hsl", hue, saturation: second, lightness: third, alpha }
+    : { _tag: "Hwb", hue, whiteness: second, blackness: third, alpha };
+
+/** A `color-mix()` resolved to a colour, or `None` when a colour in it has no value of its own. */
+const resolveMix = (mix: {
+  readonly space: InterpolationSpace;
+  readonly hue: HueMethod;
+  readonly colors: ReadonlyArray<MixComponent>;
+}): Option.Option<Color> => {
+  const percentages = fillPercentages(mix.colors);
+  return Option.flatMap(Option.all(mix.colors.map(({ color }) => working(color))), (colors) => {
+    const parts = colors.map((color, index) => ({
+      color: Mix.convert(color, mix.space),
+      percentage: percentages[index] ?? 0,
+    }));
+    return Arr.isReadonlyArrayNonEmpty(parts)
+      ? Option.some(fromWorking(Mix.mix(parts, mix.hue)))
+      : Option.none();
+  });
+};
+
+/**
+ * Resolves every `color-mix()` in a colour to the colour it computes to
+ * (CSS Color 5 §3.2): each colour converted to the interpolation space,
+ * a missing component carried forward to its analogue (and an achromatic
+ * colour's hue treated as missing), then interpolated with premultiplied
+ * alpha and the hue method, two colours at a time. The result is in the
+ * interpolation space (`color(srgb …)` for `srgb`, `hsl` and `hwb`). Any
+ * other colour comes back as it is. `None` for a mix of a colour with no
+ * value of its own (`currentcolor`, `light-dark()`, a custom colour
+ * space).
+ *
+ * @example
+ * ```ts
+ * import * as Option from "effect/Option"
+ * import { Color } from "@thomasfosterau/effect-css"
+ *
+ * const mixed = Option.flatMap(Color.parse("color-mix(in srgb, red 25%, blue)"), Color.resolve)
+ * console.log(Option.map(mixed, Color.serialize)) // Option.some("color(srgb 0.25 0 0.75)")
+ * ```
+ *
+ * @since 0.1.0
+ * @category converting
+ */
+export const resolve = (color: Color): Option.Option<Color> =>
+  Predicate.isTagged(color, "ColorMix") ? resolveMix(color) : Option.some(color);
