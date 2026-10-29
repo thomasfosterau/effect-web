@@ -49,9 +49,25 @@ A `SyntaxError` carries `offset`, the code-point offset in the preprocessed inpu
 
 `Shorthand.expand(declaration)` expands a box shorthand into its longhands, keeping `!important`: `margin`, `padding` and `inset` by the 1 to 4 values rule, `border-width` / `-style` / `-color` likewise, and `border` / `border-top` (and the other sides) into each side's `-width`, `-style` and `-color`, in any order, with an omitted part at its initial value (`medium`, `none`, `currentcolor`). A CSS-wide keyword goes to every longhand. `None` for an invalid value or one holding `var()`. `Shorthand.isShorthand(name)` says whether a property is one of these.
 
+## `Font`
+
+`Font.parse` reads the `font` shorthand (CSS Fonts 4 §2.8): optional style (an oblique angle included), `small-caps`, weight and width keywords in any order, each at most once and `normal` standing for any of them, then the size, an optional `/ line-height` and the family list; or a system font keyword (`caption`, `menu`, …) alone. What it leaves out takes its initial value. `parseFamily`, `parseWeight` (`normal` is 400, `bold` 700, or 1 to 1000, `bolder`, `lighter`), `parseStyle`, `parseSize` and `parseLineHeight` read the longhands. A family name made of identifiers may not start with a generic or CSS-wide keyword; quote it.
+
+```ts
+import * as Option from "effect/Option";
+import { Font } from "@thomasfosterau/effect-css";
+
+const font = Font.parse('italic bold 12px/1.5 "Fira Sans", serif');
+// Option.some({ _tag: "Font", style: { _tag: "Italic" }, weight: 700, lineHeight: { _tag: "Number", value: 1.5 }, … })
+```
+
+## `Text`
+
+`Text.parseAlign` (`text-align`), `parseVerticalAlign` (a keyword, or a length or percentage), and `text-decoration`: `parseDecoration` reads the shorthand (a line, a style, a colour and a thickness, each at most once and in any order, with `currentcolor` as `None`), and `parseDecorationLine`, `parseDecorationStyle` and `parseDecorationThickness` the longhands.
+
 ## Not yet
 
-The `font` shorthand, the typed font, `text-align`, `text-decoration` and `vertical-align` values, a CSSOM serialiser for declarations, the other math functions (`min()`, `max()`, `clamp()`, …), and Color 5's `color-mix()`.
+A CSSOM serialiser for declarations, the other math functions (`min()`, `max()`, `clamp()`, …), and Color 5's `color-mix()`.
 
 ## Licence
 
