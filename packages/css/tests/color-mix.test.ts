@@ -74,6 +74,33 @@ describe("WPT color-valid-color-mix-function", () => {
   });
 });
 
+const computed = vectors.computed.map(toVector).filter((vector) => !unsupported(vector));
+
+/** The computed vectors left once the unsupported ones are set aside, all of which pass. */
+const COMPUTED_COUNT = 966;
+
+describe("WPT color-computed-color-mix-function", () => {
+  it("covers the vectors that need no math functions", () => {
+    expect(computed.length).toBe(COMPUTED_COUNT);
+  });
+
+  it.each(computed)("$input", ({ input, expected, epsilon }) => {
+    const actual = Option.getOrElse(
+      Option.map(Option.flatMap(Color.parse(input), Color.resolve), Color.serialize),
+      () => "(none)",
+    );
+    // WPT's fuzzy_test_computed_color tolerance: 0.01 unless the vector gives one.
+    expect(
+      fuzzyEqual(
+        actual,
+        expected,
+        Option.getOrElse(epsilon, () => 0.01),
+      ),
+      `${actual} ≈ ${expected}`,
+    ).toBe(true);
+  });
+});
+
 describe("WPT color-invalid-color-mix-function", () => {
   it.each(vectors.invalid)("%s", (input) => {
     expect(Color.parse(input)).toStrictEqual(Option.none());
@@ -118,9 +145,20 @@ describe("Color.parse color-mix()", () => {
     );
   });
 
-  it("does not resolve a mix to sRGB", () => {
+  it("converts a mix to sRGB through its resolved colour", () => {
     expect(
-      Option.flatMap(Color.parse("color-mix(in srgb, red, blue)"), Color.toSrgb),
+      Option.map(
+        Option.flatMap(Color.parse("color-mix(in srgb, red, blue)"), Color.toSrgb),
+        ({ red, green, blue, alpha }) =>
+          [red, green, blue, alpha].map((channel) => Math.round(channel * 1e6) / 1e6 + 0),
+      ),
+    ).toStrictEqual(Option.some([0.5, 0, 0.5, 1]));
+  });
+
+  it("has no resolved colour when a colour in the mix has no value of its own", () => {
+    expect(
+      Option.flatMap(Color.parse("color-mix(in srgb, currentcolor, blue)"), Color.resolve),
     ).toStrictEqual(Option.none());
+    expect(Option.flatMap(Color.parse("red"), Color.resolve)).toStrictEqual(Color.parse("red"));
   });
 });

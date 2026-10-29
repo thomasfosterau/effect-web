@@ -14,7 +14,9 @@ import * as Option from "effect/Option";
 import * as Predicate from "effect/Predicate";
 import * as Record from "effect/Record";
 import * as Str from "effect/String";
+import * as Mix from "./internal/mix.ts";
 import { NAMED_COLORS } from "./internal/named-colors.ts";
+import * as Spaces from "./internal/spaces.ts";
 import { parseComponentValue } from "./syntax.ts";
 import type { ComponentValue } from "./token.ts";
 
@@ -298,46 +300,24 @@ const zero = (channel: Channel): number => (channel === "none" ? 0 : channel);
 
 // ── sRGB from HSL and HWB ──────────────────────────────────────────────
 
-/** CSS Color 4 §7.1's `hslToRgb`, saturation and lightness in percent, to [0, 1]. */
-const hslToRgb = (h: number, s: number, l: number): readonly [number, number, number] => {
-  const saturation = s / 100;
-  const lightness = l / 100;
-  const f = (n: number): number => {
-    const k = (n + h / 30) % 12;
-    const a = saturation * Math.min(lightness, 1 - lightness);
-    return lightness - a * Math.max(-1, Math.min(k - 3, 9 - k, 1));
-  };
-  return [f(0), f(8), f(4)];
-};
-
-/** CSS Color 4 §8.1's `hwbToRgb`, whiteness and blackness in percent, to [0, 1]. */
-const hwbToRgb = (h: number, w: number, b: number): readonly [number, number, number] => {
-  const white = w / 100;
-  const black = b / 100;
-  if (white + black >= 1) {
-    const gray = white / (white + black);
-    return [gray, gray, gray];
-  }
-  const [red, green, blue] = hslToRgb(h, 100, 50);
-  const scale = (channel: number) => channel * (1 - white - black) + white;
-  return [scale(red), scale(green), scale(blue)];
-};
-
 /** An `hsl()` or `hwb()` colour as `Rgb`, `none` channels as 0. */
 const toRgb = (
   color: ({ readonly _tag: "Hsl" } & HslChannels) | ({ readonly _tag: "Hwb" } & HwbChannels),
 ) =>
   Predicate.isTagged(color, "Hsl")
     ? rgb(
-        hslToRgb(
+        Spaces.hslToSrgb([
           zero(color.hue),
           // CSS Color 4 §7: a negative saturation is 0%, lightness is within [0%, 100%].
           Math.max(0, zero(color.saturation)),
           Math.min(100, Math.max(0, zero(color.lightness))),
-        ),
+        ]),
         color.alpha,
       )
-    : rgb(hwbToRgb(zero(color.hue), zero(color.whiteness), zero(color.blackness)), color.alpha);
+    : rgb(
+        Spaces.hwbToSrgb([zero(color.hue), zero(color.whiteness), zero(color.blackness)]),
+        color.alpha,
+      );
 
 const rgb = (
   channels: readonly [number, number, number],
@@ -803,16 +783,21 @@ const serializeLch = (color: LchChannels & { readonly _tag: "Lch" | "Oklch" }): 
  * takes an equal share of what the given ones leave of 100%, and all are
  * left out when they are all equal and sum to 100%.
  */
-const mixPercentages = (
-  colors: ReadonlyArray<MixComponent>,
-): ReadonlyArray<Option.Option<number>> => {
+/** Each colour's percentage, a missing one taking an equal share of what the given ones leave of 100%. */
+const fillPercentages = (colors: ReadonlyArray<MixComponent>): ReadonlyArray<number> => {
   const given = colors.flatMap(({ percentage }) =>
     Option.isSome(percentage) ? [percentage.value] : [],
   );
   const missing = colors.length - given.length;
   const share =
     missing === 0 ? 0 : Math.max(0, 100 - given.reduce((sum, one) => sum + one, 0)) / missing;
-  const filled = colors.map(({ percentage }) => Option.getOrElse(percentage, () => share));
+  return colors.map(({ percentage }) => Option.getOrElse(percentage, () => share));
+};
+
+const mixPercentages = (
+  colors: ReadonlyArray<MixComponent>,
+): ReadonlyArray<Option.Option<number>> => {
+  const filled = fillPercentages(colors);
   const [first = 0] = filled;
   const sum = filled.reduce((total, one) => total + one, 0);
   const defaults =
@@ -900,200 +885,6 @@ export const serialize = (color: Color): string =>
 
 // ── Conversion to sRGB ─────────────────────────────────────────────────
 
-type Vector = readonly [number, number, number];
-type Matrix = readonly [Vector, Vector, Vector];
-
-const multiply = (m: Matrix, v: Vector): Vector => [
-  m[0][0] * v[0] + m[0][1] * v[1] + m[0][2] * v[2],
-  m[1][0] * v[0] + m[1][1] * v[1] + m[1][2] * v[2],
-  m[2][0] * v[0] + m[2][1] * v[1] + m[2][2] * v[2],
-];
-
-const mapVector = (v: Vector, f: (x: number) => number): Vector => [f(v[0]), f(v[1]), f(v[2])];
-
-const signed = (value: number, f: (magnitude: number) => number): number =>
-  Math.sign(value) * f(Math.abs(value));
-
-/** The sRGB transfer function and its inverse (CSS Color 4 §10.2). */
-const srgbToLinear = (c: number): number =>
-  signed(c, (x) => (x <= 0.04045 ? x / 12.92 : ((x + 0.055) / 1.055) ** 2.4));
-const linearToSrgb = (c: number): number =>
-  signed(c, (x) => (x > 0.0031308 ? 1.055 * x ** (1 / 2.4) - 0.055 : 12.92 * x));
-
-const LINEAR_SRGB_TO_XYZ: Matrix = [
-  [0.41239079926595934, 0.357584339383878, 0.1804807884018343],
-  [0.21263900587151027, 0.715168678767756, 0.07219231536073371],
-  [0.01933081871559182, 0.11919477979462598, 0.9505321522496607],
-];
-const XYZ_TO_LINEAR_SRGB: Matrix = [
-  [3.2409699419045226, -1.537383177570094, -0.4986107602930034],
-  [-0.9692436362808796, 1.8759675015077202, 0.04155505740717559],
-  [0.05563007969699366, -0.20397695888897652, 1.0569715142428786],
-];
-const D50_TO_D65: Matrix = [
-  [0.955473421488075, -0.02309845494876471, 0.06325924320057072],
-  [-0.0283697093338637, 1.0099953980813041, 0.021041441191917323],
-  [0.012314014864481998, -0.020507649298898964, 1.330365926242124],
-];
-const LINEAR_P3_TO_XYZ: Matrix = [
-  [0.48657094864821626, 0.26566769316909294, 0.1982172852343625],
-  [0.22897456406974884, 0.6917385218365062, 0.079286914093745],
-  [0, 0.04511338185890264, 1.043944368900976],
-];
-const LINEAR_A98_TO_XYZ: Matrix = [
-  [0.5766690429101308, 0.18555823790654627, 0.18822864623499472],
-  [0.29734497525053616, 0.627363566255466, 0.07529145849399789],
-  [0.02703136138641237, 0.07068885253582714, 0.9913375368376389],
-];
-const LINEAR_PROPHOTO_TO_XYZ_D50: Matrix = [
-  [0.7977666449006423, 0.13518129740053308, 0.0313477341283922],
-  [0.2880748288194013, 0.711835234241873, 0.00008993693872564],
-  [0, 0, 0.8251046025104602],
-];
-const LINEAR_REC2020_TO_XYZ: Matrix = [
-  [0.6369580483012914, 0.14461690358620832, 0.1688809751641721],
-  [0.2627002120112671, 0.6779980715188708, 0.05930171646986196],
-  [0, 0.028072693049087428, 1.060985057710791],
-];
-const OKLAB_TO_LMS: Matrix = [
-  [1, 0.3963377773761749, 0.2158037573099136],
-  [1, -0.1055613458156586, -0.0638541728258133],
-  [1, -0.0894841775298119, -1.2914855480194092],
-];
-const LMS_TO_XYZ: Matrix = [
-  [1.2268798758459243, -0.5578149944602171, 0.2813910456659647],
-  [-0.0405757452148008, 1.112286803280317, -0.0717110580655164],
-  [-0.0763729366746601, -0.4214933324022432, 1.5869240198367816],
-];
-
-/** The D50 white point, as XYZ. */
-const D50: Vector = [0.3457 / 0.3585, 1, (1 - 0.3457 - 0.3585) / 0.3585];
-
-/** CIE Lab (D50) to XYZ D50 (CSS Color 4 §18). */
-const labToXyzD50 = (l: number, a: number, b: number): Vector => {
-  const kappa = 24389 / 27;
-  const epsilon = 216 / 24389;
-  const f1 = (l + 16) / 116;
-  const f0 = a / 500 + f1;
-  const f2 = f1 - b / 200;
-  const x = f0 ** 3 > epsilon ? f0 ** 3 : (116 * f0 - 16) / kappa;
-  const y = l > kappa * epsilon ? ((l + 16) / 116) ** 3 : l / kappa;
-  const z = f2 ** 3 > epsilon ? f2 ** 3 : (116 * f2 - 16) / kappa;
-  return [x * D50[0], y * D50[1], z * D50[2]];
-};
-
-const polar = (chroma: number, h: number): readonly [number, number] => [
-  chroma * Math.cos((h * Math.PI) / 180),
-  chroma * Math.sin((h * Math.PI) / 180),
-];
-
-const oklabToXyz = (l: number, a: number, b: number): Vector =>
-  multiply(
-    LMS_TO_XYZ,
-    mapVector(multiply(OKLAB_TO_LMS, [l, a, b]), (value) => value ** 3),
-  );
-
-const REC2020_ALPHA = 1.09929682680944;
-const REC2020_BETA = 0.018053968510807;
-
-/** Each predefined space's channels to XYZ D65. */
-const SPACE_TO_XYZ = {
-  srgb: (c) => multiply(LINEAR_SRGB_TO_XYZ, mapVector(c, srgbToLinear)),
-  "srgb-linear": (c) => multiply(LINEAR_SRGB_TO_XYZ, c),
-  "display-p3": (c) => multiply(LINEAR_P3_TO_XYZ, mapVector(c, srgbToLinear)),
-  "display-p3-linear": (c) => multiply(LINEAR_P3_TO_XYZ, c),
-  "a98-rgb": (c) =>
-    multiply(
-      LINEAR_A98_TO_XYZ,
-      mapVector(c, (x) => signed(x, (m) => m ** (563 / 256))),
-    ),
-  "prophoto-rgb": (c) =>
-    multiply(
-      D50_TO_D65,
-      multiply(
-        LINEAR_PROPHOTO_TO_XYZ_D50,
-        mapVector(c, (x) => signed(x, (m) => (m <= 16 / 512 ? m / 16 : m ** 1.8))),
-      ),
-    ),
-  rec2020: (c) =>
-    multiply(
-      LINEAR_REC2020_TO_XYZ,
-      mapVector(c, (x) =>
-        signed(x, (m) =>
-          m < REC2020_BETA * 4.5
-            ? m / 4.5
-            : ((m + REC2020_ALPHA - 1) / REC2020_ALPHA) ** (1 / 0.45),
-        ),
-      ),
-    ),
-  "xyz-d50": (c) => multiply(D50_TO_D65, c),
-  "xyz-d65": (c) => c,
-} satisfies { readonly [S in PredefinedSpace]: (c: Vector) => Vector };
-
-const lchToXyz = (
-  lightness: Channel,
-  chroma: Channel,
-  h: Channel,
-  toXyz: (l: number, a: number, b: number) => Vector,
-): Vector => {
-  const [a, b] = polar(zero(chroma), zero(h));
-  return toXyz(zero(lightness), a, b);
-};
-
-const labD65 = (l: number, a: number, b: number): Vector =>
-  multiply(D50_TO_D65, labToXyzD50(l, a, b));
-
-/** XYZ D65 for an sRGB colour with channels from 0 to 255. */
-const rgbToXyz = (rgb: {
-  readonly red: number;
-  readonly green: number;
-  readonly blue: number;
-}): Option.Option<Vector> =>
-  Option.some(
-    multiply(
-      LINEAR_SRGB_TO_XYZ,
-      mapVector([rgb.red, rgb.green, rgb.blue], (c) => srgbToLinear(c / 255)),
-    ),
-  );
-
-/** XYZ D65 for a colour, `None` for `currentcolor`. */
-const toXyzD65 = (color: Color): Option.Option<Vector> =>
-  Match.valueTags(color, {
-    Rgb: (rgb) => rgbToXyz(rgb),
-    Named: (named) => rgbToXyz(named),
-    Hsl: (hsl) => toXyzD65(toRgb(hsl)),
-    Hwb: (hwb) => toXyzD65(toRgb(hwb)),
-    Lab: (lab) => Option.some(labD65(zero(lab.lightness), zero(lab.a), zero(lab.b))),
-    Lch: (lch) => Option.some(lchToXyz(lch.lightness, lch.chroma, lch.hue, labD65)),
-    Oklab: (lab) => Option.some(oklabToXyz(zero(lab.lightness), zero(lab.a), zero(lab.b))),
-    Oklch: (lch) => Option.some(lchToXyz(lch.lightness, lch.chroma, lch.hue, oklabToXyz)),
-    ColorFunction: (function_) =>
-      Option.some(
-        SPACE_TO_XYZ[function_.space]([
-          zero(function_.channels[0]),
-          zero(function_.channels[1]),
-          zero(function_.channels[2]),
-        ]),
-      ),
-    // Naive CMYK to sRGB (CSS Color 5 §8.1), without a colour profile.
-    DeviceCmyk: (cmyk) => {
-      const black = zero(cmyk.black);
-      const channel = (ink: Channel): number =>
-        srgbToLinear(1 - Math.min(1, zero(ink) * (1 - black) + black));
-      return Option.some(
-        multiply(LINEAR_SRGB_TO_XYZ, [
-          channel(cmyk.cyan),
-          channel(cmyk.magenta),
-          channel(cmyk.yellow),
-        ]),
-      );
-    },
-    CustomColor: () => Option.none(),
-    LightDark: () => Option.none(),
-    ColorMix: () => Option.none(),
-    CurrentColor: () => Option.none(),
-  });
-
 /**
  * A colour in sRGB, channels and alpha from 0 to 1. Not gamut-mapped: a
  * colour outside sRGB (a saturated `display-p3` or `oklch()` one) has
@@ -1142,8 +933,160 @@ export const toSrgb = (color: Color): Option.Option<Srgb> => {
       alpha: color.alpha,
     });
   }
-  return Option.map(toXyzD65(color), (xyz) => {
-    const [red, green, blue] = mapVector(multiply(XYZ_TO_LINEAR_SRGB, xyz), linearToSrgb);
-    return { red, green, blue, alpha: "alpha" in color ? zero(color.alpha) : 1 };
+  return Option.map(working(color), ({ space, channels, alpha }) => {
+    const [red, green, blue] = Spaces.convert(space, "srgb", [
+      zero(channels[0]),
+      zero(channels[1]),
+      zero(channels[2]),
+    ]);
+    return { red, green, blue, alpha: zero(alpha) };
   });
 };
+
+// ── Resolving color-mix() ──────────────────────────────────────────────
+
+/** A colour's own space and channels (`none` kept), or `None` for one with no value of its own. */
+const working = (color: Color): Option.Option<Mix.Working> =>
+  Match.valueTags(color, {
+    Rgb: (rgb) => Option.some(srgbWorking(rgb)),
+    Named: (named) => Option.some(srgbWorking(named)),
+    Hsl: (hsl) =>
+      Option.some<Mix.Working>({
+        space: "hsl",
+        channels: [hsl.hue, hsl.saturation, hsl.lightness],
+        alpha: hsl.alpha,
+      }),
+    Hwb: (hwb) =>
+      Option.some<Mix.Working>({
+        space: "hwb",
+        channels: [hwb.hue, hwb.whiteness, hwb.blackness],
+        alpha: hwb.alpha,
+      }),
+    Lab: (lab) => Option.some(labWorking("lab", lab)),
+    Oklab: (lab) => Option.some(labWorking("oklab", lab)),
+    Lch: (lch) => Option.some(lchWorking("lch", lch)),
+    Oklch: (lch) => Option.some(lchWorking("oklch", lch)),
+    ColorFunction: (function_) =>
+      Option.some<Mix.Working>({
+        space: function_.space,
+        channels: function_.channels,
+        alpha: function_.alpha,
+      }),
+    // Naive CMYK to sRGB (CSS Color 5 §8.1), without a colour profile.
+    DeviceCmyk: (cmyk) => {
+      const black = zero(cmyk.black);
+      const channel = (ink: Channel): number => 1 - Math.min(1, zero(ink) * (1 - black) + black);
+      return Option.some<Mix.Working>({
+        space: "srgb",
+        channels: [channel(cmyk.cyan), channel(cmyk.magenta), channel(cmyk.yellow)],
+        alpha: cmyk.alpha,
+      });
+    },
+    ColorMix: (mix) => Option.flatMap(resolveMix(mix), working),
+    CustomColor: () => Option.none(),
+    LightDark: () => Option.none(),
+    CurrentColor: () => Option.none(),
+  });
+
+const srgbWorking = (rgb: {
+  readonly red: number;
+  readonly green: number;
+  readonly blue: number;
+  readonly alpha: number;
+}): Mix.Working => ({
+  space: "srgb",
+  channels: [rgb.red / 255, rgb.green / 255, rgb.blue / 255],
+  alpha: rgb.alpha,
+});
+
+const labWorking = (space: "lab" | "oklab", lab: LabChannels): Mix.Working => ({
+  space,
+  channels: [lab.lightness, lab.a, lab.b],
+  alpha: lab.alpha,
+});
+
+const lchWorking = (space: "lch" | "oklch", lch: LchChannels): Mix.Working => ({
+  space,
+  channels: [lch.lightness, lch.chroma, lch.hue],
+  alpha: lch.alpha,
+});
+
+/**
+ * A mixed colour as a `Color` in its interpolation space. A mix in `hsl`
+ * or `hwb` with no missing component is written as `color(srgb …)`, as
+ * CSS Color 5 serialises it; one with a missing component keeps its space,
+ * so the `none` survives.
+ */
+const fromWorking = ({ space, channels, alpha }: Mix.Working): Color => {
+  const [c1, c2, c3] = channels;
+  if (space === "lab" || space === "oklab") {
+    return { _tag: space === "lab" ? "Lab" : "Oklab", lightness: c1, a: c2, b: c3, alpha };
+  }
+  if (space === "lch" || space === "oklch") {
+    return { _tag: space === "lch" ? "Lch" : "Oklch", lightness: c1, chroma: c2, hue: c3, alpha };
+  }
+  if (space === "hsl" || space === "hwb") {
+    return [c1, c2, c3, alpha].includes("none")
+      ? polarSrgb(space, channels, alpha)
+      : {
+          _tag: "ColorFunction",
+          space: "srgb",
+          channels: Mix.toSpace({ space, channels, alpha }, "srgb").channels,
+          alpha,
+        };
+  }
+  return { _tag: "ColorFunction", space, channels, alpha };
+};
+
+const polarSrgb = (
+  space: "hsl" | "hwb",
+  [hue, second, third]: readonly [Channel, Channel, Channel],
+  alpha: Channel,
+): Color =>
+  space === "hsl"
+    ? { _tag: "Hsl", hue, saturation: second, lightness: third, alpha }
+    : { _tag: "Hwb", hue, whiteness: second, blackness: third, alpha };
+
+/** A `color-mix()` resolved to a colour, or `None` when a colour in it has no value of its own. */
+const resolveMix = (mix: {
+  readonly space: InterpolationSpace;
+  readonly hue: HueMethod;
+  readonly colors: ReadonlyArray<MixComponent>;
+}): Option.Option<Color> => {
+  const percentages = fillPercentages(mix.colors);
+  return Option.flatMap(Option.all(mix.colors.map(({ color }) => working(color))), (colors) => {
+    const parts = colors.map((color, index) => ({
+      color: Mix.toSpace(color, mix.space),
+      percentage: percentages[index] ?? 0,
+    }));
+    return Arr.isReadonlyArrayNonEmpty(parts)
+      ? Option.some(fromWorking(Mix.mix(parts, mix.hue)))
+      : Option.none();
+  });
+};
+
+/**
+ * Resolves every `color-mix()` in a colour to the colour it computes to
+ * (CSS Color 5 §3.2): each colour converted to the interpolation space,
+ * a missing component carried forward to its analogue (and an achromatic
+ * colour's hue treated as missing), then interpolated with premultiplied
+ * alpha and the hue method, two colours at a time. The result is in the
+ * interpolation space (`color(srgb …)` for `srgb`, `hsl` and `hwb`). Any
+ * other colour comes back as it is. `None` for a mix of a colour with no
+ * value of its own (`currentcolor`, `light-dark()`, a custom colour
+ * space).
+ *
+ * @example
+ * ```ts
+ * import * as Option from "effect/Option"
+ * import { Color } from "@thomasfosterau/effect-css"
+ *
+ * const mixed = Option.flatMap(Color.parse("color-mix(in srgb, red 25%, blue)"), Color.resolve)
+ * console.log(Option.map(mixed, Color.serialize)) // Option.some("color(srgb 0.25 0 0.75)")
+ * ```
+ *
+ * @since 0.1.0
+ * @category converting
+ */
+export const resolve = (color: Color): Option.Option<Color> =>
+  Predicate.isTagged(color, "ColorMix") ? resolveMix(color) : Option.some(color);
