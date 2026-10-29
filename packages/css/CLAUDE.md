@@ -1,6 +1,6 @@
 # @thomasfosterau/effect-css
 
-CSS on Effect: `Syntax` (CSS Syntax Level 3 tokenizer and parser entry points, the nesting-aware block contents included), `AnPlusB` (the `An+B` microsyntax), `Token` (tokens and component values), `Color` (CSS Color 4 `<color>` parsing, serialisation and sRGB conversion, plus Color 5's `device-cmyk()`, custom colour spaces and `light-dark()`), `Length` (CSS Values 4 lengths, absolute-unit conversion, `calc()` simplified to one term per unit) and `Shorthand` (the box shorthands expanded to longhands).
+CSS on Effect: `Syntax` (CSS Syntax Level 3 tokenizer and parser entry points, the nesting-aware block contents included), `AnPlusB` (the `An+B` microsyntax), `Token` (tokens and component values), `Color` (CSS Color 4 `<color>` parsing, serialisation and sRGB conversion, plus Color 5's `device-cmyk()`, custom colour spaces and `light-dark()`), `Length` (CSS Values 4 lengths, absolute-unit conversion, `calc()` simplified to one term per unit), `Shorthand` (the box shorthands expanded to longhands), `Font` (typed font values and the `font` shorthand) and `Text` (`text-align`, `vertical-align` and `text-decoration` values).
 
 ## Boundary
 
