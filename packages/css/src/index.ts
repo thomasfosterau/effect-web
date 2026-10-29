@@ -7,6 +7,8 @@
  * - `Token` — the tokens and component values the parser produces.
  * - `Color` — CSS Color 4 values, typed, serialised and converted to sRGB.
  * - `Length` — CSS Values 4 lengths, with absolute-unit conversion.
+ * - `Serialize` — identifiers, strings, component values and declarations
+ *   written back to CSS text.
  * - `AnPlusB` — the `An+B` microsyntax of `:nth-child()` and its relatives.
  * - `Shorthand` — the box shorthands (`margin`, `padding`, `inset`,
  *   `border` and its parts) expanded to their longhands.
@@ -19,6 +21,7 @@ export * as AnPlusB from "./an-plus-b.ts";
 export * as Color from "./color.ts";
 export * as Font from "./font.ts";
 export * as Length from "./length.ts";
+export * as Serialize from "./serialize.ts";
 export * as Shorthand from "./shorthand.ts";
 export * as Syntax from "./syntax.ts";
 export * as Text from "./text.ts";

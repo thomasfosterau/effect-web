@@ -1,6 +1,6 @@
 # @thomasfosterau/effect-css
 
-CSS on Effect: `Syntax` (CSS Syntax Level 3 tokenizer and parser entry points, the nesting-aware block contents included), `AnPlusB` (the `An+B` microsyntax), `Token` (tokens and component values), `Color` (CSS Color 4 `<color>` parsing, serialisation and sRGB conversion, plus Color 5's `device-cmyk()`, custom colour spaces and `light-dark()`), `Length` (CSS Values 4 lengths, absolute-unit conversion, `calc()` simplified to one term per unit), `Shorthand` (the box shorthands expanded to longhands), `Font` (typed font values and the `font` shorthand) and `Text` (`text-align`, `vertical-align` and `text-decoration` values).
+CSS on Effect: `Syntax` (CSS Syntax Level 3 tokenizer and parser entry points, the nesting-aware block contents included), `AnPlusB` (the `An+B` microsyntax), `Token` (tokens and component values), `Color` (CSS Color 4 `<color>` parsing, serialisation and sRGB conversion, plus Color 5's `device-cmyk()`, custom colour spaces and `light-dark()`), `Length` (CSS Values 4 lengths, absolute-unit conversion, `calc()` simplified to one term per unit), `Shorthand` (the box shorthands expanded to longhands), `Font` (typed font values and the `font` shorthand), `Serialize` (CSSOM and Syntax 3 §9 serialisation back to text) and `Text` (`text-align`, `vertical-align` and `text-decoration` values).
 
 ## Boundary
 
@@ -12,6 +12,7 @@ Peer: `effect`. No workspace dependency (`.fallowrc.json` zone `css` allows none
 - **The tokenizer and parser are transcriptions.** `internal/tokenizer.ts` and `syntax.ts` follow the specification's consume-* algorithms step for step over a cursor; the imperative loops are the algorithm as written (file-level lint disables say so). Restructure them only with the suite green.
 - **Errors are recovered from and reported in place**: a list parse yields `SyntaxError` items (`empty`, `invalid`, `extra-input`) with the code-point offset in the preprocessed input; an unterminated string or URL token is flagged `unterminated`. Nothing throws.
 - **Colour serialisation is CSS Color 4's**: sRGB-family colours (named, hex, `rgb()`, `hsl()`, `hwb()`) resolve to `Rgb` at parse time (a `none` channel as 0) and print `rgb(r, g, b)` / `rgba(…)`; Lab-family and `color()` keep their space; numbers print with at most six decimals. `toSrgb` does not gamut-map.
+- **Serialisation round-trips**: parsing `Serialize.componentValues` output gives back the component values it was given, less comments and whitespace runs; `tests/serialize.test.ts` checks it over every suite input.
 - **Nothing runs at import** (`"sideEffects": false`): tables and matrices are literals.
 
 ## Terms
