@@ -10,6 +10,7 @@ import * as Option from "effect/Option";
 import * as Result from "effect/Result";
 import * as Str from "effect/String";
 import type { Name as EncodingName } from "./labels.ts";
+import { type CodePointHandler, cjkEncoder, EMPTY, hasCjkEncoder, type CjkTables } from "./cjk.ts";
 import { singleByteHigh } from "./tables.ts";
 
 /** What an encoder does with a code point its encoding cannot represent. */
@@ -62,15 +63,35 @@ const utf8 = new TextEncoder();
 const utf8Handler: Handler = (codePoint) =>
   Option.some(Array.from(utf8.encode(String.fromCodePoint(codePoint))));
 
-/** The handler for an encoding, or `None` when this package has no encoder for it. */
-const handlerFor = (encoding: EncodingName): Option.Option<Handler> => {
-  if (encoding === "UTF-8") return Option.some(utf8Handler);
-  if (encoding === "x-user-defined") return Option.some(xUserDefinedHandler);
-  return Option.map(singleByteHigh(encoding), singleByteHandler);
+/** A stateless handler as a code-point handler: no state to finish. */
+const stateless = (handler: Handler): CodePointHandler => ({
+  encode: (codePoint) =>
+    Option.match(handler(codePoint), {
+      onSome: (bytes) => ({ bytes, error: Option.none() }),
+      onNone: () => ({ bytes: [], error: Option.some(codePoint) }),
+    }),
+  finish: () => [],
+});
+
+/**
+ * A new handler for an encoding (CJK ones from the provided tables), or
+ * `None` when there is no encoder for it.
+ */
+const handlerFor = (encoding: EncodingName, tables: CjkTables): Option.Option<CodePointHandler> => {
+  if (encoding === "UTF-8") return Option.some(stateless(utf8Handler));
+  if (encoding === "x-user-defined") return Option.some(stateless(xUserDefinedHandler));
+  return Option.orElse(
+    Option.map(singleByteHigh(encoding), (high) => stateless(singleByteHandler(high))),
+    () => cjkEncoder(encoding, tables),
+  );
 };
 
-/** Whether this package can encode to the encoding. */
-export const hasEncoder = (encoding: EncodingName): boolean => Option.isSome(handlerFor(encoding));
+/** Whether there is an encoder for the encoding, with the provided tables. */
+export const hasEncoder = (encoding: EncodingName, tables: CjkTables = EMPTY): boolean => {
+  if (encoding === "UTF-8" || encoding === "x-user-defined") return true;
+  if (Option.isSome(singleByteHigh(encoding))) return true;
+  return hasCjkEncoder(encoding, tables);
+};
 
 const isHighSurrogate = (unit: number): boolean => unit >= 0xd800 && unit <= 0xdbff;
 
@@ -99,8 +120,9 @@ const codePoints = (text: string): ReadonlyArray<readonly [number, number]> =>
 export const makeEncoder = (options: {
   readonly encoding: EncodingName;
   readonly mode: ErrorMode;
+  readonly tables: CjkTables;
 }): Result.Result<Encoder, EncodingName> =>
-  Option.match(handlerFor(options.encoding), {
+  Option.match(handlerFor(options.encoding, options.tables), {
     onNone: () => Result.fail(options.encoding),
     onSome: (handler) => {
       let pending = "";
@@ -109,26 +131,30 @@ export const makeEncoder = (options: {
         const start = consumed;
         consumed += text.length;
         const bytes: Array<number> = [];
-        const failure = codePoints(text).find(([codePoint]) =>
-          Option.match(handler(codePoint), {
-            onSome: (encoded) => {
-              bytes.push(...encoded);
+        let failure: Option.Option<EncodeFailure> = Option.none();
+        codePoints(text).some(([codePoint, at]) => {
+          const step = handler.encode(codePoint);
+          bytes.push(...step.bytes);
+          return Option.match(step.error, {
+            onNone: () => false,
+            onSome: (unmappable) => {
+              if (options.mode === "fatal") {
+                failure = Option.some({
+                  encoding: options.encoding,
+                  offset: start + at,
+                  codePoint: unmappable,
+                });
+                return true;
+              }
+              bytes.push(...htmlReference(unmappable));
               return false;
             },
-            onNone: () => {
-              if (options.mode === "fatal") return true;
-              bytes.push(...htmlReference(codePoint));
-              return false;
-            },
-          }),
-        );
-        return failure === undefined
-          ? Result.succeed(Uint8Array.from(bytes))
-          : Result.fail({
-              encoding: options.encoding,
-              offset: start + failure[1],
-              codePoint: failure[0],
-            });
+          });
+        });
+        return Option.match(failure, {
+          onNone: () => Result.succeed(Uint8Array.from(bytes)),
+          onSome: Result.fail,
+        });
       };
       return Result.succeed({
         push: (chunk) => {
@@ -141,7 +167,7 @@ export const makeEncoder = (options: {
         flush: () => {
           const text = pending;
           pending = "";
-          return run(text);
+          return Result.map(run(text), (bytes) => Uint8Array.from([...bytes, ...handler.finish()]));
         },
       });
     },

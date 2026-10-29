@@ -6,14 +6,17 @@
  *
  * @since 0.1.0
  */
+import * as Context from "effect/Context";
 import * as Effect from "effect/Effect";
 import { dual } from "effect/Function";
+import * as Layer from "effect/Layer";
 import * as Option from "effect/Option";
 import * as Record from "effect/Record";
 import * as Result from "effect/Result";
 import * as Schema from "effect/Schema";
 import * as Stream from "effect/Stream";
 import * as Str from "effect/String";
+import * as Cjk from "./internal/cjk.ts";
 import * as Decoder from "./internal/decoder.ts";
 import * as Encoder from "./internal/encoder.ts";
 import { LABELS, NAMES, type Name } from "./internal/labels.ts";
@@ -167,7 +170,8 @@ export class UnsupportedEncodingError extends Schema.TaggedError<UnsupportedEnco
  * Whether this runtime can decode the encoding: its `TextDecoder` knows
  * it, or the table is bundled here (every single-byte encoding and
  * `x-user-defined`, used when the runtime's `TextDecoder` lacks one, as
- * small-ICU builds and some edge runtimes do), or it is `replacement`.
+ * small-ICU builds and some edge runtimes do), or `tables` (see
+ * {@link Tables}) holds its CJK index, or it is `replacement`.
  *
  * @example
  * ```ts
@@ -180,7 +184,10 @@ export class UnsupportedEncodingError extends Schema.TaggedError<UnsupportedEnco
  * @since 0.1.0
  * @category decoding
  */
-export const isSupported: (encoding: EncodingName) => boolean = Decoder.canDecode;
+export const isSupported: (encoding: EncodingName, tables?: Tables) => boolean = (
+  encoding,
+  tables,
+) => Decoder.canDecode(encoding, tables);
 
 const decodeError = (failure: Decoder.Failure): DecodeError =>
   new DecodeError({
@@ -198,13 +205,14 @@ const unsupported = (encoding: EncodingName): UnsupportedEncodingError =>
 const makeDecoder = (
   options: DecodeOptions,
 ): Effect.Effect<Decoder.Decoder, UnsupportedEncodingError> =>
-  Effect.suspend(() =>
+  Effect.flatMap(Effect.service(EncodingTables), (tables) =>
     Effect.mapError(
       Effect.fromResult(
         Decoder.make({
           encoding: options.encoding ?? "UTF-8",
           fatal: options.fatal ?? true,
           bomHandling: options.bomHandling ?? "sniff",
+          tables,
         }),
       ),
       unsupported,
@@ -300,6 +308,72 @@ export const decodeStream: {
 );
 
 /**
+ * One of the CJK index sets, from an opt-in entry
+ * (`@thomasfosterau/effect-encoding/japanese`, `/gb18030`, `/big5`,
+ * `/euc-kr`), each exporting `tables`. Give them to {@link tablesLayer}.
+ * Kept out of the main entry so a program that never meets a CJK encoding
+ * never loads the indexes (a few hundred kilobytes).
+ *
+ * @since 0.1.0
+ * @category tables
+ */
+export type Tables = Cjk.CjkTables;
+
+/**
+ * One index inside {@link Tables}: its code points from pointer `base` on,
+ * U+FFFD where it has no entry, and `astral`, the pointers whose code
+ * point is outside the Basic Multilingual Plane, as pointer, code point
+ * pairs.
+ *
+ * @since 0.1.0
+ * @category tables
+ */
+export type IndexData = Cjk.CjkIndexData;
+
+/**
+ * The CJK tables {@link encode}, {@link decode} and their stream forms
+ * use, read from the context; none by default. Provide them with
+ * {@link tablesLayer}.
+ *
+ * @since 0.1.0
+ * @category tables
+ */
+export const EncodingTables: Context.Reference<Tables> = /*#__PURE__*/ Context.Reference(
+  "@thomasfosterau/effect-encoding/EncodingTables",
+  { defaultValue: () => Cjk.EMPTY },
+);
+
+/**
+ * A layer providing CJK tables to {@link EncodingTables}, so that
+ * {@link encode} can encode Shift_JIS, EUC-JP, ISO-2022-JP, gb18030, GBK,
+ * Big5 and EUC-KR, and {@link decode} decodes them by the standard's
+ * algorithms rather than the runtime's `TextDecoder` (which a small-ICU
+ * runtime lacks, and whose mappings can differ from the standard's).
+ *
+ * @example
+ * ```ts
+ * import * as Effect from "effect/Effect"
+ * import { Encoding } from "@thomasfosterau/effect-encoding"
+ * import * as EucKr from "@thomasfosterau/effect-encoding/euc-kr"
+ * import * as Japanese from "@thomasfosterau/effect-encoding/japanese"
+ *
+ * const program = Effect.gen(function* () {
+ *   const bytes = yield* Encoding.encode("カナ", { encoding: "ISO-2022-JP" })
+ *   return yield* Encoding.decode(bytes, { encoding: "ISO-2022-JP" })
+ * })
+ * const text = await Effect.runPromise(
+ *   program.pipe(Effect.provide(Encoding.tablesLayer(Japanese.tables, EucKr.tables))),
+ * )
+ * console.log(text) // "カナ"
+ * ```
+ *
+ * @since 0.1.0
+ * @category tables
+ */
+export const tablesLayer = (...tables: ReadonlyArray<Tables>): Layer.Layer<never> =>
+  Layer.succeed(EncodingTables, Cjk.merge(tables));
+
+/**
  * The encoding to encode with in place of the given one (§4.3, "get an
  * output encoding"): `replacement`, `UTF-16BE` and `UTF-16LE`, which have
  * no encoder, become `UTF-8`; any other encoding is itself. What a URL
@@ -323,9 +397,9 @@ export const getOutputEncoding = (encoding: EncodingName): EncodingName =>
 
 /**
  * Whether {@link encode} can encode to the encoding: UTF-8, every
- * single-byte encoding and `x-user-defined`. `replacement` and UTF-16 have
- * no encoder in the standard (see {@link getOutputEncoding}); the CJK
- * encoders are not here yet.
+ * single-byte encoding and `x-user-defined`, and a CJK encoding when
+ * `tables` (see {@link Tables}) holds its index. `replacement` and UTF-16
+ * have no encoder in the standard (see {@link getOutputEncoding}).
  *
  * @example
  * ```ts
@@ -338,7 +412,8 @@ export const getOutputEncoding = (encoding: EncodingName): EncodingName =>
  * @since 0.1.0
  * @category encoding
  */
-export const canEncode: (encoding: EncodingName) => boolean = Encoder.hasEncoder;
+export const canEncode: (encoding: EncodingName, tables?: Tables) => boolean = (encoding, tables) =>
+  Encoder.hasEncoder(encoding, tables);
 
 /**
  * What {@link encode} does with a code point the encoding cannot represent
@@ -394,12 +469,13 @@ const encodeError = (failure: Encoder.EncodeFailure): EncodeError =>
 const makeEncoder = (
   options: EncodeOptions,
 ): Effect.Effect<Encoder.Encoder, UnsupportedEncodingError> =>
-  Effect.suspend(() =>
+  Effect.flatMap(Effect.service(EncodingTables), (tables) =>
     Effect.mapError(
       Effect.fromResult(
         Encoder.makeEncoder({
           encoding: options.encoding ?? "UTF-8",
           mode: options.errorMode ?? "fatal",
+          tables,
         }),
       ),
       (encoding) =>
@@ -420,7 +496,8 @@ const liftEncoded = (
  * the encoding cannot represent fails with an {@link EncodeError} carrying
  * its offset; `errorMode: "html"` writes `&#N;` instead. A lone surrogate
  * is encoded as U+FFFD. An encoding with no encoder (see {@link canEncode})
- * fails with an {@link UnsupportedEncodingError}.
+ * fails with an {@link UnsupportedEncodingError}. The CJK encodings need
+ * their tables provided (see {@link tablesLayer}).
  *
  * @example
  * ```ts

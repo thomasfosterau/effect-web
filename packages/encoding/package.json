@@ -34,6 +34,22 @@
     ".": {
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
+    },
+    "./japanese": {
+      "types": "./dist/japanese.d.ts",
+      "default": "./dist/japanese.js"
+    },
+    "./gb18030": {
+      "types": "./dist/gb18030.d.ts",
+      "default": "./dist/gb18030.js"
+    },
+    "./big5": {
+      "types": "./dist/big5.d.ts",
+      "default": "./dist/big5.js"
+    },
+    "./euc-kr": {
+      "types": "./dist/euc-kr.d.ts",
+      "default": "./dist/euc-kr.js"
     }
   },
   "publishConfig": {
