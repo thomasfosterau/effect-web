@@ -147,35 +147,25 @@ const hex = (value: number): string => Str.toUpperCase(value.toString(16));
 
 const CLOSING = { "[": "]", "(": ")", "{": "}" } as const;
 
-/** One component value's text, without the comment rule between neighbours. */
-const valueText = (value: ComponentValue): string => {
-  switch (value._tag) {
-    case "Ident":
-      return identifier(value.value);
-    case "AtKeyword":
-      return `@${identifier(value.value)}`;
-    case "Hash":
-      return `#${value.type === "id" ? identifier(value.value) : name(value.value)}`;
-    case "String":
-      return string(value.value);
-    case "Url":
-      return `url(${codePointsOf(value.value).map(urlCodePoint).join("")})`;
-    case "Delim":
-      return value.value === "\\" ? "\\\n" : value.value;
-    case "Number":
-      return value.representation;
-    case "Percentage":
-      return `${value.representation}%`;
-    case "Dimension":
-      return `${value.representation}${unit(value.unit)}`;
-    case "UnicodeRange":
-      return value.start === value.end
-        ? `U+${hex(value.start)}`
-        : `U+${hex(value.start)}-${hex(value.end)}`;
-    case "Func":
-      return `${identifier(value.name)}(${componentValues(value.value)})`;
-    case "Block":
-      return `${value.associated}${componentValues(value.value)}${CLOSING[value.associated]}`;
+/** The tokens whose text depends on nothing but their type. */
+type Punctuation = Exclude<
+  ComponentValue["_tag"],
+  | "Ident"
+  | "AtKeyword"
+  | "Hash"
+  | "String"
+  | "Url"
+  | "Delim"
+  | "Number"
+  | "Percentage"
+  | "Dimension"
+  | "UnicodeRange"
+  | "Func"
+  | "Block"
+>;
+
+const punctuationText = (tag: Punctuation): string => {
+  switch (tag) {
     case "BadString":
       return '"\n';
     case "BadUrl":
@@ -210,6 +200,40 @@ const valueText = (value: ComponentValue): string => {
       return ")";
     case "CloseCurly":
       return "}";
+  }
+};
+
+/** One component value's text, without the comment rule between neighbours. */
+const valueText = (value: ComponentValue): string => {
+  switch (value._tag) {
+    case "Ident":
+      return identifier(value.value);
+    case "AtKeyword":
+      return `@${identifier(value.value)}`;
+    case "Hash":
+      return `#${value.type === "id" ? identifier(value.value) : name(value.value)}`;
+    case "String":
+      return string(value.value);
+    case "Url":
+      return `url(${codePointsOf(value.value).map(urlCodePoint).join("")})`;
+    case "Delim":
+      return value.value === "\\" ? "\\\n" : value.value;
+    case "Number":
+      return value.representation;
+    case "Percentage":
+      return `${value.representation}%`;
+    case "Dimension":
+      return `${value.representation}${unit(value.unit)}`;
+    case "UnicodeRange":
+      return value.start === value.end
+        ? `U+${hex(value.start)}`
+        : `U+${hex(value.start)}-${hex(value.end)}`;
+    case "Func":
+      return `${identifier(value.name)}(${componentValues(value.value)})`;
+    case "Block":
+      return `${value.associated}${componentValues(value.value)}${CLOSING[value.associated]}`;
+    default:
+      return punctuationText(value._tag);
   }
 };
 
