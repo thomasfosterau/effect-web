@@ -243,3 +243,93 @@ describe("review regressions", () => {
     expect(sniffed(ascii("ID3\u0004"), { supplied: "application/ogg" })).toBe("audio/mpeg");
   });
 });
+
+/** A Layer III stream: frame header `header`, then `size - 4` zero bytes, then `next`. */
+const mp3 = (
+  header: ReadonlyArray<number>,
+  size: number,
+  next: ReadonlyArray<number>,
+): Uint8Array => {
+  const stream = new Uint8Array(size + next.length);
+  stream.set(header, 0);
+  stream.set(next, size);
+  return stream;
+};
+
+describe("MP3 without ID3 (§6.2.3)", () => {
+  // MPEG-1 Layer III, 64 kbit/s, 44.1 kHz: 64000 × 144 / 44100 = 208 bytes.
+  const mpeg1 = [0xff, 0xfb, 0x50, 0x00];
+  // The same with the padding bit: 209 bytes.
+  const mpeg1Padded = [0xff, 0xfb, 0x52, 0x00];
+  // MPEG-2 Layer III, 64 kbit/s (mp2.5-rates index 8), 22.05 kHz: 64000 × 72 / 22050 = 208.
+  const mpeg2 = [0xff, 0xf3, 0x80, 0x00];
+
+  it("finds two consecutive Layer III frame headers", () => {
+    expect(Sniff.matchAudioOrVideo(mp3(mpeg1, 208, mpeg1))).toStrictEqual(
+      Option.some("audio/mpeg"),
+    );
+    expect(Sniff.matchAudioOrVideo(mp3(mpeg1Padded, 209, mpeg1))).toStrictEqual(
+      Option.some("audio/mpeg"),
+    );
+    expect(Sniff.matchAudioOrVideo(mp3(mpeg2, 208, mpeg2))).toStrictEqual(
+      Option.some("audio/mpeg"),
+    );
+    expect(sniffed(mp3(mpeg1, 208, mpeg1))).toBe("audio/mpeg");
+  });
+
+  it("needs the second header exactly one frame later", () => {
+    expect(Sniff.matchAudioOrVideo(mp3(mpeg1, 207, mpeg1))).toStrictEqual(Option.none());
+    expect(Sniff.matchAudioOrVideo(mp3(mpeg1Padded, 208, mpeg1))).toStrictEqual(Option.none());
+    expect(Sniff.matchAudioOrVideo(mp3(mpeg1, 208, [0xff, 0xfb]))).toStrictEqual(Option.none());
+    expect(Sniff.matchAudioOrVideo(bytes(...mpeg1))).toStrictEqual(Option.none());
+  });
+
+  it("rejects a header without a frame sync, outside Layer III, or with a reserved or free rate", () => {
+    const rejected = [
+      [0xfe, 0xfb, 0x50, 0x00], // no frame sync
+      [0xff, 0x1b, 0x50, 0x00], // sync bits clear in the second byte
+      [0xff, 0xfd, 0x50, 0x00], // Layer II
+      [0xff, 0xf9, 0x50, 0x00], // layer 0 (reserved)
+      [0xff, 0xfb, 0xf0, 0x00], // bit-rate index 15
+      [0xff, 0xfb, 0x5c, 0x00], // sample-rate index 3
+      [0xff, 0xfb, 0x00, 0x00], // bit-rate index 0 (free): a frame size under 4
+    ];
+    rejected.forEach((header) => {
+      expect(Sniff.matchAudioOrVideo(mp3(header, 208, header))).toStrictEqual(Option.none());
+    });
+  });
+});
+
+describe("the check-for-apache-bug flag (§5.1, §7.2)", () => {
+  const binary = bytes(0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a);
+
+  it("decides text or binary for the four exact Apache values", () => {
+    [
+      "text/plain",
+      "text/plain; charset=ISO-8859-1",
+      "text/plain; charset=iso-8859-1",
+      "text/plain; charset=UTF-8",
+    ].forEach((supplied) => {
+      expect(sniffed(binary, { supplied, checkForApacheBug: true })).toBe(
+        "application/octet-stream",
+      );
+      expect(sniffed(ascii("<html>"), { supplied, checkForApacheBug: true })).toBe("text/plain");
+    });
+  });
+
+  it("reads a UTF-16 or UTF-8 byte order mark as text, whatever follows", () => {
+    const options = { supplied: "text/plain", checkForApacheBug: true } as const;
+    expect(sniffed(bytes(0xfe, 0xff, 0x00, 0x41), options)).toBe("text/plain");
+    expect(sniffed(bytes(0xff, 0xfe, 0x41, 0x00), options)).toBe("text/plain");
+    expect(sniffed(bytes(0xef, 0xbb, 0xbf, 0x00), options)).toBe("text/plain");
+  });
+
+  it("leaves any other spelling, and noSniff, to the supplied type", () => {
+    expect(sniffed(binary, { supplied: "text/plain;charset=UTF-8", checkForApacheBug: true })).toBe(
+      "text/plain",
+    );
+    expect(
+      sniffed(binary, { supplied: "text/plain", checkForApacheBug: true, noSniff: true }),
+    ).toBe("text/plain");
+  });
+});
