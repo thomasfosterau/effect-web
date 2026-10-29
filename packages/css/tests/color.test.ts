@@ -61,13 +61,20 @@ describe("css-parsing-tests colour vectors", () => {
  */
 const level5 = (input: string): (typeof functions5)[number] => {
   const inColorForm = (color: Color.Color): string =>
-    Predicate.isTagged(color, "Rgb")
-      ? Color.serialize({
-          _tag: "ColorFunction",
-          space: "srgb",
-          channels: [color.red / 255, color.green / 255, color.blue / 255],
-          alpha: color.alpha,
-        })
+    Predicate.isTagged(color, "Rgb") ||
+    Predicate.isTagged(color, "Hsl") ||
+    Predicate.isTagged(color, "Hwb")
+      ? Option.getOrElse(
+          Option.map(Color.toSrgb(color), ({ red, green, blue, alpha }) =>
+            Color.serialize({
+              _tag: "ColorFunction",
+              space: "srgb",
+              channels: [red, green, blue],
+              alpha,
+            }),
+          ),
+          () => "",
+        )
       : Color.serialize(color);
   const parsed = Color.parse(input);
   if (input.startsWith("light-dark(")) {
@@ -232,5 +239,28 @@ describe("Length", () => {
     expect(Length.toPixels({ value: 2, unit: "em" })).toStrictEqual(Option.none());
     expect(Length.convert({ value: 50, unit: "%" }, "px")).toStrictEqual(Option.none());
     expect(Length.serialize({ value: 1.5, unit: "em" })).toBe("1.5em");
+  });
+});
+
+describe("hsl() and hwb()", () => {
+  it("keep their channels, none included", () => {
+    expect(Color.parse("hsl(none 50% 25% / none)")).toStrictEqual(
+      Option.some({ _tag: "Hsl", hue: "none", saturation: 50, lightness: 25, alpha: "none" }),
+    );
+    expect(Color.parse("hsla(390, 100%, 50%, 0.5)")).toStrictEqual(
+      Option.some({ _tag: "Hsl", hue: 30, saturation: 100, lightness: 50, alpha: 0.5 }),
+    );
+    expect(Color.parse("hwb(120deg none 20%)")).toStrictEqual(
+      Option.some({ _tag: "Hwb", hue: 120, whiteness: "none", blackness: 20, alpha: 1 }),
+    );
+  });
+
+  it("serialise and convert as sRGB, none as 0", () => {
+    expect(Option.map(Color.parse("hsl(120 100% 25%)"), Color.serialize)).toStrictEqual(
+      Option.some("rgb(0, 127.5, 0)"),
+    );
+    expect(Option.flatMap(Color.parse("hwb(none 100% 0%)"), Color.toSrgb)).toStrictEqual(
+      Option.some({ red: 1, green: 1, blue: 1, alpha: 1 }),
+    );
   });
 });
