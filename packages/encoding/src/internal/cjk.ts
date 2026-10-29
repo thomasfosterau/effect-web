@@ -456,7 +456,8 @@ export interface CjkBackend {
 /**
  * The backend for a CJK encoding from the provided tables, or `None`. It
  * runs the handler over the bytes (§4.1, "process a queue"), restoring
- * bytes to the front of the queue as the handler asks; at the end of the
+ * bytes to the front of the queue as the handler asks (a small buffer read
+ * before the input, never an insertion into it); at the end of the
  * input (`stream: false`) it runs the handler on end-of-queue until it
  * finishes. A fatal backend fails on the first error; otherwise each error
  * is U+FFFD.
@@ -470,14 +471,21 @@ export const cjkBackend = (
     const handler = make();
     return {
       decode: (bytes, stream) => {
-        const queue: Array<number> = Array.from(bytes);
+        // Restored bytes go in `pending`, read before the rest of the input:
+        // at most three (gb18030's « second, third, byte »), so the driver
+        // stays linear in the input however malformed it is.
+        let pending: ReadonlyArray<number> = [];
         const out: Array<number> = [];
         let at = 0;
         let ending = false;
         for (;;) {
           let step: Step;
-          if (at < queue.length) {
-            step = handler(queue[at] ?? 0);
+          const [restored, ...rest] = pending;
+          if (restored !== undefined) {
+            pending = rest;
+            step = handler(restored);
+          } else if (at < bytes.length) {
+            step = handler(bytes[at] ?? 0);
             at += 1;
           } else if (!stream && !ending) {
             step = handler(EOQ);
@@ -489,7 +497,7 @@ export const cjkBackend = (
           if (step._tag === "Error") {
             if (fatal) return Result.fail(undefined);
             out.push(0xfffd);
-            queue.splice(at, 0, ...step.restore);
+            pending = [...step.restore, ...pending];
           }
         }
         let text = "";

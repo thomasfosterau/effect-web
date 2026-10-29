@@ -197,6 +197,28 @@ describe("streams and state", () => {
   });
 });
 
+describe("malformed input", () => {
+  it.each([
+    // gb18030: a four-byte start that fails at its fourth byte restores three bytes each time.
+    ["gb18030", [0x81, 0x30, 0x81, 0x41]],
+    // Shift_JIS / Big5 / EUC-KR: a lead byte then an ASCII trail restores the trail.
+    ["Shift_JIS", [0x81, 0x20]],
+    ["Big5", [0xa4, 0x20]],
+    ["EUC-KR", [0xb0, 0x20]],
+    // ISO-2022-JP: a broken escape restores its bytes.
+    ["ISO-2022-JP", [0x1b, 0x24, 0x50]],
+  ] as const)("decodes 1 MB of repeated malformed %s in linear time", (encoding, unit) => {
+    const size = 1 << 20;
+    const bytes = Uint8Array.from({ length: size }, (_, at) => unit[at % unit.length] ?? 0);
+    const started = performance.now();
+    const exit = run(Encoding.decode(bytes, { encoding, fatal: false, bomHandling: "keep" }));
+    const elapsed = performance.now() - started;
+    expect(Exit.isSuccess(exit)).toBe(true);
+    // Quadratic restoring took minutes on 1 MB; linear is well under this bound even on a loaded machine.
+    expect(elapsed).toBeLessThan(20_000);
+  });
+});
+
 describe("without the tables", () => {
   it("cannot encode a CJK encoding, and says so", () => {
     expect(Encoding.canEncode("Shift_JIS")).toBe(false);
