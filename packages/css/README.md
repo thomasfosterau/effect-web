@@ -65,9 +65,20 @@ const font = Font.parse('italic bold 12px/1.5 "Fira Sans", serif');
 
 `Text.parseAlign` (`text-align`), `parseVerticalAlign` (a keyword, or a length or percentage), and `text-decoration`: `parseDecoration` reads the shorthand (a line, a style, a colour and a thickness, each at most once and in any order, with `currentcolor` as `None`), and `parseDecorationLine`, `parseDecorationStyle` and `parseDecorationThickness` the longhands.
 
+## `Serialize`
+
+Writes parsed CSS back as text. `identifier`, `string` and `url` follow CSSOM's rules (`Serialize.identifier("1st")` is `\31 st`); `componentValues` follows CSS Syntax 3 §9, keeping each number's written form and putting `/**/` between two tokens that would otherwise tokenize as one; `declaration` and `declarationList` write a `style` attribute the way CSSOM does (`color: red; margin: 0 auto !important;`). Parsing the output gives back the same component values, less comments and whitespace runs; the round trip is tested over every css-parsing-tests input.
+
+```ts
+import { Serialize, Syntax } from "@thomasfosterau/effect-css";
+
+Serialize.declarationList(Syntax.parseDeclarationList("color:red;;margin : 0 auto"));
+// "color: red; margin: 0 auto;"
+```
+
 ## Not yet
 
-A CSSOM serialiser for declarations, the other math functions (`min()`, `max()`, `clamp()`, …), and Color 5's `color-mix()`.
+The other math functions (`min()`, `max()`, `clamp()`, …), and Color 5's `color-mix()`.
 
 ## Licence
 
