@@ -16,7 +16,7 @@ import { singleByteHigh } from "./tables.ts";
 export type ErrorMode = "fatal" | "html";
 
 /** An unmappable code point under the "fatal" mode, and where it is. */
-export interface Failure {
+export interface EncodeFailure {
   readonly encoding: EncodingName;
   /** The UTF-16 code-unit offset of the code point, from the start of the input. */
   readonly offset: number;
@@ -25,8 +25,8 @@ export interface Failure {
 
 /** The incremental encoder: `push` each chunk of text, then `flush` once. */
 export interface Encoder {
-  readonly push: (text: string) => Result.Result<Uint8Array, Failure>;
-  readonly flush: () => Result.Result<Uint8Array, Failure>;
+  readonly push: (text: string) => Result.Result<Uint8Array, EncodeFailure>;
+  readonly flush: () => Result.Result<Uint8Array, EncodeFailure>;
 }
 
 /** One code point's bytes, or `None` when the encoding cannot represent it. */
@@ -70,7 +70,7 @@ const handlerFor = (encoding: EncodingName): Option.Option<Handler> => {
 };
 
 /** Whether this package can encode to the encoding. */
-export const canEncode = (encoding: EncodingName): boolean => Option.isSome(handlerFor(encoding));
+export const hasEncoder = (encoding: EncodingName): boolean => Option.isSome(handlerFor(encoding));
 
 const isHighSurrogate = (unit: number): boolean => unit >= 0xd800 && unit <= 0xdbff;
 
@@ -96,7 +96,7 @@ const codePoints = (text: string): ReadonlyArray<readonly [number, number]> =>
  * Builds the incremental encoder, or fails with the encoding this package
  * cannot encode to.
  */
-export const make = (options: {
+export const makeEncoder = (options: {
   readonly encoding: EncodingName;
   readonly mode: ErrorMode;
 }): Result.Result<Encoder, EncodingName> =>
@@ -105,7 +105,7 @@ export const make = (options: {
     onSome: (handler) => {
       let pending = "";
       let consumed = 0;
-      const run = (text: string): Result.Result<Uint8Array, Failure> => {
+      const run = (text: string): Result.Result<Uint8Array, EncodeFailure> => {
         const start = consumed;
         consumed += text.length;
         const bytes: Array<number> = [];

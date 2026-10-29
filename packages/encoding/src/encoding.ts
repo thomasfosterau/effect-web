@@ -338,7 +338,7 @@ export const getOutputEncoding = (encoding: EncodingName): EncodingName =>
  * @since 0.1.0
  * @category encoding
  */
-export const canEncode: (encoding: EncodingName) => boolean = Encoder.canEncode;
+export const canEncode: (encoding: EncodingName) => boolean = Encoder.hasEncoder;
 
 /**
  * What {@link encode} does with a code point the encoding cannot represent
@@ -383,7 +383,7 @@ export class EncodeError extends Schema.TaggedError<EncodeError>()("EncodeError"
   message: Schema.String,
 }) {}
 
-const encodeError = (failure: Encoder.Failure): EncodeError =>
+const encodeError = (failure: Encoder.EncodeFailure): EncodeError =>
   new EncodeError({
     encoding: failure.encoding,
     offset: failure.offset,
@@ -397,7 +397,7 @@ const makeEncoder = (
   Effect.suspend(() =>
     Effect.mapError(
       Effect.fromResult(
-        Encoder.make({
+        Encoder.makeEncoder({
           encoding: options.encoding ?? "UTF-8",
           mode: options.errorMode ?? "fatal",
         }),
@@ -411,7 +411,7 @@ const makeEncoder = (
   );
 
 const liftEncoded = (
-  result: Result.Result<Uint8Array, Encoder.Failure>,
+  result: Result.Result<Uint8Array, Encoder.EncodeFailure>,
 ): Effect.Effect<Uint8Array, EncodeError> =>
   Effect.mapError(Effect.fromResult(result), encodeError);
 
