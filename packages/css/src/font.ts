@@ -10,7 +10,7 @@ import * as Option from "effect/Option";
 import * as Predicate from "effect/Predicate";
 import * as Str from "effect/String";
 import * as Length from "./length.ts";
-import { parseComponentValueList } from "./syntax.ts";
+import { keyword, significant, single, type Values, valuesOf } from "./internal/values.ts";
 import type { ComponentValue } from "./token.ts";
 
 /**
@@ -150,24 +150,6 @@ const SYSTEM_FONTS: ReadonlyArray<string> = [
   "small-caption",
   "status-bar",
 ];
-
-type Values = ReadonlyArray<ComponentValue>;
-
-const significant = (values: Values): Values =>
-  values.filter((value) => !Predicate.isTagged(value, "Whitespace"));
-
-const valuesOf = (input: string | Values): Values =>
-  Predicate.isString(input) ? parseComponentValueList(input) : input;
-
-const keyword = (value: ComponentValue): Option.Option<string> =>
-  Predicate.isTagged(value, "Ident") ? Option.some(Str.toLowerCase(value.value)) : Option.none();
-
-/** Exactly one significant component value, else `None`. */
-const single = (input: string | Values): Option.Option<ComponentValue> => {
-  const values = significant(valuesOf(input));
-  const [only] = values;
-  return values.length === 1 && only !== undefined ? Option.some(only) : Option.none();
-};
 
 /** The comma-separated groups of `values`, each without whitespace. */
 const commaGroups = (values: Values): ReadonlyArray<Values> =>

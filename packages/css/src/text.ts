@@ -7,35 +7,17 @@
  */
 import * as Arr from "effect/Array";
 import * as Option from "effect/Option";
-import * as Predicate from "effect/Predicate";
-import * as Str from "effect/String";
 import * as Color from "./color.ts";
 import * as Length from "./length.ts";
-import { parseComponentValueList } from "./syntax.ts";
+import { keyword, partsOf, single, type Values } from "./internal/values.ts";
 import type { ComponentValue } from "./token.ts";
-
-type Values = ReadonlyArray<ComponentValue>;
-
-const significant = (values: Values): Values =>
-  values.filter((value) => !Predicate.isTagged(value, "Whitespace"));
-
-const partsOf = (input: string | Values): Values =>
-  significant(Predicate.isString(input) ? parseComponentValueList(input) : input);
-
-const keyword = (value: ComponentValue): Option.Option<string> =>
-  Predicate.isTagged(value, "Ident") ? Option.some(Str.toLowerCase(value.value)) : Option.none();
 
 /** The one significant part's keyword, if it is one of `allowed`. */
 const singleKeyword = (
   input: string | Values,
   allowed: ReadonlyArray<string>,
-): Option.Option<string> => {
-  const parts = partsOf(input);
-  const [only] = parts;
-  return parts.length === 1 && only !== undefined
-    ? Option.filter(keyword(only), (name) => allowed.includes(name))
-    : Option.none();
-};
+): Option.Option<string> =>
+  Option.filter(Option.flatMap(single(input), keyword), (name) => allowed.includes(name));
 
 /**
  * The `text-align` keywords (CSS Text 3 §6.1). `match-parent` and
@@ -119,18 +101,16 @@ const VERTICAL_ALIGN: ReadonlyArray<string> = [
  * @since 0.1.0
  * @category parsing
  */
-export const parseVerticalAlign = (input: string | Values): Option.Option<VerticalAlign> => {
-  const parts = partsOf(input);
-  const [only] = parts;
-  if (parts.length !== 1 || only === undefined) return Option.none();
-  return Option.orElse(
-    Option.map(
-      Option.filter(keyword(only), (name) => VERTICAL_ALIGN.includes(name)),
-      (name): VerticalAlign => ({ _tag: "Keyword", keyword: name }),
+export const parseVerticalAlign = (input: string | Values): Option.Option<VerticalAlign> =>
+  Option.flatMap(single(input), (only) =>
+    Option.orElse(
+      Option.map(
+        Option.filter(keyword(only), (name) => VERTICAL_ALIGN.includes(name)),
+        (name): VerticalAlign => ({ _tag: "Keyword", keyword: name }),
+      ),
+      () => Option.map(Length.parse(only), (length): VerticalAlign => ({ _tag: "Length", length })),
     ),
-    () => Option.map(Length.parse(only), (length): VerticalAlign => ({ _tag: "Length", length })),
   );
-};
 
 /**
  * A `text-decoration-line` (CSS Text Decoration 3 §2.1): `none`, or a
@@ -261,11 +241,7 @@ const thicknessOf = (value: ComponentValue): Option.Option<DecorationThickness> 
  */
 export const parseDecorationThickness = (
   input: string | Values,
-): Option.Option<DecorationThickness> => {
-  const parts = partsOf(input);
-  const [only] = parts;
-  return parts.length === 1 && only !== undefined ? thicknessOf(only) : Option.none();
-};
+): Option.Option<DecorationThickness> => Option.flatMap(single(input), thicknessOf);
 
 /**
  * The `text-decoration` shorthand: every longhand it sets. One the
