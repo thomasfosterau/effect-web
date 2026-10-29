@@ -8,23 +8,19 @@ import * as Option from "effect/Option";
 import * as Predicate from "effect/Predicate";
 import { Shorthand, Syntax, Token } from "@thomasfosterau/effect-css";
 
+/** Serialise one component value back to text, for comparison. */
+const textOf = (value: Token.ComponentValue): string => {
+  if (Predicate.isTagged(value, "Ident")) return value.value;
+  if (Predicate.isTagged(value, "Dimension")) return `${value.representation}${value.unit}`;
+  if (Predicate.isTagged(value, "Number")) return value.representation;
+  if (Predicate.isTagged(value, "Percentage")) return `${value.representation}%`;
+  if (Predicate.isTagged(value, "Hash")) return `#${value.value}`;
+  if (Predicate.isTagged(value, "Func")) return `${value.name}(…)`;
+  return value._tag;
+};
+
 /** Serialise a value's component values back to text, for comparison. */
-const text = (values: ReadonlyArray<Token.ComponentValue>): string =>
-  values
-    .map((value) =>
-      Predicate.isTagged(value, "Ident")
-        ? value.value
-        : Predicate.isTagged(value, "Dimension")
-          ? `${value.representation}${value.unit}`
-          : Predicate.isTagged(value, "Number") || Predicate.isTagged(value, "Percentage")
-            ? `${value.representation}${Predicate.isTagged(value, "Percentage") ? "%" : ""}`
-            : Predicate.isTagged(value, "Hash")
-              ? `#${value.value}`
-              : Predicate.isTagged(value, "Func")
-                ? `${value.name}(…)`
-                : value._tag,
-    )
-    .join(" ");
+const text = (values: ReadonlyArray<Token.ComponentValue>): string => values.map(textOf).join(" ");
 
 /** Expand the one declaration in `css` to `name: value[!]` strings, or `None`. */
 const expanded = (css: string): Option.Option<ReadonlyArray<string>> => {
