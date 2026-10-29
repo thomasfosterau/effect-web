@@ -7,9 +7,11 @@
  * - `Token` — the tokens and component values the parser produces.
  * - `Color` — CSS Color 4 values, typed, serialised and converted to sRGB.
  * - `Length` — CSS Values 4 lengths, with absolute-unit conversion.
+ * - `AnPlusB` — the `An+B` microsyntax of `:nth-child()` and its relatives.
  *
  * @since 0.1.0
  */
+export * as AnPlusB from "./an-plus-b.ts";
 export * as Color from "./color.ts";
 export * as Length from "./length.ts";
 export * as Syntax from "./syntax.ts";

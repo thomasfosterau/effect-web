@@ -84,6 +84,10 @@ const cursor = (input: string) => {
     back: (): void => {
       index -= 1;
     },
+    mark: (): number => index,
+    reset: (to: number): void => {
+      index = to;
+    },
   };
 };
 type Cursor = ReturnType<typeof cursor>;
@@ -279,6 +283,91 @@ const consumeUntilSemicolon = (input: Cursor): Array<ComponentValue> => {
     values.push(consumeComponentValue(input));
   }
   return values;
+};
+
+/**
+ * A declaration inside a block (the nesting-aware "consume a declaration"):
+ * `None` when the component values do not make one, or when its value has a
+ * top-level `{}` block beside anything else but whitespace (that is a
+ * nested rule, `a:hover {…}`, not a declaration).
+ */
+const consumeNestedDeclaration = (
+  name: string,
+  rest: ReadonlyArray<ComponentValue>,
+): Option.Option<Declaration> =>
+  Option.filter(consumeDeclaration(name, rest), (declaration) => {
+    const significant = declaration.value.filter((value) => value._tag !== "Whitespace");
+    const hasBlock = significant.some(
+      (value) => value._tag === "Block" && value.associated === "{",
+    );
+    return !hasBlock || significant.length === 1;
+  });
+
+/**
+ * A nested qualified rule (a rule inside a block's contents): its prelude
+ * runs to a `{` block; a `;` or the end of the input first is an error,
+ * the `;` consumed.
+ */
+const consumeNestedQualifiedRule = (input: Cursor, offset: number): QualifiedRule | SyntaxError => {
+  const prelude: Array<ComponentValue> = [];
+  for (;;) {
+    const token = input.next();
+    if (token === undefined || token._tag === "Semicolon") {
+      return { _tag: "SyntaxError", kind: "invalid", offset };
+    }
+    if (token._tag === "OpenCurly") {
+      return { _tag: "QualifiedRule", prelude, block: consumeBlock(input, "OpenCurly").value };
+    }
+    input.back();
+    prelude.push(consumeComponentValue(input));
+  }
+};
+
+/**
+ * Parses a block's contents (the Syntax 3 editor's draft's "parse a
+ * block's contents", for CSS nesting): declarations, at-rules and nested
+ * qualified rules, in order. Something that starts like a declaration but
+ * is not one (`a:hover {…}`) is read as a qualified rule; a qualified rule
+ * that reaches a `;` or the end of the input before its block is an
+ * `invalid` {@link SyntaxError}.
+ *
+ * @example
+ * ```ts
+ * import { Syntax } from "@thomasfosterau/effect-css"
+ *
+ * const items = Syntax.parseBlockContents("color: red; &:hover { color: blue } margin: 0")
+ * console.log(items.map((item) => item._tag)) // ["Declaration", "QualifiedRule", "Declaration"]
+ * ```
+ *
+ * @since 0.1.0
+ * @category parsing
+ */
+export const parseBlockContents = (
+  css: string,
+): ReadonlyArray<Declaration | AtRule | QualifiedRule | SyntaxError> => {
+  const input = cursor(css);
+  const items: Array<Declaration | AtRule | QualifiedRule | SyntaxError> = [];
+  for (;;) {
+    const offset = input.offset();
+    const start = input.mark();
+    const token = input.next();
+    if (token === undefined) return items;
+    if (token._tag === "Whitespace" || token._tag === "Semicolon") continue;
+    if (token._tag === "AtKeyword") {
+      items.push(consumeAtRule(input, token.value));
+      continue;
+    }
+    const declaration =
+      token._tag === "Ident"
+        ? consumeNestedDeclaration(token.value, consumeUntilSemicolon(input))
+        : Option.none();
+    if (Option.isSome(declaration)) {
+      items.push(declaration.value);
+      continue;
+    }
+    input.reset(start);
+    items.push(consumeNestedQualifiedRule(input, offset));
+  }
 };
 
 /**
