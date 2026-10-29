@@ -1,0 +1,1134 @@
+{
+  "color-valid-color-function": [
+    ["color(srgb 0% 0% 0%)", "color(srgb 0 0 0)", null],
+    ["color(srgb 10% 10% 10%)", "color(srgb 0.1 0.1 0.1)", null],
+    ["color(srgb .2 .2 25%)", "color(srgb 0.2 0.2 0.25)", null],
+    ["color(srgb 0 0 0 / 1)", "color(srgb 0 0 0)", null],
+    ["color(srgb 0% 0 0 / 0.5)", "color(srgb 0 0 0 / 0.5)", null],
+    ["color(srgb 20% 0 10/0.5)", "color(srgb 0.2 0 10 / 0.5)", null],
+    ["color(srgb 20% 0 10/50%)", "color(srgb 0.2 0 10 / 0.5)", null],
+    ["color(srgb 400% 0 10/50%)", "color(srgb 4 0 10 / 0.5)", null],
+    ["color(srgb 50% -160 160)", "color(srgb 0.5 -160 160)", null],
+    ["color(srgb 50% -200 200)", "color(srgb 0.5 -200 200)", null],
+    ["color(srgb 0 0 0 / -10%)", "color(srgb 0 0 0 / 0)", null],
+    ["color(srgb 0 0 0 / 110%)", "color(srgb 0 0 0)", null],
+    ["color(srgb 0 0 0 / 300%)", "color(srgb 0 0 0)", null],
+    ["color(srgb 200 200 200)", "color(srgb 200 200 200)", null],
+    ["color(srgb 200 200 200 / 200)", "color(srgb 200 200 200)", null],
+    ["color(srgb -200 -200 -200)", "color(srgb -200 -200 -200)", null],
+    ["color(srgb -200 -200 -200 / -200)", "color(srgb -200 -200 -200 / 0)", null],
+    ["color(srgb 200% 200% 200%)", "color(srgb 2 2 2)", null],
+    ["color(srgb 200% 200% 200% / 200%)", "color(srgb 2 2 2)", null],
+    ["color(srgb -200% -200% -200% / -200%)", "color(srgb -2 -2 -2 / 0)", null],
+    [
+      "color(srgb calc(0.5 + 1) calc(0.5 - 1) calc(0.5) / calc(-0.5 + 1))",
+      "color(srgb calc(1.5) calc(-0.5) calc(0.5) / calc(0.5))",
+      null
+    ],
+    [
+      "color(srgb calc(50% * 3) calc(-150% / 3) calc(50%) / calc(-50% * 3))",
+      "color(srgb calc(150%) calc(-50%) calc(50%) / calc(-150%))",
+      null
+    ],
+    ["color(srgb calc(50%) 50% 0.5)", "color(srgb calc(50%) 0.5 0.5)", null],
+    ["color(srgb none none none / none)", "color(srgb none none none / none)", null],
+    ["color(srgb none none none)", "color(srgb none none none)", null],
+    ["color(srgb 10% none none / none)", "color(srgb 0.1 none none / none)", null],
+    ["color(srgb none none none / 0.5)", "color(srgb none none none / 0.5)", null],
+    ["color(srgb 0 0 0 / none)", "color(srgb 0 0 0 / none)", null],
+    ["color(srgb 0 calc(infinity) 0)", "color(srgb 0 calc(infinity) 0)", null],
+    ["color(srgb 0 calc(-infinity) 0)", "color(srgb 0 calc(-infinity) 0)", null],
+    ["color(srgb calc(NaN) 0 0)", "color(srgb calc(NaN) 0 0)", null],
+    ["color(srgb calc(0 / 0) 0 0)", "color(srgb calc(NaN) 0 0)", null],
+    [
+      "color(srgb calc(50% + (sign(1em - 10px) * 10%)) 0 0 / 0.5)",
+      "color(srgb calc(50% + (10% * sign(1em - 10px))) 0 0 / 0.5)",
+      null
+    ],
+    [
+      "color(srgb 0.5 0 0 / calc(50% + (sign(1em - 10px) * 10%)))",
+      "color(srgb 0.5 0 0 / calc(50% + (10% * sign(1em - 10px))))",
+      null
+    ],
+    ["color(srgb-linear 0% 0% 0%)", "color(srgb-linear 0 0 0)", null],
+    ["color(srgb-linear 10% 10% 10%)", "color(srgb-linear 0.1 0.1 0.1)", null],
+    ["color(srgb-linear .2 .2 25%)", "color(srgb-linear 0.2 0.2 0.25)", null],
+    ["color(srgb-linear 0 0 0 / 1)", "color(srgb-linear 0 0 0)", null],
+    ["color(srgb-linear 0% 0 0 / 0.5)", "color(srgb-linear 0 0 0 / 0.5)", null],
+    ["color(srgb-linear 20% 0 10/0.5)", "color(srgb-linear 0.2 0 10 / 0.5)", null],
+    ["color(srgb-linear 20% 0 10/50%)", "color(srgb-linear 0.2 0 10 / 0.5)", null],
+    ["color(srgb-linear 400% 0 10/50%)", "color(srgb-linear 4 0 10 / 0.5)", null],
+    ["color(srgb-linear 50% -160 160)", "color(srgb-linear 0.5 -160 160)", null],
+    ["color(srgb-linear 50% -200 200)", "color(srgb-linear 0.5 -200 200)", null],
+    ["color(srgb-linear 0 0 0 / -10%)", "color(srgb-linear 0 0 0 / 0)", null],
+    ["color(srgb-linear 0 0 0 / 110%)", "color(srgb-linear 0 0 0)", null],
+    ["color(srgb-linear 0 0 0 / 300%)", "color(srgb-linear 0 0 0)", null],
+    ["color(srgb-linear 200 200 200)", "color(srgb-linear 200 200 200)", null],
+    ["color(srgb-linear 200 200 200 / 200)", "color(srgb-linear 200 200 200)", null],
+    ["color(srgb-linear -200 -200 -200)", "color(srgb-linear -200 -200 -200)", null],
+    ["color(srgb-linear -200 -200 -200 / -200)", "color(srgb-linear -200 -200 -200 / 0)", null],
+    ["color(srgb-linear 200% 200% 200%)", "color(srgb-linear 2 2 2)", null],
+    ["color(srgb-linear 200% 200% 200% / 200%)", "color(srgb-linear 2 2 2)", null],
+    ["color(srgb-linear -200% -200% -200% / -200%)", "color(srgb-linear -2 -2 -2 / 0)", null],
+    [
+      "color(srgb-linear calc(0.5 + 1) calc(0.5 - 1) calc(0.5) / calc(-0.5 + 1))",
+      "color(srgb-linear calc(1.5) calc(-0.5) calc(0.5) / calc(0.5))",
+      null
+    ],
+    [
+      "color(srgb-linear calc(50% * 3) calc(-150% / 3) calc(50%) / calc(-50% * 3))",
+      "color(srgb-linear calc(150%) calc(-50%) calc(50%) / calc(-150%))",
+      null
+    ],
+    ["color(srgb-linear calc(50%) 50% 0.5)", "color(srgb-linear calc(50%) 0.5 0.5)", null],
+    ["color(srgb-linear none none none / none)", "color(srgb-linear none none none / none)", null],
+    ["color(srgb-linear none none none)", "color(srgb-linear none none none)", null],
+    ["color(srgb-linear 10% none none / none)", "color(srgb-linear 0.1 none none / none)", null],
+    ["color(srgb-linear none none none / 0.5)", "color(srgb-linear none none none / 0.5)", null],
+    ["color(srgb-linear 0 0 0 / none)", "color(srgb-linear 0 0 0 / none)", null],
+    ["color(srgb-linear 0 calc(infinity) 0)", "color(srgb-linear 0 calc(infinity) 0)", null],
+    ["color(srgb-linear 0 calc(-infinity) 0)", "color(srgb-linear 0 calc(-infinity) 0)", null],
+    ["color(srgb-linear calc(NaN) 0 0)", "color(srgb-linear calc(NaN) 0 0)", null],
+    ["color(srgb-linear calc(0 / 0) 0 0)", "color(srgb-linear calc(NaN) 0 0)", null],
+    [
+      "color(srgb-linear calc(50% + (sign(1em - 10px) * 10%)) 0 0 / 0.5)",
+      "color(srgb-linear calc(50% + (10% * sign(1em - 10px))) 0 0 / 0.5)",
+      null
+    ],
+    [
+      "color(srgb-linear 0.5 0 0 / calc(50% + (sign(1em - 10px) * 10%)))",
+      "color(srgb-linear 0.5 0 0 / calc(50% + (10% * sign(1em - 10px))))",
+      null
+    ],
+    ["color(a98-rgb 0% 0% 0%)", "color(a98-rgb 0 0 0)", null],
+    ["color(a98-rgb 10% 10% 10%)", "color(a98-rgb 0.1 0.1 0.1)", null],
+    ["color(a98-rgb .2 .2 25%)", "color(a98-rgb 0.2 0.2 0.25)", null],
+    ["color(a98-rgb 0 0 0 / 1)", "color(a98-rgb 0 0 0)", null],
+    ["color(a98-rgb 0% 0 0 / 0.5)", "color(a98-rgb 0 0 0 / 0.5)", null],
+    ["color(a98-rgb 20% 0 10/0.5)", "color(a98-rgb 0.2 0 10 / 0.5)", null],
+    ["color(a98-rgb 20% 0 10/50%)", "color(a98-rgb 0.2 0 10 / 0.5)", null],
+    ["color(a98-rgb 400% 0 10/50%)", "color(a98-rgb 4 0 10 / 0.5)", null],
+    ["color(a98-rgb 50% -160 160)", "color(a98-rgb 0.5 -160 160)", null],
+    ["color(a98-rgb 50% -200 200)", "color(a98-rgb 0.5 -200 200)", null],
+    ["color(a98-rgb 0 0 0 / -10%)", "color(a98-rgb 0 0 0 / 0)", null],
+    ["color(a98-rgb 0 0 0 / 110%)", "color(a98-rgb 0 0 0)", null],
+    ["color(a98-rgb 0 0 0 / 300%)", "color(a98-rgb 0 0 0)", null],
+    ["color(a98-rgb 200 200 200)", "color(a98-rgb 200 200 200)", null],
+    ["color(a98-rgb 200 200 200 / 200)", "color(a98-rgb 200 200 200)", null],
+    ["color(a98-rgb -200 -200 -200)", "color(a98-rgb -200 -200 -200)", null],
+    ["color(a98-rgb -200 -200 -200 / -200)", "color(a98-rgb -200 -200 -200 / 0)", null],
+    ["color(a98-rgb 200% 200% 200%)", "color(a98-rgb 2 2 2)", null],
+    ["color(a98-rgb 200% 200% 200% / 200%)", "color(a98-rgb 2 2 2)", null],
+    ["color(a98-rgb -200% -200% -200% / -200%)", "color(a98-rgb -2 -2 -2 / 0)", null],
+    [
+      "color(a98-rgb calc(0.5 + 1) calc(0.5 - 1) calc(0.5) / calc(-0.5 + 1))",
+      "color(a98-rgb calc(1.5) calc(-0.5) calc(0.5) / calc(0.5))",
+      null
+    ],
+    [
+      "color(a98-rgb calc(50% * 3) calc(-150% / 3) calc(50%) / calc(-50% * 3))",
+      "color(a98-rgb calc(150%) calc(-50%) calc(50%) / calc(-150%))",
+      null
+    ],
+    ["color(a98-rgb calc(50%) 50% 0.5)", "color(a98-rgb calc(50%) 0.5 0.5)", null],
+    ["color(a98-rgb none none none / none)", "color(a98-rgb none none none / none)", null],
+    ["color(a98-rgb none none none)", "color(a98-rgb none none none)", null],
+    ["color(a98-rgb 10% none none / none)", "color(a98-rgb 0.1 none none / none)", null],
+    ["color(a98-rgb none none none / 0.5)", "color(a98-rgb none none none / 0.5)", null],
+    ["color(a98-rgb 0 0 0 / none)", "color(a98-rgb 0 0 0 / none)", null],
+    ["color(a98-rgb 0 calc(infinity) 0)", "color(a98-rgb 0 calc(infinity) 0)", null],
+    ["color(a98-rgb 0 calc(-infinity) 0)", "color(a98-rgb 0 calc(-infinity) 0)", null],
+    ["color(a98-rgb calc(NaN) 0 0)", "color(a98-rgb calc(NaN) 0 0)", null],
+    ["color(a98-rgb calc(0 / 0) 0 0)", "color(a98-rgb calc(NaN) 0 0)", null],
+    [
+      "color(a98-rgb calc(50% + (sign(1em - 10px) * 10%)) 0 0 / 0.5)",
+      "color(a98-rgb calc(50% + (10% * sign(1em - 10px))) 0 0 / 0.5)",
+      null
+    ],
+    [
+      "color(a98-rgb 0.5 0 0 / calc(50% + (sign(1em - 10px) * 10%)))",
+      "color(a98-rgb 0.5 0 0 / calc(50% + (10% * sign(1em - 10px))))",
+      null
+    ],
+    ["color(rec2020 0% 0% 0%)", "color(rec2020 0 0 0)", null],
+    ["color(rec2020 10% 10% 10%)", "color(rec2020 0.1 0.1 0.1)", null],
+    ["color(rec2020 .2 .2 25%)", "color(rec2020 0.2 0.2 0.25)", null],
+    ["color(rec2020 0 0 0 / 1)", "color(rec2020 0 0 0)", null],
+    ["color(rec2020 0% 0 0 / 0.5)", "color(rec2020 0 0 0 / 0.5)", null],
+    ["color(rec2020 20% 0 10/0.5)", "color(rec2020 0.2 0 10 / 0.5)", null],
+    ["color(rec2020 20% 0 10/50%)", "color(rec2020 0.2 0 10 / 0.5)", null],
+    ["color(rec2020 400% 0 10/50%)", "color(rec2020 4 0 10 / 0.5)", null],
+    ["color(rec2020 50% -160 160)", "color(rec2020 0.5 -160 160)", null],
+    ["color(rec2020 50% -200 200)", "color(rec2020 0.5 -200 200)", null],
+    ["color(rec2020 0 0 0 / -10%)", "color(rec2020 0 0 0 / 0)", null],
+    ["color(rec2020 0 0 0 / 110%)", "color(rec2020 0 0 0)", null],
+    ["color(rec2020 0 0 0 / 300%)", "color(rec2020 0 0 0)", null],
+    ["color(rec2020 200 200 200)", "color(rec2020 200 200 200)", null],
+    ["color(rec2020 200 200 200 / 200)", "color(rec2020 200 200 200)", null],
+    ["color(rec2020 -200 -200 -200)", "color(rec2020 -200 -200 -200)", null],
+    ["color(rec2020 -200 -200 -200 / -200)", "color(rec2020 -200 -200 -200 / 0)", null],
+    ["color(rec2020 200% 200% 200%)", "color(rec2020 2 2 2)", null],
+    ["color(rec2020 200% 200% 200% / 200%)", "color(rec2020 2 2 2)", null],
+    ["color(rec2020 -200% -200% -200% / -200%)", "color(rec2020 -2 -2 -2 / 0)", null],
+    [
+      "color(rec2020 calc(0.5 + 1) calc(0.5 - 1) calc(0.5) / calc(-0.5 + 1))",
+      "color(rec2020 calc(1.5) calc(-0.5) calc(0.5) / calc(0.5))",
+      null
+    ],
+    [
+      "color(rec2020 calc(50% * 3) calc(-150% / 3) calc(50%) / calc(-50% * 3))",
+      "color(rec2020 calc(150%) calc(-50%) calc(50%) / calc(-150%))",
+      null
+    ],
+    ["color(rec2020 calc(50%) 50% 0.5)", "color(rec2020 calc(50%) 0.5 0.5)", null],
+    ["color(rec2020 none none none / none)", "color(rec2020 none none none / none)", null],
+    ["color(rec2020 none none none)", "color(rec2020 none none none)", null],
+    ["color(rec2020 10% none none / none)", "color(rec2020 0.1 none none / none)", null],
+    ["color(rec2020 none none none / 0.5)", "color(rec2020 none none none / 0.5)", null],
+    ["color(rec2020 0 0 0 / none)", "color(rec2020 0 0 0 / none)", null],
+    ["color(rec2020 0 calc(infinity) 0)", "color(rec2020 0 calc(infinity) 0)", null],
+    ["color(rec2020 0 calc(-infinity) 0)", "color(rec2020 0 calc(-infinity) 0)", null],
+    ["color(rec2020 calc(NaN) 0 0)", "color(rec2020 calc(NaN) 0 0)", null],
+    ["color(rec2020 calc(0 / 0) 0 0)", "color(rec2020 calc(NaN) 0 0)", null],
+    [
+      "color(rec2020 calc(50% + (sign(1em - 10px) * 10%)) 0 0 / 0.5)",
+      "color(rec2020 calc(50% + (10% * sign(1em - 10px))) 0 0 / 0.5)",
+      null
+    ],
+    [
+      "color(rec2020 0.5 0 0 / calc(50% + (sign(1em - 10px) * 10%)))",
+      "color(rec2020 0.5 0 0 / calc(50% + (10% * sign(1em - 10px))))",
+      null
+    ],
+    ["color(prophoto-rgb 0% 0% 0%)", "color(prophoto-rgb 0 0 0)", null],
+    ["color(prophoto-rgb 10% 10% 10%)", "color(prophoto-rgb 0.1 0.1 0.1)", null],
+    ["color(prophoto-rgb .2 .2 25%)", "color(prophoto-rgb 0.2 0.2 0.25)", null],
+    ["color(prophoto-rgb 0 0 0 / 1)", "color(prophoto-rgb 0 0 0)", null],
+    ["color(prophoto-rgb 0% 0 0 / 0.5)", "color(prophoto-rgb 0 0 0 / 0.5)", null],
+    ["color(prophoto-rgb 20% 0 10/0.5)", "color(prophoto-rgb 0.2 0 10 / 0.5)", null],
+    ["color(prophoto-rgb 20% 0 10/50%)", "color(prophoto-rgb 0.2 0 10 / 0.5)", null],
+    ["color(prophoto-rgb 400% 0 10/50%)", "color(prophoto-rgb 4 0 10 / 0.5)", null],
+    ["color(prophoto-rgb 50% -160 160)", "color(prophoto-rgb 0.5 -160 160)", null],
+    ["color(prophoto-rgb 50% -200 200)", "color(prophoto-rgb 0.5 -200 200)", null],
+    ["color(prophoto-rgb 0 0 0 / -10%)", "color(prophoto-rgb 0 0 0 / 0)", null],
+    ["color(prophoto-rgb 0 0 0 / 110%)", "color(prophoto-rgb 0 0 0)", null],
+    ["color(prophoto-rgb 0 0 0 / 300%)", "color(prophoto-rgb 0 0 0)", null],
+    ["color(prophoto-rgb 200 200 200)", "color(prophoto-rgb 200 200 200)", null],
+    ["color(prophoto-rgb 200 200 200 / 200)", "color(prophoto-rgb 200 200 200)", null],
+    ["color(prophoto-rgb -200 -200 -200)", "color(prophoto-rgb -200 -200 -200)", null],
+    ["color(prophoto-rgb -200 -200 -200 / -200)", "color(prophoto-rgb -200 -200 -200 / 0)", null],
+    ["color(prophoto-rgb 200% 200% 200%)", "color(prophoto-rgb 2 2 2)", null],
+    ["color(prophoto-rgb 200% 200% 200% / 200%)", "color(prophoto-rgb 2 2 2)", null],
+    ["color(prophoto-rgb -200% -200% -200% / -200%)", "color(prophoto-rgb -2 -2 -2 / 0)", null],
+    [
+      "color(prophoto-rgb calc(0.5 + 1) calc(0.5 - 1) calc(0.5) / calc(-0.5 + 1))",
+      "color(prophoto-rgb calc(1.5) calc(-0.5) calc(0.5) / calc(0.5))",
+      null
+    ],
+    [
+      "color(prophoto-rgb calc(50% * 3) calc(-150% / 3) calc(50%) / calc(-50% * 3))",
+      "color(prophoto-rgb calc(150%) calc(-50%) calc(50%) / calc(-150%))",
+      null
+    ],
+    ["color(prophoto-rgb calc(50%) 50% 0.5)", "color(prophoto-rgb calc(50%) 0.5 0.5)", null],
+    [
+      "color(prophoto-rgb none none none / none)",
+      "color(prophoto-rgb none none none / none)",
+      null
+    ],
+    ["color(prophoto-rgb none none none)", "color(prophoto-rgb none none none)", null],
+    ["color(prophoto-rgb 10% none none / none)", "color(prophoto-rgb 0.1 none none / none)", null],
+    ["color(prophoto-rgb none none none / 0.5)", "color(prophoto-rgb none none none / 0.5)", null],
+    ["color(prophoto-rgb 0 0 0 / none)", "color(prophoto-rgb 0 0 0 / none)", null],
+    ["color(prophoto-rgb 0 calc(infinity) 0)", "color(prophoto-rgb 0 calc(infinity) 0)", null],
+    ["color(prophoto-rgb 0 calc(-infinity) 0)", "color(prophoto-rgb 0 calc(-infinity) 0)", null],
+    ["color(prophoto-rgb calc(NaN) 0 0)", "color(prophoto-rgb calc(NaN) 0 0)", null],
+    ["color(prophoto-rgb calc(0 / 0) 0 0)", "color(prophoto-rgb calc(NaN) 0 0)", null],
+    [
+      "color(prophoto-rgb calc(50% + (sign(1em - 10px) * 10%)) 0 0 / 0.5)",
+      "color(prophoto-rgb calc(50% + (10% * sign(1em - 10px))) 0 0 / 0.5)",
+      null
+    ],
+    [
+      "color(prophoto-rgb 0.5 0 0 / calc(50% + (sign(1em - 10px) * 10%)))",
+      "color(prophoto-rgb 0.5 0 0 / calc(50% + (10% * sign(1em - 10px))))",
+      null
+    ],
+    ["color(display-p3 0% 0% 0%)", "color(display-p3 0 0 0)", null],
+    ["color(display-p3 10% 10% 10%)", "color(display-p3 0.1 0.1 0.1)", null],
+    ["color(display-p3 .2 .2 25%)", "color(display-p3 0.2 0.2 0.25)", null],
+    ["color(display-p3 0 0 0 / 1)", "color(display-p3 0 0 0)", null],
+    ["color(display-p3 0% 0 0 / 0.5)", "color(display-p3 0 0 0 / 0.5)", null],
+    ["color(display-p3 20% 0 10/0.5)", "color(display-p3 0.2 0 10 / 0.5)", null],
+    ["color(display-p3 20% 0 10/50%)", "color(display-p3 0.2 0 10 / 0.5)", null],
+    ["color(display-p3 400% 0 10/50%)", "color(display-p3 4 0 10 / 0.5)", null],
+    ["color(display-p3 50% -160 160)", "color(display-p3 0.5 -160 160)", null],
+    ["color(display-p3 50% -200 200)", "color(display-p3 0.5 -200 200)", null],
+    ["color(display-p3 0 0 0 / -10%)", "color(display-p3 0 0 0 / 0)", null],
+    ["color(display-p3 0 0 0 / 110%)", "color(display-p3 0 0 0)", null],
+    ["color(display-p3 0 0 0 / 300%)", "color(display-p3 0 0 0)", null],
+    ["color(display-p3 200 200 200)", "color(display-p3 200 200 200)", null],
+    ["color(display-p3 200 200 200 / 200)", "color(display-p3 200 200 200)", null],
+    ["color(display-p3 -200 -200 -200)", "color(display-p3 -200 -200 -200)", null],
+    ["color(display-p3 -200 -200 -200 / -200)", "color(display-p3 -200 -200 -200 / 0)", null],
+    ["color(display-p3 200% 200% 200%)", "color(display-p3 2 2 2)", null],
+    ["color(display-p3 200% 200% 200% / 200%)", "color(display-p3 2 2 2)", null],
+    ["color(display-p3 -200% -200% -200% / -200%)", "color(display-p3 -2 -2 -2 / 0)", null],
+    [
+      "color(display-p3 calc(0.5 + 1) calc(0.5 - 1) calc(0.5) / calc(-0.5 + 1))",
+      "color(display-p3 calc(1.5) calc(-0.5) calc(0.5) / calc(0.5))",
+      null
+    ],
+    [
+      "color(display-p3 calc(50% * 3) calc(-150% / 3) calc(50%) / calc(-50% * 3))",
+      "color(display-p3 calc(150%) calc(-50%) calc(50%) / calc(-150%))",
+      null
+    ],
+    ["color(display-p3 calc(50%) 50% 0.5)", "color(display-p3 calc(50%) 0.5 0.5)", null],
+    ["color(display-p3 none none none / none)", "color(display-p3 none none none / none)", null],
+    ["color(display-p3 none none none)", "color(display-p3 none none none)", null],
+    ["color(display-p3 10% none none / none)", "color(display-p3 0.1 none none / none)", null],
+    ["color(display-p3 none none none / 0.5)", "color(display-p3 none none none / 0.5)", null],
+    ["color(display-p3 0 0 0 / none)", "color(display-p3 0 0 0 / none)", null],
+    ["color(display-p3 0 calc(infinity) 0)", "color(display-p3 0 calc(infinity) 0)", null],
+    ["color(display-p3 0 calc(-infinity) 0)", "color(display-p3 0 calc(-infinity) 0)", null],
+    ["color(display-p3 calc(NaN) 0 0)", "color(display-p3 calc(NaN) 0 0)", null],
+    ["color(display-p3 calc(0 / 0) 0 0)", "color(display-p3 calc(NaN) 0 0)", null],
+    [
+      "color(display-p3 calc(50% + (sign(1em - 10px) * 10%)) 0 0 / 0.5)",
+      "color(display-p3 calc(50% + (10% * sign(1em - 10px))) 0 0 / 0.5)",
+      null
+    ],
+    [
+      "color(display-p3 0.5 0 0 / calc(50% + (sign(1em - 10px) * 10%)))",
+      "color(display-p3 0.5 0 0 / calc(50% + (10% * sign(1em - 10px))))",
+      null
+    ],
+    ["color(display-p3-linear 0% 0% 0%)", "color(display-p3-linear 0 0 0)", null],
+    ["color(display-p3-linear 10% 10% 10%)", "color(display-p3-linear 0.1 0.1 0.1)", null],
+    ["color(display-p3-linear .2 .2 25%)", "color(display-p3-linear 0.2 0.2 0.25)", null],
+    ["color(display-p3-linear 0 0 0 / 1)", "color(display-p3-linear 0 0 0)", null],
+    ["color(display-p3-linear 0% 0 0 / 0.5)", "color(display-p3-linear 0 0 0 / 0.5)", null],
+    ["color(display-p3-linear 20% 0 10/0.5)", "color(display-p3-linear 0.2 0 10 / 0.5)", null],
+    ["color(display-p3-linear 20% 0 10/50%)", "color(display-p3-linear 0.2 0 10 / 0.5)", null],
+    ["color(display-p3-linear 400% 0 10/50%)", "color(display-p3-linear 4 0 10 / 0.5)", null],
+    ["color(display-p3-linear 50% -160 160)", "color(display-p3-linear 0.5 -160 160)", null],
+    ["color(display-p3-linear 50% -200 200)", "color(display-p3-linear 0.5 -200 200)", null],
+    ["color(display-p3-linear 0 0 0 / -10%)", "color(display-p3-linear 0 0 0 / 0)", null],
+    ["color(display-p3-linear 0 0 0 / 110%)", "color(display-p3-linear 0 0 0)", null],
+    ["color(display-p3-linear 0 0 0 / 300%)", "color(display-p3-linear 0 0 0)", null],
+    ["color(display-p3-linear 200 200 200)", "color(display-p3-linear 200 200 200)", null],
+    ["color(display-p3-linear 200 200 200 / 200)", "color(display-p3-linear 200 200 200)", null],
+    ["color(display-p3-linear -200 -200 -200)", "color(display-p3-linear -200 -200 -200)", null],
+    [
+      "color(display-p3-linear -200 -200 -200 / -200)",
+      "color(display-p3-linear -200 -200 -200 / 0)",
+      null
+    ],
+    ["color(display-p3-linear 200% 200% 200%)", "color(display-p3-linear 2 2 2)", null],
+    ["color(display-p3-linear 200% 200% 200% / 200%)", "color(display-p3-linear 2 2 2)", null],
+    [
+      "color(display-p3-linear -200% -200% -200% / -200%)",
+      "color(display-p3-linear -2 -2 -2 / 0)",
+      null
+    ],
+    [
+      "color(display-p3-linear calc(0.5 + 1) calc(0.5 - 1) calc(0.5) / calc(-0.5 + 1))",
+      "color(display-p3-linear calc(1.5) calc(-0.5) calc(0.5) / calc(0.5))",
+      null
+    ],
+    [
+      "color(display-p3-linear calc(50% * 3) calc(-150% / 3) calc(50%) / calc(-50% * 3))",
+      "color(display-p3-linear calc(150%) calc(-50%) calc(50%) / calc(-150%))",
+      null
+    ],
+    [
+      "color(display-p3-linear calc(50%) 50% 0.5)",
+      "color(display-p3-linear calc(50%) 0.5 0.5)",
+      null
+    ],
+    [
+      "color(display-p3-linear none none none / none)",
+      "color(display-p3-linear none none none / none)",
+      null
+    ],
+    ["color(display-p3-linear none none none)", "color(display-p3-linear none none none)", null],
+    [
+      "color(display-p3-linear 10% none none / none)",
+      "color(display-p3-linear 0.1 none none / none)",
+      null
+    ],
+    [
+      "color(display-p3-linear none none none / 0.5)",
+      "color(display-p3-linear none none none / 0.5)",
+      null
+    ],
+    ["color(display-p3-linear 0 0 0 / none)", "color(display-p3-linear 0 0 0 / none)", null],
+    [
+      "color(display-p3-linear 0 calc(infinity) 0)",
+      "color(display-p3-linear 0 calc(infinity) 0)",
+      null
+    ],
+    [
+      "color(display-p3-linear 0 calc(-infinity) 0)",
+      "color(display-p3-linear 0 calc(-infinity) 0)",
+      null
+    ],
+    ["color(display-p3-linear calc(NaN) 0 0)", "color(display-p3-linear calc(NaN) 0 0)", null],
+    ["color(display-p3-linear calc(0 / 0) 0 0)", "color(display-p3-linear calc(NaN) 0 0)", null],
+    [
+      "color(display-p3-linear calc(50% + (sign(1em - 10px) * 10%)) 0 0 / 0.5)",
+      "color(display-p3-linear calc(50% + (10% * sign(1em - 10px))) 0 0 / 0.5)",
+      null
+    ],
+    [
+      "color(display-p3-linear 0.5 0 0 / calc(50% + (sign(1em - 10px) * 10%)))",
+      "color(display-p3-linear 0.5 0 0 / calc(50% + (10% * sign(1em - 10px))))",
+      null
+    ],
+    ["color(xyz 0% 0% 0%)", "color(xyz-d65 0 0 0)", null],
+    ["color(xyz 10% 10% 10%)", "color(xyz-d65 0.1 0.1 0.1)", null],
+    ["color(xyz .2 .2 25%)", "color(xyz-d65 0.2 0.2 0.25)", null],
+    ["color(xyz 0 0 0 / 1)", "color(xyz-d65 0 0 0)", null],
+    ["color(xyz 0% 0 0 / 0.5)", "color(xyz-d65 0 0 0 / 0.5)", null],
+    ["color(xyz 20% 0 10/0.5)", "color(xyz-d65 0.2 0 10 / 0.5)", null],
+    ["color(xyz 20% 0 10/50%)", "color(xyz-d65 0.2 0 10 / 0.5)", null],
+    ["color(xyz 400% 0 10/50%)", "color(xyz-d65 4 0 10 / 0.5)", null],
+    ["color(xyz 50% -160 160)", "color(xyz-d65 0.5 -160 160)", null],
+    ["color(xyz 50% -200 200)", "color(xyz-d65 0.5 -200 200)", null],
+    ["color(xyz 0 0 0 / -10%)", "color(xyz-d65 0 0 0 / 0)", null],
+    ["color(xyz 0 0 0 / 110%)", "color(xyz-d65 0 0 0)", null],
+    ["color(xyz 0 0 0 / 300%)", "color(xyz-d65 0 0 0)", null],
+    ["color(xyz 200 200 200)", "color(xyz-d65 200 200 200)", null],
+    ["color(xyz 200 200 200 / 200)", "color(xyz-d65 200 200 200)", null],
+    ["color(xyz -200 -200 -200)", "color(xyz-d65 -200 -200 -200)", null],
+    ["color(xyz -200 -200 -200 / -200)", "color(xyz-d65 -200 -200 -200 / 0)", null],
+    ["color(xyz 200% 200% 200%)", "color(xyz-d65 2 2 2)", null],
+    ["color(xyz 200% 200% 200% / 200%)", "color(xyz-d65 2 2 2)", null],
+    ["color(xyz -200% -200% -200% / -200%)", "color(xyz-d65 -2 -2 -2 / 0)", null],
+    [
+      "color(xyz calc(0.5 + 1) calc(0.5 - 1) calc(0.5) / calc(-0.5 + 1))",
+      "color(xyz-d65 calc(1.5) calc(-0.5) calc(0.5) / calc(0.5))",
+      null
+    ],
+    [
+      "color(xyz calc(50% * 3) calc(-150% / 3) calc(50%) / calc(-50% * 3))",
+      "color(xyz-d65 calc(150%) calc(-50%) calc(50%) / calc(-150%))",
+      null
+    ],
+    ["color(xyz calc(50%) 50% 0.5)", "color(xyz-d65 calc(50%) 0.5 0.5)", null],
+    ["color(xyz none none none / none)", "color(xyz-d65 none none none / none)", null],
+    ["color(xyz none none none)", "color(xyz-d65 none none none)", null],
+    ["color(xyz 10% none none / none)", "color(xyz-d65 0.1 none none / none)", null],
+    ["color(xyz none none none / 0.5)", "color(xyz-d65 none none none / 0.5)", null],
+    ["color(xyz 0 0 0 / none)", "color(xyz-d65 0 0 0 / none)", null],
+    ["color(xyz 0 calc(infinity) 0)", "color(xyz-d65 0 calc(infinity) 0)", null],
+    ["color(xyz 0 calc(-infinity) 0)", "color(xyz-d65 0 calc(-infinity) 0)", null],
+    ["color(xyz calc(NaN) 0 0)", "color(xyz-d65 calc(NaN) 0 0)", null],
+    ["color(xyz calc(0 / 0) 0 0)", "color(xyz-d65 calc(NaN) 0 0)", null],
+    [
+      "color(xyz calc(50% + (sign(1em - 10px) * 10%)) 0 0 / 0.5)",
+      "color(xyz-d65 calc(50% + (10% * sign(1em - 10px))) 0 0 / 0.5)",
+      null
+    ],
+    [
+      "color(xyz 0.5 0 0 / calc(50% + (sign(1em - 10px) * 10%)))",
+      "color(xyz-d65 0.5 0 0 / calc(50% + (10% * sign(1em - 10px))))",
+      null
+    ],
+    ["color(xyz-d50 0% 0% 0%)", "color(xyz-d50 0 0 0)", null],
+    ["color(xyz-d50 10% 10% 10%)", "color(xyz-d50 0.1 0.1 0.1)", null],
+    ["color(xyz-d50 .2 .2 25%)", "color(xyz-d50 0.2 0.2 0.25)", null],
+    ["color(xyz-d50 0 0 0 / 1)", "color(xyz-d50 0 0 0)", null],
+    ["color(xyz-d50 0% 0 0 / 0.5)", "color(xyz-d50 0 0 0 / 0.5)", null],
+    ["color(xyz-d50 20% 0 10/0.5)", "color(xyz-d50 0.2 0 10 / 0.5)", null],
+    ["color(xyz-d50 20% 0 10/50%)", "color(xyz-d50 0.2 0 10 / 0.5)", null],
+    ["color(xyz-d50 400% 0 10/50%)", "color(xyz-d50 4 0 10 / 0.5)", null],
+    ["color(xyz-d50 50% -160 160)", "color(xyz-d50 0.5 -160 160)", null],
+    ["color(xyz-d50 50% -200 200)", "color(xyz-d50 0.5 -200 200)", null],
+    ["color(xyz-d50 0 0 0 / -10%)", "color(xyz-d50 0 0 0 / 0)", null],
+    ["color(xyz-d50 0 0 0 / 110%)", "color(xyz-d50 0 0 0)", null],
+    ["color(xyz-d50 0 0 0 / 300%)", "color(xyz-d50 0 0 0)", null],
+    ["color(xyz-d50 200 200 200)", "color(xyz-d50 200 200 200)", null],
+    ["color(xyz-d50 200 200 200 / 200)", "color(xyz-d50 200 200 200)", null],
+    ["color(xyz-d50 -200 -200 -200)", "color(xyz-d50 -200 -200 -200)", null],
+    ["color(xyz-d50 -200 -200 -200 / -200)", "color(xyz-d50 -200 -200 -200 / 0)", null],
+    ["color(xyz-d50 200% 200% 200%)", "color(xyz-d50 2 2 2)", null],
+    ["color(xyz-d50 200% 200% 200% / 200%)", "color(xyz-d50 2 2 2)", null],
+    ["color(xyz-d50 -200% -200% -200% / -200%)", "color(xyz-d50 -2 -2 -2 / 0)", null],
+    [
+      "color(xyz-d50 calc(0.5 + 1) calc(0.5 - 1) calc(0.5) / calc(-0.5 + 1))",
+      "color(xyz-d50 calc(1.5) calc(-0.5) calc(0.5) / calc(0.5))",
+      null
+    ],
+    [
+      "color(xyz-d50 calc(50% * 3) calc(-150% / 3) calc(50%) / calc(-50% * 3))",
+      "color(xyz-d50 calc(150%) calc(-50%) calc(50%) / calc(-150%))",
+      null
+    ],
+    ["color(xyz-d50 calc(50%) 50% 0.5)", "color(xyz-d50 calc(50%) 0.5 0.5)", null],
+    ["color(xyz-d50 none none none / none)", "color(xyz-d50 none none none / none)", null],
+    ["color(xyz-d50 none none none)", "color(xyz-d50 none none none)", null],
+    ["color(xyz-d50 10% none none / none)", "color(xyz-d50 0.1 none none / none)", null],
+    ["color(xyz-d50 none none none / 0.5)", "color(xyz-d50 none none none / 0.5)", null],
+    ["color(xyz-d50 0 0 0 / none)", "color(xyz-d50 0 0 0 / none)", null],
+    ["color(xyz-d50 0 calc(infinity) 0)", "color(xyz-d50 0 calc(infinity) 0)", null],
+    ["color(xyz-d50 0 calc(-infinity) 0)", "color(xyz-d50 0 calc(-infinity) 0)", null],
+    ["color(xyz-d50 calc(NaN) 0 0)", "color(xyz-d50 calc(NaN) 0 0)", null],
+    ["color(xyz-d50 calc(0 / 0) 0 0)", "color(xyz-d50 calc(NaN) 0 0)", null],
+    [
+      "color(xyz-d50 calc(50% + (sign(1em - 10px) * 10%)) 0 0 / 0.5)",
+      "color(xyz-d50 calc(50% + (10% * sign(1em - 10px))) 0 0 / 0.5)",
+      null
+    ],
+    [
+      "color(xyz-d50 0.5 0 0 / calc(50% + (sign(1em - 10px) * 10%)))",
+      "color(xyz-d50 0.5 0 0 / calc(50% + (10% * sign(1em - 10px))))",
+      null
+    ],
+    ["color(xyz-d65 0% 0% 0%)", "color(xyz-d65 0 0 0)", null],
+    ["color(xyz-d65 10% 10% 10%)", "color(xyz-d65 0.1 0.1 0.1)", null],
+    ["color(xyz-d65 .2 .2 25%)", "color(xyz-d65 0.2 0.2 0.25)", null],
+    ["color(xyz-d65 0 0 0 / 1)", "color(xyz-d65 0 0 0)", null],
+    ["color(xyz-d65 0% 0 0 / 0.5)", "color(xyz-d65 0 0 0 / 0.5)", null],
+    ["color(xyz-d65 20% 0 10/0.5)", "color(xyz-d65 0.2 0 10 / 0.5)", null],
+    ["color(xyz-d65 20% 0 10/50%)", "color(xyz-d65 0.2 0 10 / 0.5)", null],
+    ["color(xyz-d65 400% 0 10/50%)", "color(xyz-d65 4 0 10 / 0.5)", null],
+    ["color(xyz-d65 50% -160 160)", "color(xyz-d65 0.5 -160 160)", null],
+    ["color(xyz-d65 50% -200 200)", "color(xyz-d65 0.5 -200 200)", null],
+    ["color(xyz-d65 0 0 0 / -10%)", "color(xyz-d65 0 0 0 / 0)", null],
+    ["color(xyz-d65 0 0 0 / 110%)", "color(xyz-d65 0 0 0)", null],
+    ["color(xyz-d65 0 0 0 / 300%)", "color(xyz-d65 0 0 0)", null],
+    ["color(xyz-d65 200 200 200)", "color(xyz-d65 200 200 200)", null],
+    ["color(xyz-d65 200 200 200 / 200)", "color(xyz-d65 200 200 200)", null],
+    ["color(xyz-d65 -200 -200 -200)", "color(xyz-d65 -200 -200 -200)", null],
+    ["color(xyz-d65 -200 -200 -200 / -200)", "color(xyz-d65 -200 -200 -200 / 0)", null],
+    ["color(xyz-d65 200% 200% 200%)", "color(xyz-d65 2 2 2)", null],
+    ["color(xyz-d65 200% 200% 200% / 200%)", "color(xyz-d65 2 2 2)", null],
+    ["color(xyz-d65 -200% -200% -200% / -200%)", "color(xyz-d65 -2 -2 -2 / 0)", null],
+    [
+      "color(xyz-d65 calc(0.5 + 1) calc(0.5 - 1) calc(0.5) / calc(-0.5 + 1))",
+      "color(xyz-d65 calc(1.5) calc(-0.5) calc(0.5) / calc(0.5))",
+      null
+    ],
+    [
+      "color(xyz-d65 calc(50% * 3) calc(-150% / 3) calc(50%) / calc(-50% * 3))",
+      "color(xyz-d65 calc(150%) calc(-50%) calc(50%) / calc(-150%))",
+      null
+    ],
+    ["color(xyz-d65 calc(50%) 50% 0.5)", "color(xyz-d65 calc(50%) 0.5 0.5)", null],
+    ["color(xyz-d65 none none none / none)", "color(xyz-d65 none none none / none)", null],
+    ["color(xyz-d65 none none none)", "color(xyz-d65 none none none)", null],
+    ["color(xyz-d65 10% none none / none)", "color(xyz-d65 0.1 none none / none)", null],
+    ["color(xyz-d65 none none none / 0.5)", "color(xyz-d65 none none none / 0.5)", null],
+    ["color(xyz-d65 0 0 0 / none)", "color(xyz-d65 0 0 0 / none)", null],
+    ["color(xyz-d65 0 calc(infinity) 0)", "color(xyz-d65 0 calc(infinity) 0)", null],
+    ["color(xyz-d65 0 calc(-infinity) 0)", "color(xyz-d65 0 calc(-infinity) 0)", null],
+    ["color(xyz-d65 calc(NaN) 0 0)", "color(xyz-d65 calc(NaN) 0 0)", null],
+    ["color(xyz-d65 calc(0 / 0) 0 0)", "color(xyz-d65 calc(NaN) 0 0)", null],
+    [
+      "color(xyz-d65 calc(50% + (sign(1em - 10px) * 10%)) 0 0 / 0.5)",
+      "color(xyz-d65 calc(50% + (10% * sign(1em - 10px))) 0 0 / 0.5)",
+      null
+    ],
+    [
+      "color(xyz-d65 0.5 0 0 / calc(50% + (sign(1em - 10px) * 10%)))",
+      "color(xyz-d65 0.5 0 0 / calc(50% + (10% * sign(1em - 10px))))",
+      null
+    ]
+  ],
+  "color-valid-hsl": [
+    ["hsl(120 30% 50%)", "rgb(89, 166, 89)", null],
+    ["hsl(120 30% 50% / 0.5)", "rgba(89, 166, 89, 0.5)", null],
+    ["hsl(none none none)", "hsl(none none none)", null],
+    ["hsl(0 0% 0%)", "rgb(0, 0, 0)", null],
+    ["hsl(none none none / none)", "hsl(none none none / none)", null],
+    ["hsl(0 0% 0% / 0)", "rgba(0, 0, 0, 0)", null],
+    ["hsla(none none none)", "hsl(none none none)", null],
+    ["hsla(0 0% 0%)", "rgb(0, 0, 0)", null],
+    ["hsla(none none none / none)", "hsl(none none none / none)", null],
+    ["hsla(0 0% 0% / 0)", "rgba(0, 0, 0, 0)", null],
+    ["hsl(120 none none)", "hsl(120 none none)", null],
+    ["hsl(120 0% 0%)", "rgb(0, 0, 0)", null],
+    ["hsl(120 80% none)", "hsl(120 80% none)", null],
+    ["hsl(120 80% 0%)", "rgb(0, 0, 0)", null],
+    ["hsl(120 none 50%)", "hsl(120 none 50%)", null],
+    ["hsl(120 0% 50%)", "rgb(128, 128, 128)", null],
+    ["hsl(120 100% 50% / none)", "hsl(120 100% 50% / none)", null],
+    ["hsl(120 100% 50% / 0)", "rgba(0, 255, 0, 0)", null],
+    ["hsl(none 100% 50%)", "hsl(none 100% 50%)", null],
+    ["hsl(0 100% 50%)", "rgb(255, 0, 0)", null],
+    ["hsl(120 30 50)", "rgb(89, 166, 89)", null],
+    ["hsl(120 30 50 / 0.5)", "rgba(89, 166, 89, 0.5)", null],
+    ["hsl(120 30% 50)", "rgb(89, 166, 89)", null],
+    ["hsl(120 30% 50 / 0.5)", "rgba(89, 166, 89, 0.5)", null],
+    ["hsl(120 30 50%)", "rgb(89, 166, 89)", null],
+    ["hsl(120 30 50% / 0.5)", "rgba(89, 166, 89, 0.5)", null],
+    ["hsl(120 none 50)", "hsl(120 none 50%)", null],
+    ["hsl(120 none 50 / 0.5)", "hsl(120 none 50% / 0.5)", null],
+    ["hsl(120 30 none)", "hsl(120 30% none)", null],
+    ["hsl(120 30 none / 0.5)", "hsl(120 30% none / 0.5)", null],
+    ["hsl(120 30 50 / none)", "hsl(120 30% 50% / none)", null],
+    ["hsl(0 -50% 40%)", "rgb(102, 102, 102)", null],
+    ["hsl(30 -50% 60)", "rgb(153, 153, 153)", null],
+    ["hsl(0 -50 40%)", "rgb(102, 102, 102)", null],
+    ["hsl(30 -50 60)", "rgb(153, 153, 153)", null],
+    ["hsl(calc(infinity) 100% 50%)", "rgb(255, 0, 0)", null],
+    ["hsl(calc(-infinity) 100% 50%)", "rgb(255, 0, 0)", null],
+    ["hsl(calc(0 / 0) 100% 50%)", "rgb(255, 0, 0)", null],
+    ["hsl(90 50% 50% / calc(infinity))", "rgb(128, 191, 64)", null],
+    ["hsl(90 50% 50% / calc(-infinity))", "rgba(128, 191, 64, 0)", null],
+    ["hsl(90 50% 50% / calc(0 / 0))", "rgba(128, 191, 64, 0)", null],
+    ["hsl(90 50% 50% / calc(NaN))", "rgba(128, 191, 64, 0)", null],
+    [
+      "hsl(calc(50deg + (sign(1em - 10px) * 10deg)), 0%, 0%, 50%)",
+      "hsl(calc(50deg + (10deg * sign(1em - 10px))) 0 0 / 0.5)",
+      null
+    ],
+    [
+      "hsla(calc(50deg + (sign(1em - 10px) * 10deg)), 0%, 0%, 50%)",
+      "hsl(calc(50deg + (10deg * sign(1em - 10px))) 0 0 / 0.5)",
+      null
+    ],
+    [
+      "hsl(calc(50 + (sign(1em - 10px) * 10)), 0%, 0%, 50%)",
+      "hsl(calc(50 + (10 * sign(1em - 10px))) 0 0 / 0.5)",
+      null
+    ],
+    [
+      "hsla(calc(50 + (sign(1em - 10px) * 10)), 0%, 0%, 50%)",
+      "hsl(calc(50 + (10 * sign(1em - 10px))) 0 0 / 0.5)",
+      null
+    ],
+    [
+      "hsl(0deg, 0%, 0%, calc(50% + (sign(1em - 10px) * 10%)))",
+      "hsl(0 0 0 / calc(50% + (10% * sign(1em - 10px))))",
+      null
+    ],
+    [
+      "hsla(0deg, 0%, 0%, calc(50% + (sign(1em - 10px) * 10%)))",
+      "hsl(0 0 0 / calc(50% + (10% * sign(1em - 10px))))",
+      null
+    ],
+    [
+      "hsl(0, 0%, 0%, calc(50% + (sign(1em - 10px) * 10%)))",
+      "hsl(0 0 0 / calc(50% + (10% * sign(1em - 10px))))",
+      null
+    ],
+    [
+      "hsla(0, 0%, 0%, calc(50% + (sign(1em - 10px) * 10%)))",
+      "hsl(0 0 0 / calc(50% + (10% * sign(1em - 10px))))",
+      null
+    ],
+    [
+      "hsl(calc(50deg + (sign(1em - 10px) * 10deg)) 0% 0% / 50%)",
+      "hsl(calc(50deg + (10deg * sign(1em - 10px))) 0 0 / 0.5)",
+      null
+    ],
+    [
+      "hsla(calc(50deg + (sign(1em - 10px) * 10deg)) 0% 0% / 50%)",
+      "hsl(calc(50deg + (10deg * sign(1em - 10px))) 0 0 / 0.5)",
+      null
+    ],
+    [
+      "hsl(calc(50 + (sign(1em - 10px) * 10)) 0 0 / 0.5)",
+      "hsl(calc(50 + (10 * sign(1em - 10px))) 0 0 / 0.5)",
+      null
+    ],
+    [
+      "hsla(calc(50 + (sign(1em - 10px) * 10)) 0 0 / 0.5)",
+      "hsl(calc(50 + (10 * sign(1em - 10px))) 0 0 / 0.5)",
+      null
+    ],
+    [
+      "hsl(0deg 0% 0% / calc(50% + (sign(1em - 10px) * 10%)))",
+      "hsl(0 0 0 / calc(50% + (10% * sign(1em - 10px))))",
+      null
+    ],
+    [
+      "hsla(0deg 0% 0% / calc(50% + (sign(1em - 10px) * 10%)))",
+      "hsl(0 0 0 / calc(50% + (10% * sign(1em - 10px))))",
+      null
+    ],
+    [
+      "hsl(0 0 0 / calc(0.75 + (sign(1em - 10px) * 0.1)))",
+      "hsl(0 0 0 / calc(0.75 + (0.1 * sign(1em - 10px))))",
+      null
+    ],
+    [
+      "hsla(0 0 0 / calc(0.75 + (sign(1em - 10px) * 0.1)))",
+      "hsl(0 0 0 / calc(0.75 + (0.1 * sign(1em - 10px))))",
+      null
+    ],
+    [
+      "hsla(calc(50deg + (sign(1em - 10px) * 10deg)) -100 300 / 0.5)",
+      "hsl(calc(50deg + (10deg * sign(1em - 10px))) 0 300 / 0.5)",
+      null
+    ],
+    [
+      "hsla(calc(50deg + (sign(1em - 10px) * 10deg)) -100% 300% / 0.5)",
+      "hsl(calc(50deg + (10deg * sign(1em - 10px))) 0 300 / 0.5)",
+      null
+    ]
+  ],
+  "color-valid-hwb": [
+    ["hwb(120 30% 50%)", "rgb(77, 128, 77)", null],
+    ["hwb(120 30% 50% / 0.5)", "rgba(77, 128, 77, 0.5)", null],
+    ["hwb(none none none)", "hwb(none none none)", null],
+    ["hwb(0 0% 0%)", "rgb(255, 0, 0)", null],
+    ["hwb(none none none / none)", "hwb(none none none / none)", null],
+    ["hwb(0 0% 0% / 0)", "rgba(255, 0, 0, 0)", null],
+    ["hwb(120 none none)", "hwb(120 none none)", null],
+    ["hwb(120 0% 0%)", "rgb(0, 255, 0)", null],
+    ["hwb(120 80% none)", "hwb(120 80% none)", null],
+    ["hwb(120 80% 0%)", "rgb(204, 255, 204)", null],
+    ["hwb(120 none 50%)", "hwb(120 none 50%)", null],
+    ["hwb(120 0% 50%)", "rgb(0, 128, 0)", null],
+    ["hwb(120 30% 50% / none)", "hwb(120 30% 50% / none)", null],
+    ["hwb(120 30% 50% / 0)", "rgba(77, 128, 77, 0)", null],
+    ["hwb(none 100% 50% / none)", "hwb(none 100% 50% / none)", null],
+    ["hwb(0 100% 50% / 0)", "rgba(170, 170, 170, 0)", null],
+    ["hwb(120 30 50)", "rgb(77, 128, 77)", null],
+    ["hwb(120 30 50 / 0.5)", "rgba(77, 128, 77, 0.5)", null],
+    ["hwb(120 30% 50)", "rgb(77, 128, 77)", null],
+    ["hwb(120 30% 50 / 0.5)", "rgba(77, 128, 77, 0.5)", null],
+    ["hwb(120 30 50%)", "rgb(77, 128, 77)", null],
+    ["hwb(120 30 50% / 0.5)", "rgba(77, 128, 77, 0.5)", null],
+    ["hwb(120 none 50)", "hwb(120 none 50%)", null],
+    ["hwb(120 none 50 / 0.5)", "hwb(120 none 50% / 0.5)", null],
+    ["hwb(120 30 none)", "hwb(120 30% none)", null],
+    ["hwb(120 30 none / 0.5)", "hwb(120 30% none / 0.5)", null],
+    ["hwb(120 30 50 / none)", "hwb(120 30% 50% / none)", null],
+    ["hwb(320deg 30% 40%)", "rgb(153, 77, 128)", null],
+    ["hwb(calc(infinity) 20% 10%)", "rgb(230, 51, 51)", null],
+    ["hwb(calc(-infinity) 20% 10%)", "rgb(230, 51, 51)", null],
+    ["hwb(calc(0 / 0) 20% 10%)", "rgb(230, 51, 51)", null],
+    ["hwb(90 20% 10% / calc(infinity))", "rgb(140, 230, 51)", null],
+    ["hwb(90 20% 10% / calc(-infinity))", "rgba(140, 230, 51, 0)", null],
+    ["hwb(90 20% 10% / calc(0 / 0))", "rgba(140, 230, 51, 0)", null],
+    ["hwb(90 20% 10% / calc(NaN))", "rgba(140, 230, 51, 0)", null],
+    [
+      "hwb(calc(110deg + (sign(1em - 10px) * 10deg)) 30% 50% / 50%)",
+      "hwb(calc(110deg + (10deg * sign(1em - 10px))) 30 50 / 0.5)",
+      null
+    ],
+    [
+      "hwb(calc(110 + (sign(1em - 10px) * 10)) 30 50 / 0.5)",
+      "hwb(calc(110 + (10 * sign(1em - 10px))) 30 50 / 0.5)",
+      null
+    ],
+    [
+      "hwb(120deg 30% 50% / calc(50% + (sign(1em - 10px) * 10%)))",
+      "hwb(120 30 50 / calc(50% + (10% * sign(1em - 10px))))",
+      null
+    ],
+    [
+      "hwb(120 30 50 / calc(0.75 + (sign(1em - 10px) * 0.1)))",
+      "hwb(120 30 50 / calc(0.75 + (0.1 * sign(1em - 10px))))",
+      null
+    ]
+  ],
+  "color-valid-lab": [
+    ["lab(0 0 0)", "lab(0 0 0)", null],
+    ["lab(0 0 0 / 1)", "lab(0 0 0)", null],
+    ["lab(0 0 0 / 0.5)", "lab(0 0 0 / 0.5)", null],
+    ["lab(20 0 10/0.5)", "lab(20 0 10 / 0.5)", null],
+    ["lab(20 0 10/50%)", "lab(20 0 10 / 0.5)", null],
+    ["lab(400 0 10/50%)", "lab(100 0 10 / 0.5)", null],
+    ["lab(50 -160 160)", "lab(50 -160 160)", null],
+    ["lab(50 -200 200)", "lab(50 -200 200)", null],
+    ["lab(0 0 0 / -10%)", "lab(0 0 0 / 0)", null],
+    ["lab(0 0 0 / 110%)", "lab(0 0 0)", null],
+    ["lab(0 0 0 / 300%)", "lab(0 0 0)", null],
+    ["lab(-40 0 0)", "lab(0 0 0)", null],
+    ["lab(50 -20 0)", "lab(50 -20 0)", null],
+    ["lab(50 0 -20)", "lab(50 0 -20)", null],
+    ["lab(50% 50% -20%)", "lab(50 62.5 -25)", null],
+    ["lab(50 -20% -20%)", "lab(50 -25 -25)", null],
+    [
+      "lab(calc(50 * 3) calc(0.5 - 1) calc(1.5) / calc(-0.5 + 1))",
+      "lab(calc(150) calc(-0.5) calc(1.5) / calc(0.5))",
+      null
+    ],
+    [
+      "lab(calc(-50 * 3) calc(0.5 + 1) calc(-1.5) / calc(-0.5 * 2))",
+      "lab(calc(-150) calc(1.5) calc(-1.5) / calc(-1))",
+      null
+    ],
+    ["lab(calc(50%) 50% 0.5)", "lab(calc(50%) 62.5 0.5)", null],
+    ["lab(200 calc(50%) 0.5)", "lab(100 calc(50%) 0.5)", null],
+    ["lab(-200 calc(50%) 0.5)", "lab(0 calc(50%) 0.5)", null],
+    ["lab(none 20 calc(0.5))", "lab(none 20 calc(0.5))", null],
+    ["lab(none none none / none)", "lab(none none none / none)", null],
+    ["lab(none none none)", "lab(none none none)", null],
+    ["lab(20 none none / none)", "lab(20 none none / none)", null],
+    ["lab(none none none / 0.5)", "lab(none none none / 0.5)", null],
+    ["lab(0 0 0 / none)", "lab(0 0 0 / none)", null],
+    ["lab(calc(infinity) 0 0)", "lab(calc(infinity) 0 0)", null],
+    ["lab(50 calc(infinity) 0)", "lab(50 calc(infinity) 0)", null],
+    ["lab(50 calc(-infinity) 0)", "lab(50 calc(-infinity) 0)", null],
+    ["lab(calc(NaN) 0 0)", "lab(calc(NaN) 0 0)", null],
+    ["lab(calc(0 / 0) 0 0)", "lab(calc(NaN) 0 0)", null],
+    ["oklab(0 0 0)", "oklab(0 0 0)", null],
+    ["oklab(0 0 0 / 1)", "oklab(0 0 0)", null],
+    ["oklab(0 0 0 / 0.5)", "oklab(0 0 0 / 0.5)", null],
+    ["oklab(0.2 0 0.1/0.5)", "oklab(0.2 0 0.1 / 0.5)", null],
+    ["oklab(0.2 0 0.1/50%)", "oklab(0.2 0 0.1 / 0.5)", null],
+    ["oklab(4 0 0.1/50%)", "oklab(1 0 0.1 / 0.5)", null],
+    ["oklab(0.5 -1.6 1.6)", "oklab(0.5 -1.6 1.6)", null],
+    ["oklab(0.5 -2 2)", "oklab(0.5 -2 2)", null],
+    ["oklab(0 0 0 / -10%)", "oklab(0 0 0 / 0)", null],
+    ["oklab(0 0 0 / 110%)", "oklab(0 0 0)", null],
+    ["oklab(0 0 0 / 300%)", "oklab(0 0 0)", null],
+    ["oklab(-0.4 0 0)", "oklab(0 0 0)", null],
+    ["oklab(0.5 -2 0)", "oklab(0.5 -2 0)", null],
+    ["oklab(0.5 0 -2)", "oklab(0.5 0 -2)", null],
+    ["oklab(50% 50% -20%)", "oklab(0.5 0.2 -0.08)", null],
+    ["oklab(0.5 -20% -20%)", "oklab(0.5 -0.08 -0.08)", null],
+    [
+      "oklab(calc(0.5 * 3) calc(0.5 - 1) calc(1.5) / calc(-0.5 + 1))",
+      "oklab(calc(1.5) calc(-0.5) calc(1.5) / calc(0.5))",
+      null
+    ],
+    [
+      "oklab(calc(-0.5 * 3) calc(0.5 + 1) calc(-1.5) / calc(-0.5 * 2))",
+      "oklab(calc(-1.5) calc(1.5) calc(-1.5) / calc(-1))",
+      null
+    ],
+    ["oklab(calc(50%) 50% 0.5)", "oklab(calc(50%) 0.2 0.5)", null],
+    ["oklab(200 calc(50%) 0.5)", "oklab(1 calc(50%) 0.5)", null],
+    ["oklab(-200 calc(50%) 0.5)", "oklab(0 calc(50%) 0.5)", null],
+    ["oklab(none 0.2 calc(0.5))", "oklab(none 0.2 calc(0.5))", null],
+    ["oklab(none none none / none)", "oklab(none none none / none)", null],
+    ["oklab(none none none)", "oklab(none none none)", null],
+    ["oklab(0.2 none none / none)", "oklab(0.2 none none / none)", null],
+    ["oklab(none none none / 0.5)", "oklab(none none none / 0.5)", null],
+    ["oklab(0 0 0 / none)", "oklab(0 0 0 / none)", null],
+    ["lab(20% -50% 90%/0.5)", "lab(20 -62.5 112.5 / 0.5)", null],
+    ["oklab(20% 70% -80%/0.5)", "oklab(0.2 0.28 -0.32 / 0.5)", null],
+    ["oklab(calc(infinity) 0 0)", "oklab(calc(infinity) 0 0)", null],
+    ["oklab(0.5 calc(infinity) 0)", "oklab(0.5 calc(infinity) 0)", null],
+    ["oklab(0.5 calc(-infinity) 0)", "oklab(0.5 calc(-infinity) 0)", null],
+    ["oklab(calc(NaN) 0 0)", "oklab(calc(NaN) 0 0)", null],
+    ["oklab(calc(0 / 0) 0 0)", "oklab(calc(NaN) 0 0)", null],
+    ["lch(0 0 0deg)", "lch(0 0 0)", null],
+    ["lch(0 0 0deg / 1)", "lch(0 0 0)", null],
+    ["lch(0 0 0deg / 0.5)", "lch(0 0 0 / 0.5)", null],
+    ["lch(100 230 0deg / 0.5)", "lch(100 230 0 / 0.5)", null],
+    ["lch(20 50 20deg/0.5)", "lch(20 50 20 / 0.5)", null],
+    ["lch(20 50 20deg/50%)", "lch(20 50 20 / 0.5)", null],
+    ["lch(10 20 20deg / -10%)", "lch(10 20 20 / 0)", null],
+    ["lch(10 20 20deg / 110%)", "lch(10 20 20)", null],
+    ["lch(10 20 1.28rad)", "lch(10 20 73.3386)", null],
+    ["lch(10 20 380deg)", "lch(10 20 20)", null],
+    ["lch(10 20 -340deg)", "lch(10 20 20)", null],
+    ["lch(10 20 740deg)", "lch(10 20 20)", null],
+    ["lch(10 20 -700deg)", "lch(10 20 20)", null],
+    ["lch(-40 0 0)", "lch(0 0 0)", null],
+    ["lch(20 -20 0)", "lch(20 0 0)", null],
+    ["lch(0 0 0 / 0.5)", "lch(0 0 0 / 0.5)", null],
+    ["lch(10 20 20 / 110%)", "lch(10 20 20)", null],
+    ["lch(10 20 -700)", "lch(10 20 20)", null],
+    ["lch(50% 50% 20)", "lch(50 75 20)", null],
+    ["lch(0.5 -20% -20)", "lch(0.5 0 340)", null],
+    [
+      "lch(calc(50 * 3) calc(0.5 - 1) calc(20deg * 2) / calc(-0.5 + 1))",
+      "lch(calc(150) calc(-0.5) calc(40deg) / calc(0.5))",
+      null
+    ],
+    [
+      "lch(calc(-50 * 3) calc(0.5 + 1) calc(-20deg * 2) / calc(-0.5 * 2))",
+      "lch(calc(-150) calc(1.5) calc(-40deg) / calc(-1))",
+      null
+    ],
+    ["lch(calc(50%) 50% 0.5)", "lch(calc(50%) 75 0.5)", null],
+    ["lch(200 calc(50%) 0.5)", "lch(100 calc(50%) 0.5)", null],
+    ["lch(-200 calc(50%) 0.5)", "lch(0 calc(50%) 0.5)", null],
+    ["lch(calc(50%) -100 0.5)", "lch(calc(50%) 0 0.5)", null],
+    ["lch(none 20 calc(0.5))", "lch(none 20 calc(0.5))", null],
+    ["lch(none none none / none)", "lch(none none none / none)", null],
+    ["lch(none none none)", "lch(none none none)", null],
+    ["lch(20 none none / none)", "lch(20 none none / none)", null],
+    ["lch(none none none / 0.5)", "lch(none none none / 0.5)", null],
+    ["lch(0 0 0 / none)", "lch(0 0 0 / none)", null],
+    ["lch(calc(infinity) 0 0)", "lch(calc(infinity) 0 0)", null],
+    ["lch(50 calc(infinity) 0)", "lch(50 calc(infinity) 0)", null],
+    ["lch(50 calc(-infinity) 0)", "lch(50 calc(-infinity) 0)", null],
+    ["lch(50 10 calc(infinity))", "lch(50 10 calc(infinity))", null],
+    ["lch(50 10 calc(-infinity))", "lch(50 10 calc(-infinity))", null],
+    ["lch(calc(NaN) 0 0)", "lch(calc(NaN) 0 0)", null],
+    ["lch(calc(0 / 0) 0 0)", "lch(calc(NaN) 0 0)", null],
+    ["lch(50 10 calc(0 / 0))", "lch(50 10 calc(NaN))", null],
+    ["lch(50 10 calc(NaN))", "lch(50 10 calc(NaN))", null],
+    ["oklch(0 0 0deg)", "oklch(0 0 0)", null],
+    ["oklch(0 0 0deg / 1)", "oklch(0 0 0)", null],
+    ["oklch(0 0 0deg / 0.5)", "oklch(0 0 0 / 0.5)", null],
+    ["oklch(1 2.3 0deg / 0.5)", "oklch(1 2.3 0 / 0.5)", null],
+    ["oklch(0.2 0.5 20deg/0.5)", "oklch(0.2 0.5 20 / 0.5)", null],
+    ["oklch(0.2 0.5 20deg/50%)", "oklch(0.2 0.5 20 / 0.5)", null],
+    ["oklch(0.1 0.2 20deg / -10%)", "oklch(0.1 0.2 20 / 0)", null],
+    ["oklch(0.1 0.2 20deg / 110%)", "oklch(0.1 0.2 20)", null],
+    ["oklch(0.1 0.2 1.28rad)", "oklch(0.1 0.2 73.3386)", null],
+    ["oklch(0.1 0.2 380deg)", "oklch(0.1 0.2 20)", null],
+    ["oklch(0.1 0.2 -340deg)", "oklch(0.1 0.2 20)", null],
+    ["oklch(0.1 0.2 740deg)", "oklch(0.1 0.2 20)", null],
+    ["oklch(0.1 0.2 -700deg)", "oklch(0.1 0.2 20)", null],
+    ["oklch(-4 0 0)", "oklch(0 0 0)", null],
+    ["oklch(0.2 -0.2 0)", "oklch(0.2 0 0)", null],
+    ["oklch(0 0 0 / 0.5)", "oklch(0 0 0 / 0.5)", null],
+    ["oklch(0.1 0.2 20 / 110%)", "oklch(0.1 0.2 20)", null],
+    ["oklch(0.1 0.2 -700)", "oklch(0.1 0.2 20)", null],
+    ["oklch(50% 50% 20)", "oklch(0.5 0.2 20)", null],
+    ["oklch(0.5 -20% -20)", "oklch(0.5 0 340)", null],
+    [
+      "oklch(calc(0.5 * 3) calc(0.5 - 1) calc(20deg * 2) / calc(-0.5 + 1))",
+      "oklch(calc(1.5) calc(-0.5) calc(40deg) / calc(0.5))",
+      null
+    ],
+    [
+      "oklch(calc(-0.5 * 3) calc(0.5 + 1) calc(-20deg * 2) / calc(-0.5 * 2))",
+      "oklch(calc(-1.5) calc(1.5) calc(-40deg) / calc(-1))",
+      null
+    ],
+    ["oklch(calc(50%) 50% 0.5)", "oklch(calc(50%) 0.2 0.5)", null],
+    ["oklch(200 calc(50%) 0.5)", "oklch(1 calc(50%) 0.5)", null],
+    ["oklch(-200 calc(50%) 0.5)", "oklch(0 calc(50%) 0.5)", null],
+    ["oklch(calc(50%) -100 0.5)", "oklch(calc(50%) 0 0.5)", null],
+    ["oklch(none 0.2 calc(0.5))", "oklch(none 0.2 calc(0.5))", null],
+    ["oklch(none none none / none)", "oklch(none none none / none)", null],
+    ["oklch(none none none)", "oklch(none none none)", null],
+    ["oklch(0.2 none none / none)", "oklch(0.2 none none / none)", null],
+    ["oklch(none none none / 0.5)", "oklch(none none none / 0.5)", null],
+    ["oklch(0 0 0 / none)", "oklch(0 0 0 / none)", null],
+    ["lch(20% 80% 10/0.5)", "lch(20 120 10 / 0.5)", null],
+    ["oklch(20% 60% 10/0.5)", "oklch(0.2 0.24 10 / 0.5)", null],
+    ["oklch(calc(infinity) 0 0)", "oklch(calc(infinity) 0 0)", null],
+    ["oklch(0.5 calc(infinity) 0)", "oklch(0.5 calc(infinity) 0)", null],
+    ["oklch(0.5 calc(-infinity) 0)", "oklch(0.5 calc(-infinity) 0)", null],
+    ["oklch(0.5 0.1 calc(infinity))", "oklch(0.5 0.1 calc(infinity))", null],
+    ["oklch(0.5 0.1 calc(-infinity))", "oklch(0.5 0.1 calc(-infinity))", null],
+    ["oklch(calc(NaN) 0 0)", "oklch(calc(NaN) 0 0)", null],
+    ["oklch(calc(0 / 0) 0 0)", "oklch(calc(NaN) 0 0)", null],
+    ["oklch(0.5 0.1 calc(0 / 0))", "oklch(0.5 0.1 calc(NaN))", null],
+    ["oklch(0.5 0.1 calc(NaN))", "oklch(0.5 0.1 calc(NaN))", null],
+    [
+      "lab(calc(50 + (sign(1em - 10px) * 10)) 30 50 / 50%)",
+      "lab(calc(50 + (10 * sign(1em - 10px))) 30 50 / 0.5)",
+      null
+    ],
+    [
+      "oklab(calc(0.5 + (sign(1em - 10px) * 0.1)) 0.3 0.5 / 50%)",
+      "oklab(calc(0.5 + (0.1 * sign(1em - 10px))) 0.3 0.5 / 0.5)",
+      null
+    ],
+    [
+      "lab(60 30 50 / calc(50% + (sign(1em - 10px) * 10%)))",
+      "lab(60 30 50 / calc(50% + (10% * sign(1em - 10px))))",
+      null
+    ],
+    [
+      "oklab(0.6 0.3 0.5 / calc(50% + (sign(1em - 10px) * 10%)))",
+      "oklab(0.6 0.3 0.5 / calc(50% + (10% * sign(1em - 10px))))",
+      null
+    ],
+    [
+      "lch(calc(50 + (sign(1em - 10px) * 10)) 30 50deg / 50%)",
+      "lch(calc(50 + (10 * sign(1em - 10px))) 30 50 / 0.5)",
+      null
+    ],
+    [
+      "oklch(calc(0.5 + (sign(1em - 10px) * 0.1)) 0.3 50deg / 50%)",
+      "oklch(calc(0.5 + (0.1 * sign(1em - 10px))) 0.3 50 / 0.5)",
+      null
+    ],
+    [
+      "lch(60 30 50deg / calc(50% + (sign(1em - 10px) * 10%)))",
+      "lch(60 30 50 / calc(50% + (10% * sign(1em - 10px))))",
+      null
+    ],
+    [
+      "oklch(0.6 0.3 50deg / calc(50% + (sign(1em - 10px) * 10%)))",
+      "oklch(0.6 0.3 50 / calc(50% + (10% * sign(1em - 10px))))",
+      null
+    ]
+  ],
+  "color-valid-rgb": [
+    ["rgb(none none none)", "color(srgb none none none)", null],
+    ["rgb(none none none / none)", "color(srgb none none none / none)", null],
+    ["rgb(128 none none)", "color(srgb 0.50196078 none none)", null],
+    ["rgb(128 none none / none)", "color(srgb 0.50196078 none none / none)", null],
+    ["rgb(none none none / .5)", "color(srgb none none none / 0.5)", null],
+    ["rgb(20% none none)", "color(srgb 0.2 none none)", null],
+    ["rgb(20% none none / none)", "color(srgb 0.2 none none / none)", null],
+    ["rgb(none none none / 50%)", "color(srgb none none none / 0.5)", null],
+    ["rgba(none none none)", "color(srgb none none none)", null],
+    ["rgba(none none none / none)", "color(srgb none none none / none)", null],
+    ["rgba(128 none none)", "color(srgb 0.50196078 none none)", null],
+    ["rgba(128 none none / none)", "color(srgb 0.501961 none none / none)", null],
+    ["rgba(none none none / .5)", "color(srgb none none none / 0.5)", null],
+    ["rgba(20% none none)", "color(srgb 0.2 none none)", null],
+    ["rgba(20% none none / none)", "color(srgb 0.2 none none / none)", null],
+    ["rgba(none none none / 50%)", "color(srgb none none none / 0.5)", null],
+    ["rgb(-2 3 4)", "rgb(0, 3, 4)", null],
+    ["rgb(-20% 20% 40%)", "rgb(0, 51, 102)", null],
+    ["rgb(257 30 40)", "rgb(255, 30, 40)", null],
+    ["rgb(250% 20% 40%)", "rgb(255, 51, 102)", null],
+    ["rgba(-2 3 4)", "rgb(0, 3, 4)", null],
+    ["rgba(-20% 20% 40%)", "rgb(0, 51, 102)", null],
+    ["rgba(257 30 40)", "rgb(255, 30, 40)", null],
+    ["rgba(250% 20% 40%)", "rgb(255, 51, 102)", null],
+    ["rgba(-2 3 4 / .5)", "rgba(0, 3, 4, 0.5)", null],
+    ["rgba(-20% 20% 40% / 50%)", "rgba(0, 51, 102, 0.5)", null],
+    ["rgba(257 30 40 / 50%)", "rgba(255, 30, 40, 0.5)", null],
+    ["rgba(250% 20% 40% / .5)", "rgba(255, 51, 102, 0.5)", null],
+    ["rgb(250% 51 40%)", "rgb(255, 51, 102)", null],
+    ["rgb(255 20% 102)", "rgb(255, 51, 102)", null],
+    ["rgb(500, 0, 0)", "rgb(255, 0, 0)", null],
+    ["rgb(-500, 64, 128)", "rgb(0, 64, 128)", null],
+    ["rgb(calc(infinity), 0, 0)", "rgb(255, 0, 0)", null],
+    ["rgb(0, calc(infinity), 0)", "rgb(0, 255, 0)", null],
+    ["rgb(0, 0, calc(infinity))", "rgb(0, 0, 255)", null],
+    ["rgba(0, 0, 0, calc(infinity))", "rgb(0, 0, 0)", null],
+    ["rgb(calc(-infinity), 0, 0)", "rgb(0, 0, 0)", null],
+    ["rgb(0, calc(-infinity), 0)", "rgb(0, 0, 0)", null],
+    ["rgb(0, 0, calc(-infinity))", "rgb(0, 0, 0)", null],
+    ["rgba(0, 0, 0, calc(-infinity))", "rgba(0, 0, 0, 0)", null],
+    ["rgb(calc(NaN), 0, 0)", "rgb(0, 0, 0)", null],
+    ["rgb(0, calc(NaN), 0)", "rgb(0, 0, 0)", null],
+    ["rgb(0, 0, calc(NaN))", "rgb(0, 0, 0)", null],
+    ["rgba(0, 0, 0, calc(NaN))", "rgba(0, 0, 0, 0)", null],
+    ["rgb(calc(0 / 0), 0, 0)", "rgb(0, 0, 0)", null],
+    ["rgb(0, calc(0 / 0), 0)", "rgb(0, 0, 0)", null],
+    ["rgb(0, 0, calc(0 / 0))", "rgb(0, 0, 0)", null],
+    ["rgba(0, 0, 0, calc(0 / 0))", "rgba(0, 0, 0, 0)", null],
+    [
+      "rgb(calc(50% + (sign(1em - 10px) * 10%)), 0%, 0%, 50%)",
+      "rgb(calc(50% + (10% * sign(1em - 10px))) 0 0 / 0.5)",
+      null
+    ],
+    [
+      "rgba(calc(50% + (sign(1em - 10px) * 10%)), 0%, 0%, 50%)",
+      "rgb(calc(50% + (10% * sign(1em - 10px))) 0 0 / 0.5)",
+      null
+    ],
+    [
+      "rgb(calc(50 + (sign(1em - 10px) * 10)), 0, 0, 0.5)",
+      "rgb(calc(50 + (10 * sign(1em - 10px))) 0 0 / 0.5)",
+      null
+    ],
+    [
+      "rgba(calc(50 + (sign(1em - 10px) * 10)), 0, 0, 0.5)",
+      "rgb(calc(50 + (10 * sign(1em - 10px))) 0 0 / 0.5)",
+      null
+    ],
+    [
+      "rgb(0%, 0%, 0%, calc(50% + (sign(1em - 10px) * 10%)))",
+      "rgb(0 0 0 / calc(50% + (10% * sign(1em - 10px))))",
+      null
+    ],
+    [
+      "rgba(0%, 0%, 0%, calc(50% + (sign(1em - 10px) * 10%)))",
+      "rgb(0 0 0 / calc(50% + (10% * sign(1em - 10px))))",
+      null
+    ],
+    [
+      "rgb(0, 0, 0, calc(0.75 + (sign(1em - 10px) * 0.1)))",
+      "rgb(0 0 0 / calc(0.75 + (0.1 * sign(1em - 10px))))",
+      null
+    ],
+    [
+      "rgba(0, 0, 0, calc(0.75 + (sign(1em - 10px) * 0.1)))",
+      "rgb(0 0 0 / calc(0.75 + (0.1 * sign(1em - 10px))))",
+      null
+    ],
+    [
+      "rgb(calc(50% + (sign(1em - 10px) * 10%)) 0% 0% / 50%)",
+      "rgb(calc(50% + (10% * sign(1em - 10px))) 0 0 / 0.5)",
+      null
+    ],
+    [
+      "rgba(calc(50% + (sign(1em - 10px) * 10%)) 0% 0% / 50%)",
+      "rgb(calc(50% + (10% * sign(1em - 10px))) 0 0 / 0.5)",
+      null
+    ],
+    [
+      "rgb(calc(50 + (sign(1em - 10px) * 10)) 0 0 / 0.5)",
+      "rgb(calc(50 + (10 * sign(1em - 10px))) 0 0 / 0.5)",
+      null
+    ],
+    [
+      "rgba(calc(50 + (sign(1em - 10px) * 10)) 0 0 / 0.5)",
+      "rgb(calc(50 + (10 * sign(1em - 10px))) 0 0 / 0.5)",
+      null
+    ],
+    [
+      "rgb(0% 0% 0% / calc(50% + (sign(1em - 10px) * 10%)))",
+      "rgb(0 0 0 / calc(50% + (10% * sign(1em - 10px))))",
+      null
+    ],
+    [
+      "rgba(0% 0% 0% / calc(50% + (sign(1em - 10px) * 10%)))",
+      "rgb(0 0 0 / calc(50% + (10% * sign(1em - 10px))))",
+      null
+    ],
+    [
+      "rgb(0 0 0 / calc(0.75 + (sign(1em - 10px) * 0.1)))",
+      "rgb(0 0 0 / calc(0.75 + (0.1 * sign(1em - 10px))))",
+      null
+    ],
+    [
+      "rgba(0 0 0 / calc(0.75 + (sign(1em - 10px) * 0.1)))",
+      "rgb(0 0 0 / calc(0.75 + (0.1 * sign(1em - 10px))))",
+      null
+    ],
+    [
+      "rgba(calc(50% + (sign(1em - 10px) * 10%)) 0 0% / 0.5)",
+      "rgb(calc(50% + (10% * sign(1em - 10px))) 0 0 / 0.5)",
+      null
+    ],
+    [
+      "rgba(0% 0 0% / calc(0.75 + (sign(1em - 10px) * 0.1)))",
+      "rgb(0 0 0 / calc(0.75 + (0.1 * sign(1em - 10px))))",
+      null
+    ],
+    [
+      "rgba(calc(50 + (sign(1em - 10px) * 10)) 400 -400 / 0.5)",
+      "rgb(calc(50 + (10 * sign(1em - 10px))) 255 0 / 0.5)",
+      null
+    ],
+    [
+      "rgba(calc(50% + (sign(1em - 10px) * 10%)) 400% -400% / 0.5)",
+      "rgb(calc(50% + (10% * sign(1em - 10px))) 255 0 / 0.5)",
+      null
+    ],
+    [
+      "rgba(calc(50 + (sign(1em - 10px) * 10)), 400, -400, 0.5)",
+      "rgb(calc(50 + (10 * sign(1em - 10px))) 255 0 / 0.5)",
+      null
+    ],
+    [
+      "rgba(calc(50% + (sign(1em - 10px) * 10%)), 400%, -400%, 0.5)",
+      "rgb(calc(50% + (10% * sign(1em - 10px))) 255 0 / 0.5)",
+      null
+    ]
+  ],
+  "color-valid": [
+    ["currentcolor", "currentcolor", null],
+    ["transparent", "transparent", null],
+    ["red", "red", null],
+    ["magenta", "magenta", null],
+    ["#234", "rgb(34, 51, 68)", null],
+    ["#FEDCBA", "rgb(254, 220, 186)", null],
+    ["rgb(2, 3, 4)", "rgb(2, 3, 4)", null],
+    ["rgb(100%, 0%, 0%)", "rgb(255, 0, 0)", null],
+    ["rgba(2, 3, 4, 0.5)", "rgba(2, 3, 4, 0.5)", null],
+    ["rgba(2, 3, 4, 50%)", "rgba(2, 3, 4, 0.5)", null],
+    ["hsl(120, 100%, 50%)", "rgb(0, 255, 0)", null],
+    ["hsla(120, 100%, 50%, 0.25)", "rgba(0, 255, 0, 0.25)", null],
+    ["rgb(-2, 3, 4)", "rgb(0, 3, 4)", null],
+    ["rgb(100, 200, 300)", "rgb(100, 200, 255)", null],
+    ["rgb(20, 10, 0, -10)", "rgba(20, 10, 0, 0)", null],
+    ["rgb(100%, 200%, 300%)", "rgb(255, 255, 255)", null],
+    ["light-dark(black, white)", "light-dark(black, white)", null]
+  ]
+}
