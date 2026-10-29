@@ -479,6 +479,15 @@ const decoderFor = (
   }
 };
 
+/** Code points to a string, in slices so a long input does not overflow the argument list. */
+const fromCodePoints = (codePoints: ReadonlyArray<number>): string => {
+  let text = "";
+  for (let start = 0; start < codePoints.length; start += 8192) {
+    text += String.fromCodePoint(...codePoints.slice(start, start + 8192));
+  }
+  return text;
+};
+
 /** A chunk decoder over a byte handler: `decode` as the decoder module's backends have it. */
 export interface CjkBackend {
   readonly decode: (bytes: Uint8Array, stream: boolean) => Result.Result<string, void>;
@@ -506,36 +515,34 @@ export const cjkBackend = (
         // at most three (gb18030's « second, third, byte »), so the driver
         // stays linear in the input however malformed it is.
         let pending: ReadonlyArray<number> = [];
-        const out: Array<number> = [];
         let at = 0;
         let ending = false;
-        for (;;) {
-          let step: Step;
+        /** The next step: a restored byte, an input byte, end-of-queue once, or `None` when done. */
+        const next = (): Option.Option<Step> => {
           const [restored, ...rest] = pending;
           if (restored !== undefined) {
             pending = rest;
-            step = handler(restored);
-          } else if (at < bytes.length) {
-            step = handler(bytes[at] ?? 0);
+            return Option.some(handler(restored));
+          }
+          if (at < bytes.length) {
             at += 1;
-          } else if (!stream && !ending) {
-            step = handler(EOQ);
-            if (step._tag === "Finished") ending = true;
-          } else {
-            break;
+            return Option.some(handler(bytes[at - 1] ?? 0));
           }
-          if (step._tag === "Emit") out.push(...step.codePoints);
-          if (step._tag === "Error") {
-            if (fatal) return Result.fail(undefined);
-            out.push(0xfffd);
-            pending = [...step.restore, ...pending];
-          }
+          if (stream || ending) return Option.none();
+          const step = handler(EOQ);
+          ending = step._tag === "Finished";
+          return Option.some(step);
+        };
+        const out: Array<number> = [];
+        for (let step = next(); Option.isSome(step); step = next()) {
+          const value = step.value;
+          if (value._tag === "Emit") out.push(...value.codePoints);
+          if (value._tag !== "Error") continue;
+          if (fatal) return Result.fail(undefined);
+          out.push(0xfffd);
+          pending = [...value.restore, ...pending];
         }
-        let text = "";
-        for (let start = 0; start < out.length; start += 8192) {
-          text += String.fromCodePoint(...out.slice(start, start + 8192));
-        }
-        return Result.succeed(text);
+        return Result.succeed(fromCodePoints(out));
       },
     };
   });
