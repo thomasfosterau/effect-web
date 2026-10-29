@@ -43,11 +43,11 @@ A `SyntaxError` carries `offset`, the code-point offset in the preprocessed inpu
 
 ## `Length`
 
-`Length.parse` takes a dimension in a length unit (absolute `px cm mm q in pt pc`, and the font- and viewport-relative ones), a percentage, or a unitless `0`; `toPixels` and `convert` handle the absolute units (1in = 96px = 72pt), `serialize` prints it back.
+`Length.parse` takes a dimension in a length unit (absolute `px cm mm q in pt pc`, and the font- and viewport-relative ones), a percentage, or a unitless `0`; `toPixels` and `convert` handle the absolute units (1in = 96px = 72pt), `serialize` prints it back. `parse` also takes a `calc()` that simplifies to one unit (`calc(1in + 10px)` is `106px`); `parseSum` returns any `calc()` of lengths and percentages simplified to one term per unit (CSS Values 4 §10: `+` and `-` with whitespace around them, `*` by a number, `/` by a non-zero number, nested parentheses), with the absolute units folded into `px`, and `serializeSum` writes it back (`calc(50% - 1em)`).
 
 ## Not yet
 
-Shorthand expansion (`font`, `margin`, `padding`, `border`), the typed font, `text-align`, `text-decoration` and `vertical-align` values, a CSSOM serialiser for declarations, `calc()`, and Color 5's `color-mix()`.
+Shorthand expansion (`font`, `margin`, `padding`, `border`), the typed font, `text-align`, `text-decoration` and `vertical-align` values, a CSSOM serialiser for declarations, the other math functions (`min()`, `max()`, `clamp()`, …), and Color 5's `color-mix()`.
 
 ## Licence
 
