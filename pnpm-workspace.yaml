@@ -26,7 +26,7 @@ catalog:
   "@changesets/cli": ^3.0.3
   # Compiles AND RUNS every JSDoc `@example` (the `docgen` task); needs `tsx`
   # and a TypeScript JS API — the TS6 alias below satisfies its peer.
-  "@effect/docgen": ^4.0.6
+  "@effect/docgen": ^4.1.0
   "@effect/language-service": ^0.87.5
   # Optional peer of @thomasfosterau/effect-web: only the `./browser` and
   # `./testing` entries import it (its `Permissions`, `Clipboard` and
