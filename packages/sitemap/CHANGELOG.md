@@ -1,5 +1,24 @@
 # @thomasfosterau/effect-sitemap
 
+## 0.2.0
+
+### Minor Changes
+
+- [#147](https://github.com/thomasfosterau/effect-web/pull/147) [`39fe1bc`](https://github.com/thomasfosterau/effect-web/commit/39fe1bc9b0485938bcdf4cd295cad6c69a8c3fb3) Thanks [@thomasfosterau](https://github.com/thomasfosterau)! - `buildJsonFeed` / `jsonFeedResponse` are now an adapter over `@thomasfosterau/effect-json-feed` (a new dependency), and the feed they build validates as JSON Feed 1.1. `FeedEntry`, `JsonFeedOptions` and both signatures are unchanged.
+
+  The served bytes change:
+
+  - Every item now carries `content_text`, which JSON Feed 1.1 requires: the entry's `summary`, else its `title`, else `""`.
+  - `date_published` / `date_modified` are emitted RFC 3339 in UTC. A timestamp with an offset is normalised to UTC, one without a zone reads as UTC, and one that does not parse is omitted rather than emitted invalid.
+
+  `JsonFeed` / `JsonFeedItem` are now effect-json-feed's types, so an item's `date_published` / `date_modified` are typed optional. `JSON_FEED_CONTENT_TYPE` is effect-json-feed's constant (the same value).
+
+### Patch Changes
+
+- Updated dependencies [[`228bb6f`](https://github.com/thomasfosterau/effect-web/commit/228bb6fdc4540743e46368b58de4e926e1468b39), [`a28b97e`](https://github.com/thomasfosterau/effect-web/commit/a28b97efd10c938fed8610d9b6b6570c65c02c77), [`32e044f`](https://github.com/thomasfosterau/effect-web/commit/32e044f86ac5da943714d19d12828d5190cdd2b1), [`18e1967`](https://github.com/thomasfosterau/effect-web/commit/18e1967b77231fe7b930b9e2839efb0cfa9730b6), [`f0e215d`](https://github.com/thomasfosterau/effect-web/commit/f0e215de8884f7c0a1fb4701fe3ba6e8473ad1cb), [`d977b7e`](https://github.com/thomasfosterau/effect-web/commit/d977b7e6d2b123b27be4d50aac0f2c573e02b6ef), [`40d7c49`](https://github.com/thomasfosterau/effect-web/commit/40d7c49fda6f0ceab661fda246387396a4443722), [`7ec3d9c`](https://github.com/thomasfosterau/effect-web/commit/7ec3d9cceadb8d206b7119cc8e61b26eb10c9202), [`dd839f8`](https://github.com/thomasfosterau/effect-web/commit/dd839f8de55d5fdf2bc85702693f0847ef168d59), [`50889de`](https://github.com/thomasfosterau/effect-web/commit/50889dec7af207bff86954810a41706db86ab038), [`e1d84ba`](https://github.com/thomasfosterau/effect-web/commit/e1d84babe462edb9079d43ca19b464f7a7265a8a), [`aba1812`](https://github.com/thomasfosterau/effect-web/commit/aba1812caec8e7cf3fd450f2d09c0c570d5c21ed), [`448f52b`](https://github.com/thomasfosterau/effect-web/commit/448f52ba9872f48e215607883fa9884acce9dfe6), [`cd8ea52`](https://github.com/thomasfosterau/effect-web/commit/cd8ea52e03e628ae2ef6725015fc2432909510a1), [`789086c`](https://github.com/thomasfosterau/effect-web/commit/789086c8b8544bbb1cd55154003c6df18474bd02), [`f86aba6`](https://github.com/thomasfosterau/effect-web/commit/f86aba6d9e8e994c63f096f65663eed7e4e47b3f), [`9cc5a27`](https://github.com/thomasfosterau/effect-web/commit/9cc5a27e1cb2132f10fbbdd914a999df25d4d407), [`d224d12`](https://github.com/thomasfosterau/effect-web/commit/d224d1241b806e224b0d53b30b23c0eccfb5860d), [`3e32583`](https://github.com/thomasfosterau/effect-web/commit/3e32583b94d1cf0ac43813beeff3b42a28fa0faf)]:
+  - @thomasfosterau/effect-web@0.2.0
+  - @thomasfosterau/effect-json-feed@0.1.0
+
 ## 0.1.0
 
 ### Minor Changes

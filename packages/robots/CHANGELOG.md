@@ -1,5 +1,21 @@
 # @thomasfosterau/effect-robots
 
+## 0.2.0
+
+### Minor Changes
+
+- [#116](https://github.com/thomasfosterau/effect-web/pull/116) [`6327e77`](https://github.com/thomasfosterau/effect-web/commit/6327e773dee40a4c793d66ea0022f3bbb46cd86c) Thanks [@thomasfosterau](https://github.com/thomasfosterau)! - robots.txt lines are now parsed by an `@thomasfosterau/effect-parse` grammar, which is a new required peer (`^0.1.0`). Install it alongside the package: `pnpm add @thomasfosterau/effect-parse`.
+
+  `parse`, `encode` and the parsing behaviour are unchanged: the acceptance suite and a differential test against the previous parser pin them. `RobotsTxtFromString` is now typed as `Schema.Codec<RobotsTxt, string>`, so its `from` / `to` members are no longer part of the public type.
+
+- [#159](https://github.com/thomasfosterau/effect-web/pull/159) [`b54ba83`](https://github.com/thomasfosterau/effect-web/commit/b54ba83c49443fcd0d40f9b0bada57e67c92e64d) Thanks [@thomasfosterau](https://github.com/thomasfosterau)! - Add a refusal outcome the checker does not cache. `fetchRobots` (and so `makeRobotsChecker`) takes an optional `isRefusal: (error: HttpClientError) => boolean`; a failed request it identifies as the caller's own client refusing it (an SSRF guard, or a DNS failure inside one) gives the new `ROBOTS_REFUSED_SENTINEL` rather than `ROBOTS_UNAVAILABLE_SENTINEL`. `makeRobotsChecker` disallows that check with `ROBOTS_REFUSED_REASON` and does not cache it, while a 5xx or network failure is still cached as unavailable. Without the option, behaviour is unchanged.
+
+### Patch Changes
+
+- [#126](https://github.com/thomasfosterau/effect-web/pull/126) [`dd839f8`](https://github.com/thomasfosterau/effect-web/commit/dd839f8de55d5fdf2bc85702693f0847ef168d59) Thanks [@thomasfosterau](https://github.com/thomasfosterau)! - Internal refactors for the Effect lint preset, with no change in behaviour: `memoryCacheStorage` keeps its entries in insertion-ordered arrays instead of `Map`s, `appendVary` no longer builds a `Set`, and the service-worker event lifetime waits on its background fiber without running a second effect.
+
+- [#158](https://github.com/thomasfosterau/effect-web/pull/158) [`3532a9d`](https://github.com/thomasfosterau/effect-web/commit/3532a9dd3926cca65ac766639eaf6103f1f49e96) Thanks [@thomasfosterau](https://github.com/thomasfosterau)! - `parse` ends a line at a bare CR as well as at LF and CRLF (RFC 9309 §2.2's `EOL`). A CR-only robots.txt was read as one line, losing every rule, so a crawler failed open; `evaluateRobots(parse("User-agent: *\rDisallow: /\r"), "examplebot", "/x").allowed` is now `false`. LF and CRLF files parse as before.
+
 ## 0.1.0
 
 ### Minor Changes
