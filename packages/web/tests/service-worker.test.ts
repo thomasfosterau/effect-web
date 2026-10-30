@@ -205,8 +205,12 @@ describe("cache storage effects", () => {
 
   it("fails with a CacheError naming the operation and cache", async () => {
     const quota = new DOMException("quota", "QuotaExceededError");
+    const base = memoryCacheStorage();
     const broken: CacheStorage = {
-      ...memoryCacheStorage(),
+      delete: (cacheName) => base.delete(cacheName),
+      has: (cacheName) => base.has(cacheName),
+      keys: () => base.keys(),
+      match: (request, options) => base.match(request, options),
       open: () => Promise.reject(quota),
     };
     const error = await Effect.runPromise(

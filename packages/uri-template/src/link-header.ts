@@ -100,7 +100,7 @@ const relsOf = (value: string): ReadonlyArray<string> =>
  * @since 0.1.0
  * @category constructors
  */
-export const make = (target: string, options?: LinkOptions | undefined): Link => {
+export const make = (target: string, options?: LinkOptions): Link => {
   const rel = options?.rel;
   const titleStar = options?.titleStar;
   return {
@@ -213,7 +213,7 @@ const linkOf = (target: string, rawParameters: string, base: string | URL | unde
  * @since 0.1.0
  * @category parsing
  */
-export const parse = (header: string, base?: string | URL | undefined): ReadonlyArray<Link> =>
+export const parse = (header: string, base?: string | URL): ReadonlyArray<Link> =>
   Arr.map(Arr.fromIterable(header.matchAll(LINK_VALUE)), ([, target = "", parameters = ""]) =>
     linkOf(target.trim(), parameters, base),
   );

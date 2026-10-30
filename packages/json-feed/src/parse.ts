@@ -135,8 +135,7 @@ const makeReader = (diagnostics: Array<JsonFeedDiagnostic>) => {
         report(path, "an author needs a name, url or avatar; dropped");
         return Option.none();
       }
-      // SAFETY: at least one of the three members is present, checked above.
-      return Option.some(compact({ name, url, avatar }) as JsonFeedAuthor);
+      return Option.some(compact<JsonFeedAuthor>({ name, url, avatar }));
     });
 
   /** `authors`, or a JSON Feed 1.0 `author` as a one-element `authors`. */

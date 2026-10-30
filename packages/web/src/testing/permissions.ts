@@ -84,10 +84,7 @@ export interface Fixture {
  * @since 0.2.0
  * @category constructors
  */
-export const make = (
-  initial?: States | undefined,
-  unsupported?: ReadonlyArray<PermissionName> | undefined,
-): Fixture => {
+export const make = (initial?: States, unsupported?: ReadonlyArray<PermissionName>): Fixture => {
   const changed = MutableHashMap.empty<PermissionName, PermissionState>();
   const statuses: Array<{ readonly name: PermissionName; readonly status: EventTarget }> = [];
   const stateOf = (name: PermissionName): PermissionState =>
@@ -144,8 +141,8 @@ export const make = (
  * @category layers
  */
 export const layer = (
-  initial?: States | undefined,
-  unsupported?: ReadonlyArray<PermissionName> | undefined,
+  initial?: States,
+  unsupported?: ReadonlyArray<PermissionName>,
 ): Layer.Layer<Permissions.Permissions | Control> =>
   Layer.syncContext(() => {
     const { permissions, control } = make(initial, unsupported);

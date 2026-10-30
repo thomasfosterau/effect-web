@@ -68,7 +68,7 @@ interface State {
  * @since 0.2.0
  * @category constructors
  */
-export const make = (text?: string | undefined): Fixture => {
+export const make = (text?: string): Fixture => {
   const state: State = {
     text: text ?? "",
     items: [],
@@ -136,7 +136,7 @@ export const make = (text?: string | undefined): Fixture => {
  * @since 0.2.0
  * @category layers
  */
-export const layer = (text?: string | undefined): Layer.Layer<Clipboard.Clipboard | Control> =>
+export const layer = (text?: string): Layer.Layer<Clipboard.Clipboard | Control> =>
   Layer.syncContext(() => {
     const { clipboard, control } = make(text);
     return Context.make(Clipboard.Clipboard, clipboard).pipe(Context.add(Control, control));

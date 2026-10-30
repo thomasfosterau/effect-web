@@ -61,7 +61,7 @@ export interface Options {
 export class Control extends Context.Service<
   Control,
   {
-    readonly rotate: (type: OrientationType, angle?: number | undefined) => Effect.Effect<void>;
+    readonly rotate: (type: OrientationType, angle?: number) => Effect.Effect<void>;
     readonly locked: Effect.Effect<Option.Option<OrientationLockType>>;
     readonly setRefusal: (refusal: Refusal | undefined) => Effect.Effect<void>;
   }
@@ -144,7 +144,7 @@ class LockableTestOrientation extends TestOrientation {
  * @since 0.2.0
  * @category constructors
  */
-export const make = (options?: Options | undefined): Fixture => {
+export const make = (options?: Options): Fixture => {
   const type = options?.type ?? "portrait-primary";
   const state: State = {
     type,
@@ -193,7 +193,7 @@ export const make = (options?: Options | undefined): Fixture => {
  * @since 0.2.0
  * @category layers
  */
-export const layer = (options?: Options | undefined): Layer.Layer<ScreenOrientation | Control> =>
+export const layer = (options?: Options): Layer.Layer<ScreenOrientation | Control> =>
   Layer.syncContext(() => {
     const { orientation, control } = make(options);
     return Context.make(ScreenOrientation, orientation).pipe(Context.add(Control, control));

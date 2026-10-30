@@ -1,0 +1,12 @@
+{
+  // tsgolint (type-aware `vp check`) reads each file's nearest
+  // `tsconfig.json`. This one resolves the sibling workspace packages to
+  // their `src/`, so the lint, which runs before any build in CI, sees real
+  // types; the `check` task keeps type-checking against their built `dist/`.
+  "extends": "../tsconfig.json",
+  "compilerOptions": {
+    "paths": {
+      "@thomasfosterau/effect-mime": ["../../mime/src/index.ts"]
+    }
+  }
+}

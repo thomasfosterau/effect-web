@@ -109,7 +109,7 @@ interface State {
  * @since 0.2.0
  * @category constructors
  */
-export const make = (options?: Options | undefined): Fixture => {
+export const make = (options?: Options): Fixture => {
   const state: State = {
     permission: options?.permission ?? "prompt",
     answer: options?.answer ?? "granted",
@@ -200,7 +200,7 @@ export const make = (options?: Options | undefined): Fixture => {
  * @since 0.2.0
  * @category layers
  */
-export const layer = (options?: Options | undefined): Layer.Layer<IdleDetection | Control> =>
+export const layer = (options?: Options): Layer.Layer<IdleDetection | Control> =>
   Layer.syncContext(() => {
     const { idleDetection, control } = make(options);
     return Context.make(IdleDetection, idleDetection).pipe(Context.add(Control, control));

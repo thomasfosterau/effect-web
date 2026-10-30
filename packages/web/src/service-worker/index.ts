@@ -247,12 +247,12 @@ export interface CacheHandle {
   readonly name: string;
   readonly match: (
     request: RequestInfo | URL,
-    options?: CacheQueryOptions | undefined,
+    options?: CacheQueryOptions,
   ) => Effect.Effect<Option.Option<Response>, CacheError>;
   readonly put: (request: RequestInfo | URL, response: Response) => Effect.Effect<void, CacheError>;
   readonly delete: (
     request: RequestInfo | URL,
-    options?: CacheQueryOptions | undefined,
+    options?: CacheQueryOptions,
   ) => Effect.Effect<boolean, CacheError>;
   readonly keys: () => Effect.Effect<ReadonlyArray<Request>, CacheError>;
 }
@@ -1033,15 +1033,9 @@ export const messageListener = <
  * first: an undecodable payload is logged at `Warning` as `dropped` and
  * the handler is skipped.
  */
-const decodedListener = <
-  S extends Schema.Constraint,
-  Event extends ExtendableEventLike,
-  Payload,
-  E,
-  R,
->(
+const decodedListener = <S extends Schema.Constraint, Event extends ExtendableEventLike, E, R>(
   schema: S,
-  read: (event: Event) => Payload,
+  read: (event: Event) => S["Encoded"],
   dropped: string,
   handle: (decoded: S["Type"], event: Event) => Effect.Effect<unknown, E, R>,
 ): Effect.Effect<(event: Event) => void, never, R | S["DecodingServices"]> => {
@@ -1233,7 +1227,7 @@ const withRegistration = <A>(
  */
 export const showNotification = (
   title: string,
-  options?: NotificationOptions | undefined,
+  options?: NotificationOptions,
 ): Effect.Effect<void, ShowNotificationError> =>
   withRegistration("show", (registration) => registration.showNotification(title, options));
 
@@ -1263,9 +1257,9 @@ export const showNotification = (
  * @since 0.2.0
  * @category notifications
  */
-export const getNotifications = (
-  filter?: { readonly tag?: string | undefined } | undefined,
-): Effect.Effect<ReadonlyArray<PersistentNotificationLike>, ShowNotificationError> =>
+export const getNotifications = (filter?: {
+  readonly tag?: string | undefined;
+}): Effect.Effect<ReadonlyArray<PersistentNotificationLike>, ShowNotificationError> =>
   withRegistration("get", (registration) =>
     registration.getNotifications(filter?.tag === undefined ? undefined : { tag: filter.tag }),
   );

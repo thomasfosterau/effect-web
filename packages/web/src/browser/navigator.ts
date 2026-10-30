@@ -36,7 +36,7 @@ import { ambientEventTarget, ambientNavigator } from "../internal/globals.ts";
  * @since 0.2.0
  * @category models
  */
-export interface NetworkInformationLike extends Stream.EventListener<unknown> {
+export interface NetworkInformationLike extends Stream.EventListener {
   readonly type?: string | undefined;
   readonly effectiveType?: string | undefined;
   readonly downlink?: number | undefined;
@@ -99,7 +99,7 @@ export interface NavigatorLike {
  */
 export interface NavigatorEnvironment {
   readonly navigator: NavigatorLike | undefined;
-  readonly events: Stream.EventListener<unknown> | undefined;
+  readonly events: Stream.EventListener | undefined;
 }
 
 /**
@@ -300,7 +300,7 @@ export class Navigator extends Context.Service<
     readonly share: (data: ShareData) => Effect.Effect<void, NavigatorError>;
     readonly sendBeacon: (
       url: string | URL,
-      data?: BodyInit | undefined,
+      data?: BodyInit,
     ) => Effect.Effect<void, NavigatorError>;
     readonly vibrate: (pattern: VibratePattern) => Effect.Effect<boolean>;
     readonly storage: {
@@ -644,6 +644,6 @@ export const share = (data: ShareData): Effect.Effect<void, NavigatorError, Navi
  */
 export const sendBeacon = (
   url: string | URL,
-  data?: BodyInit | undefined,
+  data?: BodyInit,
 ): Effect.Effect<void, NavigatorError, Navigator> =>
   Effect.flatMap(Navigator, (navigator) => navigator.sendBeacon(url, data));

@@ -125,7 +125,7 @@ export type BrowserChecks = [
   /** _channelCarriesTheSchemaType */ Assert<Equals<ChannelValue, { readonly at: number }>>,
   /** _connectionIsOption */ Assert<Equals<Connection, Option.Option<Navigator.ConnectionInfo>>>,
   /** _observeReturnsTheFiber */ Assert<
-    Equals<Effect.Success<typeof observed>, Fiber.Fiber<ReadonlyArray<boolean>, never>>
+    Equals<Effect.Success<typeof observed>, Fiber.Fiber<ReadonlyArray<boolean>>>
   >,
   /** _idleStreamCarriesIdleError */ Assert<
     Equals<

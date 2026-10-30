@@ -232,11 +232,11 @@ export class Locks extends Context.Service<
     readonly supported: boolean;
     readonly acquire: (
       name: string,
-      options?: LockOptions | undefined,
+      options?: LockOptions,
     ) => Effect.Effect<HeldLock, LockError, Scope.Scope>;
     readonly tryAcquire: (
       name: string,
-      options?: { readonly mode?: LockMode | undefined } | undefined,
+      options?: { readonly mode?: LockMode | undefined },
     ) => Effect.Effect<Option.Option<HeldLock>, LockError, Scope.Scope>;
     readonly query: Effect.Effect<LockSnapshot, LockError>;
   }
@@ -460,19 +460,19 @@ const runHolding = <A, E, R>(
 export const withLock: {
   (
     name: string,
-    options?: LockOptions | undefined,
+    options?: LockOptions,
   ): <A, E, R>(self: Effect.Effect<A, E, R>) => Effect.Effect<A, E | LockError, R | Locks>;
   <A, E, R>(
     self: Effect.Effect<A, E, R>,
     name: string,
-    options?: LockOptions | undefined,
+    options?: LockOptions,
   ): Effect.Effect<A, E | LockError, R | Locks>;
 } = dual(
   (args) => Effect.isEffect(args[0]),
   <A, E, R>(
     self: Effect.Effect<A, E, R>,
     name: string,
-    options?: LockOptions | undefined,
+    options?: LockOptions,
   ): Effect.Effect<A, E | LockError, R | Locks> =>
     Effect.flatMap(Locks, (locks) =>
       Effect.scopedWith((scope) =>
@@ -508,21 +508,21 @@ export const withLock: {
 export const withLockIfAvailable: {
   (
     name: string,
-    options?: { readonly mode?: LockMode | undefined } | undefined,
+    options?: { readonly mode?: LockMode | undefined },
   ): <A, E, R>(
     self: Effect.Effect<A, E, R>,
   ) => Effect.Effect<Option.Option<A>, E | LockError, R | Locks>;
   <A, E, R>(
     self: Effect.Effect<A, E, R>,
     name: string,
-    options?: { readonly mode?: LockMode | undefined } | undefined,
+    options?: { readonly mode?: LockMode | undefined },
   ): Effect.Effect<Option.Option<A>, E | LockError, R | Locks>;
 } = dual(
   (args) => Effect.isEffect(args[0]),
   <A, E, R>(
     self: Effect.Effect<A, E, R>,
     name: string,
-    options?: { readonly mode?: LockMode | undefined } | undefined,
+    options?: { readonly mode?: LockMode | undefined },
   ): Effect.Effect<Option.Option<A>, E | LockError, R | Locks> =>
     Effect.flatMap(Locks, (locks) =>
       Effect.scopedWith((scope) =>

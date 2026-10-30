@@ -39,7 +39,7 @@ import * as PermissionStatus from "./permission-status.ts";
  * @since 0.2.0
  * @category models
  */
-export interface NotificationLike extends Stream.EventListener<unknown> {
+export interface NotificationLike extends Stream.EventListener {
   close(): void;
 }
 
@@ -176,7 +176,7 @@ export class Notifications extends Context.Service<
     readonly requestPermission: Effect.Effect<NotificationPermission, NotificationError>;
     readonly show: (
       title: string,
-      options?: NotificationOptions | undefined,
+      options?: NotificationOptions,
     ) => Effect.Effect<ShownNotification, NotificationError, Scope.Scope>;
   }
 >()("@thomasfosterau/effect-web/browser/Notifications") {}
@@ -219,7 +219,7 @@ const unsupported = (): Notifications["Service"] =>
 export const make = (environment: NotificationsEnvironment): Notifications["Service"] => {
   const { Notification, userActivation } = environment;
   if (Notification === undefined) return unsupported();
-  const show = (title: string, options?: NotificationOptions | undefined) =>
+  const show = (title: string, options?: NotificationOptions) =>
     Effect.acquireRelease(
       Effect.gen(function* () {
         const permission = Notification.permission;
@@ -394,7 +394,7 @@ export const requestPermission: Effect.Effect<
  */
 export const show = (
   title: string,
-  options?: NotificationOptions | undefined,
+  options?: NotificationOptions,
 ): Effect.Effect<ShownNotification, NotificationError, Notifications | Scope.Scope> =>
   Effect.flatMap(Notifications, (notifications) => notifications.show(title, options));
 

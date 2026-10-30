@@ -31,7 +31,7 @@ import { ambientScreenOrientation } from "../internal/globals.ts";
  * @since 0.2.0
  * @category models
  */
-export interface ScreenOrientationLike extends Stream.EventListener<unknown> {
+export interface ScreenOrientationLike extends Stream.EventListener {
   readonly type: OrientationType;
   readonly angle: number;
   lock?(orientation: OrientationLockType): Promise<void>;
@@ -160,11 +160,11 @@ export const make = (
     lock: (type) =>
       Effect.acquireRelease(
         Effect.suspend(() => {
-          const lock = orientation.lock;
+          const lock = orientation.lock?.bind(orientation);
           return lock === undefined
             ? Effect.fail(orientationError("Unsupported", undefined))
             : Effect.tryPromise({
-                try: () => lock.call(orientation, type),
+                try: () => lock(type),
                 catch: (cause) =>
                   orientationError(reasonOf(cause, REJECTION_REASONS, "Failed"), cause),
               });

@@ -21,6 +21,10 @@ import {
   UnsafeUrl,
 } from "@thomasfosterau/effect-web/net";
 
+/** The URL a stubbed `fetch` was called with, whatever form it took. */
+const urlOf = (input: Parameters<typeof fetch>[0]): string =>
+  Predicate.isString(input) ? input : input instanceof URL ? input.href : input.url;
+
 // `toStrictEqual` against a bare `Error` checks the prototype as well as the
 // message, so a rethrown `UnsafeUrl` / `RedirectRejected` (an `Error` subclass
 // with the same message) fails it.
@@ -242,9 +246,8 @@ const withMockFetch = async (
   fn: () => Promise<void>,
 ): Promise<void> => {
   const original = globalThis.fetch;
-  // SAFETY: the stub honours the one call shape the guard makes (`fetch(url, init)`) and ignores `init`; the cast widens it back to the global signature for the assignment.
-  globalThis.fetch = ((input: Parameters<typeof fetch>[0]) =>
-    Promise.resolve(impl(Predicate.isString(input) ? input : String(input)))) as typeof fetch;
+  // The stub honours the one call shape the guard makes (`fetch(url, init)`) and ignores `init`.
+  globalThis.fetch = (input: Parameters<typeof fetch>[0]) => Promise.resolve(impl(urlOf(input)));
   // oxlint-disable-next-line effect/avoid-try-catch -- try/**finally**, not try/catch: nothing is caught, so no error channel is being swallowed. `finally` is what restores the real `globalThis.fetch` when the assertion inside `fn` throws.
   try {
     await fn();
@@ -559,7 +562,7 @@ describe("followRedirects (the Effect form)", () => {
   const stub =
     (impl: (url: string) => Response): typeof fetch =>
     (input) =>
-      Promise.resolve(impl(Predicate.isString(input) ? input : String(input)));
+      Promise.resolve(impl(urlOf(input)));
 
   it("fails with UnsafeUrl on a blocked hop and RedirectRejected on a broken chain", async () => {
     const blocked = await Effect.runPromise(
@@ -612,7 +615,7 @@ describe("followRedirects (the Effect form)", () => {
           fetch: (input, init) => {
             seen.push(init);
             return Promise.resolve(
-              String(input) === "https://example.com/" ? redirectTo("/final") : new Response("ok"),
+              urlOf(input) === "https://example.com/" ? redirectTo("/final") : new Response("ok"),
             );
           },
         },

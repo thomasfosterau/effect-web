@@ -169,18 +169,11 @@ describe("the Fetch adapter", () => {
   describe("header-name spelling", () => {
     // `globalThis.Headers` lower-cases names on read, so the names an adapter
     // writes are observed at `Headers#set`, the call a runtime sends as written.
-    const recordSetNames = (): Array<string> => {
-      const names: Array<string> = [];
-      const set = globalThis.Headers.prototype.set;
-      vi.spyOn(globalThis.Headers.prototype, "set").mockImplementation(function (
-        this: globalThis.Headers,
-        name: string,
-        value: string,
-      ) {
-        names.push(name);
-        set.call(this, name, value);
-      });
-      return names;
+    // A spy with no implementation calls through to the real `set`; the
+    // returned reader lists the names it was called with so far.
+    const recordSetNames = (): (() => ReadonlyArray<string>) => {
+      const spy = vi.spyOn(globalThis.Headers.prototype, "set");
+      return () => spy.mock.calls.map(([name]) => name);
     };
 
     afterEach(() => {
@@ -193,7 +186,7 @@ describe("the Fetch adapter", () => {
       applyToWebHeaders(headers, (h) =>
         stageNoindex(responseVary(securityHeaders(h), "negotiated"), { indexable: false }),
       );
-      expect(names.toSorted()).toEqual(
+      expect(names().toSorted()).toEqual(
         [...Record.keys(SECURITY_HEADER_DEFAULTS), "Vary", "X-Robots-Tag"].toSorted(),
       );
     });
@@ -204,7 +197,7 @@ describe("the Fetch adapter", () => {
       updateWebHeaders(response, (h) =>
         Headers.set(Headers.set(securityHeaders(h), "etag", '"v1"'), "www-authenticate", "Basic"),
       );
-      expect(names.toSorted()).toEqual(
+      expect(names().toSorted()).toEqual(
         [
           ...Record.keys(SECURITY_HEADER_DEFAULTS).filter((name) => name !== "X-Frame-Options"),
           "ETag",

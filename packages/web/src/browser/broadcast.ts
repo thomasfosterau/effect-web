@@ -36,7 +36,7 @@ import { ambientBroadcastChannel } from "../internal/globals.ts";
  * @since 0.2.0
  * @category models
  */
-export interface BroadcastChannelLike extends Stream.EventListener<unknown> {
+export interface BroadcastChannelLike extends Stream.EventListener {
   postMessage(message: unknown): void;
   close(): void;
 }

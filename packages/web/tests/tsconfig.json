@@ -1,0 +1,20 @@
+{
+  // tsgolint (type-aware `vp check`) reads the nearest `tsconfig.json` and
+  // never `tsconfig.test.json`; this hands the tests the same options and
+  // `paths`, plus the sibling workspace packages resolved to their `src/` so
+  // the lint, which runs before any build in CI, sees real types (the
+  // `check` task keeps type-checking against their built `dist/`).
+  "extends": "../tsconfig.test.json",
+  "compilerOptions": {
+    "paths": {
+      "@thomasfosterau/effect-web": ["../src/index.ts"],
+      "@thomasfosterau/effect-web/net": ["../src/net/index.ts"],
+      "@thomasfosterau/effect-web/observability": ["../src/observability/index.ts"],
+      "@thomasfosterau/effect-web/negotiate": ["../src/negotiate/index.ts"],
+      "@thomasfosterau/effect-web/service-worker": ["../src/service-worker/index.ts"],
+      "@thomasfosterau/effect-web/browser": ["../src/browser/index.ts"],
+      "@thomasfosterau/effect-web/testing": ["../src/testing/index.ts"],
+      "@thomasfosterau/effect-mime": ["../../mime/src/index.ts"]
+    }
+  }
+}

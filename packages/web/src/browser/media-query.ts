@@ -22,7 +22,7 @@ import { ambientMatchMedia } from "../internal/globals.ts";
  * @since 0.2.0
  * @category models
  */
-export interface MediaQueryListLike extends Stream.EventListener<unknown> {
+export interface MediaQueryListLike extends Stream.EventListener {
   readonly matches: boolean;
 }
 

@@ -327,7 +327,7 @@ describe("Locks grant races", () => {
           pending.push((lock) => {
             const held = callback(lock);
             outcomes.push(held);
-            Promise.resolve(held).then(() => resolve());
+            void Promise.resolve(held).then(() => resolve());
           });
         }),
       query: () => Promise.resolve({}),
