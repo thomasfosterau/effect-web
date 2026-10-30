@@ -22,7 +22,7 @@ A new package adds a row here and in the root `README.md`, its own `CLAUDE.md`, 
 
 ## Common pitfalls
 
-- **Never edit a version in a `package.json`.** Versions live in the `pnpm-workspace.yaml` catalog (`catalogMode: strict` rejects anything else). After editing it, run `pnpm install` and commit `pnpm-lock.yaml`, or every CI job fails with `ERR_PNPM_LOCKFILE_CONFIG_MISMATCH`. `@effect/tsgo`, `@typescript/native` and `vite-plus` move together (the tsgo patch hard-errors at install on an unsupported `tsc` or `oxlint`); read their catalog comments first. Dependabot's `toolchain` group bumps them as one PR, but cannot pick the `@effect/tsgo` release that supports a new vite-plus's oxlint: when that PR goes red at install, move the `@effect/tsgo` pin by hand on its branch.
+- **Never edit a version in a `package.json`.** Versions live in the `pnpm-workspace.yaml` catalog (`catalogMode: strict` rejects anything else). After editing it, run `pnpm install` and commit `pnpm-lock.yaml`, or every CI job fails with `ERR_PNPM_LOCKFILE_CONFIG_MISMATCH`. `@effect/tsgo`, `@typescript/native` and `vite-plus` move together (the tsgo patch hard-errors at install on an unsupported `tsc` or `oxlint`); read their catalog comments first. Dependabot's `toolchain` group bumps them as one PR, but cannot pick the `@effect/tsgo` release that supports a new vite-plus's oxlint: when that PR goes red at install, move the `@effect/tsgo` pin by hand on its branch. Dependabot also groups `effect` + `@effect/*`, docgen + `tsx`, `@changesets/*` and `fallow`; the npm aliases (`vite`, `typescript`, `@typescript/native`) and the `overrides` are hand moves listed in `.github/dependabot.yml`'s header. `minimumReleaseAge` is 480 minutes (8 hours); Dependabot's `cooldown` is 1 day, its smallest unit.
 - **`dist/` is the product.** Each package is a `vp pack` (tsdown) library with one bundle per entry point; `exports` points at `dist/`, so a sibling package consumes it the way a consumer does and its `check` / `test:unit` / `docgen` tasks take a `{ task: 'build', from: 'dependencies' }` edge.
 - **`"sideEffects": false` is a claim about `dist/`, and it is load-bearing.** Every emitted `.js` must be pure declarations: no top-level statements, no top-level `await`, no bare imports. That is what lets a consumer's bundler drop what it does not use.
 - **`vp run docgen` executes your examples.** `@effect/docgen` compiles every JSDoc `@example` as a program and runs it (docgen 4 runs examples only under `"runExamples": true` in each `packages/*/docgen.json`; it defaults to type-checking alone), importing the package by name through `dist/`. An example must be complete (import everything it uses), must not use `declare const` (no runtime value — the failure is at execution and easy to misread), and must not throw.
@@ -44,7 +44,7 @@ Package-local invariants, terms and import boundaries live only in each package'
 ## Commands
 
 - `pnpm install` — dependencies plus the Vite+ git hooks (pre-commit runs `vp staged`: format + lint on staged files) and the `prepare` step that patches the native `tsc` / `oxlint` with `@effect/tsgo`. No pre-push hook: run the gates yourself.
-- `vp check` — format + lint (Oxfmt + Oxlint). `vp run check` — the type gate: every package's `src` under `tsconfig.json` plus its type-level tests under `tsconfig.test.json`. They are different commands.
+- `vp check` — format + lint (Oxfmt + Oxlint: `@enfect/oxlint`'s `recommended` Effect rules, `@effect/tsgo`'s preset, and oxlint's `correctness`, `suspicious` and `perf` categories over the `typescript`, `unicorn`, `oxc`, `import`, `promise` and `vitest` plugins; fix a finding in code, a rule is relaxed only in `vite.config.ts` with its reason). `vp run check` — the type gate: every package's `src` under `tsconfig.json` plus its type-level tests under `tsconfig.test.json`. They are different commands.
 - `vp run -r test:unit` — unit tests (node Vitest; nothing here needs a database or a credential).
 - `vp run -r build` — `vp pack` → every package's `dist/`.
 - `vp run check:dist` — the import guard: the built `dist/` of every published package imports no `effect/unstable/*`. Run after the build.
@@ -68,7 +68,7 @@ Before you report work as done, run the gates below in order and quote each comm
 8. `pnpm audit --audit-level high` (network)
 9. `vp run test:coverage`, then `fallow audit --format json --quiet --explain --gate-marker agent` (the fallow gate below; not a CI step). The PreToolUse fallow gate audits against `coverage/coverage-final.json` and never refreshes it, so run `test:coverage` first.
 
-Steps 2–8 are CI's required `ci` job, in its order ([ci.yml](.github/workflows/ci.yml)). `CONTRIBUTING.md` and the PR template link here rather than restating the list.
+Steps 2–8 are CI's required `ci` job, in its order ([ci.yml](.github/workflows/ci.yml)). Every workflow defaults to `permissions: {}`, pins each action to a commit SHA, checks out without persisted credentials (except the Release job, whose Changesets step pushes), and never runs the Release job for Dependabot; CI needs no secret, so Dependabot PRs run it safely. `uvx zizmor --offline .github` audits the workflows (config in `.github/zizmor.yml`). `CONTRIBUTING.md` and the PR template link here rather than restating the list.
 
 ## Branches and pull requests
 
@@ -98,6 +98,7 @@ Read the installed package before writing Effect code: `node_modules/effect/AGEN
 ## Agent sessions
 
 - The SessionStart hook (`.claude/hooks/session-start.sh`) installs dependencies against the lockfile and puts `vp` (a re-exec shim that prefers the nearest worktree's `node_modules`), `fallow` and `tsx` on PATH for non-interactive shells. It hydrates no secrets; none are needed, and nothing here can publish.
+- `.claude/settings.json` enables the `@enfect/claude` plugin (Effect guidance, skills and post-write pattern checks), pinned by `ref` to a reviewed `mpsuesser/enfect` commit.
 - A PreToolUse hook (`.claude/hooks/fallow-gate.sh`) blocks `git commit` / `git push` when `fallow audit --base origin/trunk` fails; it reads the coverage map on disk, so run `vp run test:coverage` first. A PostToolUse hook runs `vp fmt` on every source, JSON, CSS or Markdown file you write or edit.
 - Every gate in [Verification](#verification) runs in an agent session; `pnpm audit` needs the network.
 

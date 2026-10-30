@@ -21,7 +21,9 @@ jobs:
     name: Version or publish
     # Never run on forks (they have neither the environment nor the trusted
     # publisher binding, so a fork cannot publish on your behalf).
-    if: github.repository == 'thomasfosterau/effect-web'
+    # Never for Dependabot either: this job holds `id-token: write` and the
+    # release environment, which no `dependabot[bot]`-triggered run may reach.
+    if: github.repository == 'thomasfosterau/effect-web' && github.actor != 'dependabot[bot]'
     runs-on: ubuntu-latest
     timeout-minutes: 20
     # Requires manual approval via a protected GitHub Environment named
