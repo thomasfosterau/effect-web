@@ -59,8 +59,8 @@ catalog:
   "@thomasfosterau/effect-jsonapi": ^0.19.0
   # Peer of @thomasfosterau/effect-robots: the robots.txt line grammar is an
   # effect-parse parser, decoded through its `ParserSchema` (effect-web#113).
-  "@thomasfosterau/effect-parse": ^0.3.0
-  "@types/node": ^26.6.5
+  "@thomasfosterau/effect-parse": ^0.4.0
+  "@types/node": ^26.6.6
   # Must equal the vitest that vite-plus bundles (see `vitest` below); vite-plus
   # refuses to run coverage on a mismatch.
   "@vitest/coverage-istanbul": 5.0.5
@@ -102,7 +102,7 @@ catalogs:
     "@thomasfosterau/effect-jsonapi": ">=0.16.1"
     # Caret, not `>=`: on 0.x a minor release may break the combinator API
     # the robots grammar is written against.
-    "@thomasfosterau/effect-parse": ^0.3.0
+    "@thomasfosterau/effect-parse": ^0.4.0
     # rc.118 removed every `effect/unstable/*` export path (now `effect/http`,
     # `effect/http-api`, `effect/sql`, ...), so the published dist imports
     # paths that do not exist on anything older: the floor is rc.118
