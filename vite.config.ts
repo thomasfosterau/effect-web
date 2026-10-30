@@ -15,7 +15,7 @@
 
 import { defineConfig } from "vite-plus";
 import { recommended } from "@effect/tsgo/oxlint-presets";
-import effect from "@mpsuesser/oxlint-plugin-effect";
+import effect from "@enfect/oxlint";
 
 export default defineConfig({
   // Staged-file checks run by `vp staged` (pre-commit).
@@ -36,8 +36,13 @@ export default defineConfig({
   lint: {
     ignorePatterns: ["**/dist/**", "**/docs/**", "**/coverage/**", "**/node_modules/**"],
     extends: [recommended, effect.configs.recommended],
+    // oxlint's default plugins plus `import`, `promise` and `vitest`, each
+    // contributing its rules to the categories below.
+    plugins: ["eslint", "typescript", "unicorn", "oxc", "import", "promise", "vitest"],
     categories: {
       correctness: "error",
+      suspicious: "error",
+      perf: "error",
     },
     rules: {
       "eslint/no-unused-vars": [
@@ -89,6 +94,45 @@ export default defineConfig({
       "typescript/ban-ts-comment": "off",
       "unicorn/no-empty-file": "off",
       "vite-plus/prefer-vite-plus-imports": "error",
+
+      // ---- `suspicious` / `perf` / plugin rules, tuned to this workspace ----
+      // `_tag` is Effect's discriminant, read and written on every tagged
+      // value; any other leading underscore is still a finding.
+      "eslint/no-underscore-dangle": ["error", { allow: ["_tag"] }],
+      // The test helpers are named `expect…` / `assert…` (`expectDispatch`,
+      // `expectPlainErrorCausedBy`): each wraps `expect` calls.
+      "vitest/expect-expect": [
+        "error",
+        { assertFunctionNames: ["expect", "expect*", "assert", "assert*"] },
+      ],
+      // Vitest's `expect(value, message)` takes a failure message as its
+      // second argument; the rule's default of one argument is Jest's.
+      "vitest/valid-expect": ["error", { maxArgs: 2 }],
+      // A thrown decode error's text is Effect's `SchemaError` rendering, not
+      // this family's contract; the tests pin that a decode throws, and the
+      // typed failure where it matters.
+      "vitest/require-to-throw-message": "off",
+      // Spreading a value into a new object in `map` / `reduce` is the
+      // immutable update the Effect style asks for; the rules' suggested
+      // fix is in-place mutation. The `reduce` sites are tracked (see below).
+      "oxc/no-map-spread": "off",
+      // False positive: the one `postMessage` call is `BroadcastChannel`'s,
+      // which takes no `targetOrigin` (same-origin by construction).
+      "unicorn/require-post-message-target-origin": "off",
+      // The in-memory Web Locks fake (`./testing`) mirrors the platform's
+      // promise plumbing: its `then` callbacks deliberately return nothing,
+      // and the `callback` it invokes is the lock request's, not a Node-style
+      // continuation.
+      "promise/always-return": "off",
+      "promise/no-callback-in-promise": "off",
+      // Allowances adopted with the `suspicious` / `perf` categories (counts
+      // as of adoption; a new site is a defect, not headroom). Paying them
+      // down is tracked in the follow-up issue linked from the PR that
+      // enabled the categories.
+      "eslint/no-shadow": "warn", // 48 sites
+      "unicorn/consistent-function-scoping": "warn", // 41 sites
+      "unicorn/prefer-set-has": "warn", // 19 sites
+      "oxc/no-accumulating-spread": "warn", // 3 sites
     },
     overrides: [
       // Build/test configs are evaluated by Vite and Vitest in bare Node,

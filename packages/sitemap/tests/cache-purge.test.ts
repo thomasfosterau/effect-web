@@ -10,6 +10,7 @@ import * as Logger from "effect/Logger";
 import * as References from "effect/References";
 import * as Schema from "effect/Schema";
 import {
+  type CachePurgeContext,
   FEED_CACHE_TAG,
   makePurgeTagsForResourceType,
   purgeCacheTags,
@@ -62,15 +63,18 @@ describe("makePurgeTagsForResourceType", () => {
   });
 });
 
+/** The `purge` method a `CachePurgeContext` carries, the shape every mock below takes. */
+type Purge = NonNullable<CachePurgeContext["cache"]>["purge"];
+
 describe("purgeCacheTags", () => {
   it("calls ctx.cache.purge with the given tags", async () => {
-    const purge = vi.fn(async () => ({ success: true, errors: [] }));
+    const purge = vi.fn<Purge>(async () => ({ success: true, errors: [] }));
     await Effect.runPromise(purgeCacheTags({ cache: { purge } }, ["sitemap", "feed"]));
     expect(purge).toHaveBeenCalledWith({ tags: ["sitemap", "feed"] });
   });
 
   it("is a no-op for an empty tag list — never calls purge", async () => {
-    const purge = vi.fn(async () => ({ success: true, errors: [] }));
+    const purge = vi.fn<Purge>(async () => ({ success: true, errors: [] }));
     await Effect.runPromise(purgeCacheTags({ cache: { purge } }, []));
     expect(purge).not.toHaveBeenCalled();
   });
@@ -84,7 +88,7 @@ describe("purgeCacheTags", () => {
   });
 
   it("logs a purge failure rather than failing (dropped purge, not a dropped request)", async () => {
-    const purge = vi.fn(async () => {
+    const purge = vi.fn<Purge>(async () => {
       throw new TestFailure({ message: "purge unavailable" });
     });
     const { lines } = await runLogging(purgeCacheTags({ cache: { purge } }, ["sitemap"]));
@@ -95,7 +99,7 @@ describe("purgeCacheTags", () => {
 
   it("logs a resolved success: false result rather than dropping it silently", async () => {
     const errors = [{ code: 10000, message: "internal error" }];
-    const purge = vi.fn(async () => ({ success: false, errors }));
+    const purge = vi.fn<Purge>(async () => ({ success: false, errors }));
     const { lines } = await runLogging(purgeCacheTags({ cache: { purge } }, ["sitemap"]));
     expect(lines).toHaveLength(1);
     expect(lines[0]?.annotations).toMatchObject({
@@ -106,13 +110,13 @@ describe("purgeCacheTags", () => {
   });
 
   it("does not log when the purge resolves success: true", async () => {
-    const purge = vi.fn(async () => ({ success: true, errors: [] }));
+    const purge = vi.fn<Purge>(async () => ({ success: true, errors: [] }));
     const { lines } = await runLogging(purgeCacheTags({ cache: { purge } }, ["sitemap"]));
     expect(lines).toEqual([]);
   });
 
   it("the Promise form resolves through the same path", async () => {
-    const purge = vi.fn(async () => ({ success: true, errors: [] }));
+    const purge = vi.fn<Purge>(async () => ({ success: true, errors: [] }));
     await expect(purgeCacheTagsPromise({ cache: { purge } }, ["feed"])).resolves.toBeUndefined();
     expect(purge).toHaveBeenCalledWith({ tags: ["feed"] });
   });

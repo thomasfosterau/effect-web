@@ -38,15 +38,21 @@ catalog:
   # with an Effect-patched build matched by gitHead, so this pins in lockstep
   # with `@typescript/native` below (0.55.0 ships against typescript 7.0.2 and
   # 7.1.0-dev.20261019.1) and with the `oxlint` and `oxlint-tsgolint` that
-  # `vite-plus` pulls in (0.55.0 supports oxlint 1.87.0 – 1.89.0 and
-  # tsgolint 7.0.2003 / 7.0.2004; vite-plus 1.3.0 carries oxlint 1.88.0 and
-  # tsgolint 7.0.2004 — 0.47.x's 1.82.0 – 1.86.0 range no longer covers it).
+  # `vite-plus` pulls in (0.63.0 supports oxlint 1.88.0 – 1.90.0 and
+  # tsgolint 7.0.2004 / 7.0.2005, on native typescript 7.0.2; vite-plus 1.4.0
+  # carries oxlint 1.89.0 and tsgolint 7.0.2004).
   # Each @effect/tsgo release hard-errors (UnsupportedTargetPackageVersionError)
   # on any other component version, failing `pnpm install` itself. Read the
   # `components` table in node_modules/@effect/tsgo/dist/effect-tsgo.cjs
   # before bumping any of the three.
-  "@effect/tsgo": 0.55.0
-  "@mpsuesser/oxlint-plugin-effect": ^0.6.0
+  "@effect/tsgo": 0.63.0
+  # The Effect lint rules (`effect/*`, the `anti-slop` rules included), loaded
+  # by vite-plus's oxlint as a JS plugin through `configs.recommended` in
+  # vite.config.ts. Rides in Dependabot's `toolchain` group with the oxlint
+  # it loads into. It depends on `effect` 4.1.0 exactly, but the `effect`
+  # override below forces it onto the workspace singleton, which it lints
+  # fine against.
+  "@enfect/oxlint": ^0.9.0
   # Optional peer of @thomasfosterau/effect-web: only the `./negotiate` entry
   # imports it (the JSON:API §5/§6 media-type rules are adopted from its
   # `Middleware`, never re-implemented here).
@@ -59,7 +65,7 @@ catalog:
   # refuses to run coverage on a mismatch.
   "@vitest/coverage-istanbul": 5.0.5
   effect: 4.0.6
-  fallow: 3.36.0
+  fallow: 3.37.0
   # Runs docgen's compiled examples.
   tsx: ^4.23.15
   # TypeScript 6/7 side-by-side: TS7 (the native Go compiler) ships no JS API
@@ -75,12 +81,13 @@ catalog:
   # entry decides the oxlint version `effect-tsgo patch --oxlint` has to
   # support (see the @effect/tsgo note above): 1.1.0 carries oxlint 1.87.0
   # on vitest 5.0.3, 1.2.0 carries 1.88.0 on vitest 5.0.4, 1.3.0 carries
-  # 1.88.0 on vitest 5.0.5. `vite` is the same release under its aliased core
-  # package, and `vitest` must match vite-plus's exact pin (1.3.0 → 5.0.5)
+  # 1.88.0 on vitest 5.0.5, 1.4.0 carries 1.89.0 (oxfmt 0.74.0, tsgolint
+  # 7.0.2004) on vitest 5.0.5. `vite` is the same release under its aliased core
+  # package, and `vitest` must match vite-plus's exact pin (1.4.0 → 5.0.5)
   # because the `vitest: "catalog:"` override forces every resolution to the
   # catalog singleton.
-  vite-plus: 1.3.0
-  vite: npm:@voidzero-dev/vite-plus-core@1.3.0
+  vite-plus: 1.4.0
+  vite: npm:@voidzero-dev/vite-plus-core@1.4.0
   vitest: 5.0.5
 
 # Peer ranges the PUBLISHED packages declare. Kept as a named catalog so the
@@ -109,8 +116,11 @@ overrides:
   # range admits the fix but whose lockfile resolution stayed below it.
   # Drop once that resolution reaches >=8.12.2 on its own.
   undici: ^8.12.2
-  vite: "catalog:"
-  vitest: "catalog:"
+  # vite-plus's managed overrides (`vp migrate` writes the `@*` keys under
+  # pnpm): every `vite` resolves to the vite-plus core alias and every
+  # `vitest` to the one vite-plus pins.
+  "vite@*": "catalog:"
+  "vitest@*": "catalog:"
   # `effect` MUST be a singleton (see the header): force every resolution to
   # the catalog version so a hoisting reshuffle cannot introduce a second copy.
   effect: "catalog:"
@@ -127,9 +137,12 @@ peerDependencyRules:
     vite: "*"
     vitest: "*"
 
-# Supply-chain delay (owner's policy, gardeneria #1149): hold newly published
-# versions for 1 day (unit: MINUTES) before pnpm will install them.
-minimumReleaseAge: 1440
+# Supply-chain delay (owner's policy, gardeneria #1149, relaxed to 8 hours on
+# 2026-10-30): hold newly published versions for 8 hours (unit: MINUTES)
+# before pnpm will install them. Dependabot's `cooldown` (whole days only) is
+# set to 1 day, longer than this, so it never proposes a version pnpm would
+# still refuse.
+minimumReleaseAge: 480
 minimumReleaseAgeExclude:
   # @thomasfosterau/* is first-party — exempt so our own releases install immediately.
   - "@thomasfosterau/*"

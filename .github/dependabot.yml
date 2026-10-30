@@ -17,17 +17,37 @@
 #   `vite-plus` pins, and hard-errors (UnsupportedTargetPackageVersionError)
 #   on any pairing it has no artifact for, failing `pnpm install` itself.
 #   `vite` (the vite-plus core alias), `vitest` and `@vitest/*` must equal
-#   what that vite-plus release pins. The effect lint plugin rides with the
-#   oxlint it loads into. Read the catalog comments in pnpm-workspace.yaml
-#   before merging one of these PRs: Dependabot cannot know which
-#   `@effect/tsgo` supports a new oxlint, so the PR may need that pin moved
-#   by hand (the `components` table in node_modules/@effect/tsgo/dist/effect-tsgo.cjs).
+#   what that vite-plus release pins. The Effect lint rules
+#   (`@enfect/oxlint`) ride with the oxlint they load into, and
+#   `@effect/language-service` with the TypeScript pair. Read the catalog
+#   comments in pnpm-workspace.yaml before merging one of these PRs:
+#   Dependabot cannot know which `@effect/tsgo` supports a new oxlint, so the
+#   PR may need that pin moved by hand (the `components` table in
+#   node_modules/@effect/tsgo/dist/effect-tsgo.cjs).
 # - `effect`: the Effect 4 line is a lockstep-versioned singleton set
-#   (`@effect/platform-browser` is pinned exact to `effect`). `@effect/tsgo`
-#   is a toolchain package and is excluded here.
+#   (`@effect/platform-browser` is pinned exact to `effect`). The toolchain
+#   and docgen `@effect/*` packages are excluded here.
+# - `docgen`: `@effect/docgen` runs the compiled examples under `tsx`.
+# - `changesets`, `fallow`: their own small sets.
+# - `minor-and-patch`: everything else, minor and patch only.
 #
-# `cooldown` mirrors pnpm-workspace.yaml's `minimumReleaseAge` (1440 minutes)
-# and its `minimumReleaseAgeExclude` (`@thomasfosterau/*`, first-party).
+# Moved by hand, because Dependabot cannot bump them (do it on the toolchain
+# PR's branch):
+# - the `vite` catalog entry, an npm alias
+#   (`npm:@voidzero-dev/vite-plus-core@<vite-plus version>`; `pnpm exec vp
+#   migrate` re-pins it, then drop any `minimumReleaseAgeExclude` entries it
+#   adds);
+# - the `typescript` (`npm:@typescript/typescript6@…`) and
+#   `@typescript/native` (`npm:typescript@…`) aliases, only to a pairing the
+#   `@effect/tsgo` release's `components` table lists;
+# - the `vite@*` / `vitest@*` / `effect` overrides, which follow their
+#   catalog entries, and the `undici` security floor under `overrides`.
+#
+# `cooldown` is 1 day (Dependabot counts whole days only), longer than
+# pnpm-workspace.yaml's `minimumReleaseAge` of 480 minutes (8 hours), so a
+# Dependabot PR never proposes a version pnpm would still refuse to install.
+# First-party `@thomasfosterau/*` is exempt, as it is from
+# `minimumReleaseAgeExclude`.
 version: 2
 updates:
   - package-ecosystem: "npm"
@@ -57,7 +77,9 @@ updates:
           - "@typescript/native"
           - "typescript"
           - "@typescript/typescript6"
-          - "@mpsuesser/oxlint-plugin-effect"
+          - "@oxlint/*"
+          - "@effect/language-service"
+          - "@enfect/oxlint"
         update-types: ["major", "minor", "patch"]
       effect:
         applies-to: version-updates
@@ -66,11 +88,24 @@ updates:
           - "@effect/*"
         exclude-patterns:
           - "@effect/tsgo"
+          - "@effect/language-service"
+          - "@effect/docgen"
+        update-types: ["major", "minor", "patch"]
+      docgen:
+        applies-to: version-updates
+        patterns:
+          - "@effect/docgen"
+          - "tsx"
         update-types: ["major", "minor", "patch"]
       changesets:
         applies-to: version-updates
         patterns:
           - "@changesets/*"
+        update-types: ["major", "minor", "patch"]
+      fallow:
+        applies-to: version-updates
+        patterns:
+          - "fallow"
         update-types: ["major", "minor", "patch"]
       minor-and-patch:
         applies-to: version-updates
