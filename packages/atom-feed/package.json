@@ -1,7 +1,7 @@
 {
   "$schema": "https://www.schemastore.org/package",
   "name": "@thomasfosterau/effect-atom-feed",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "Atom (RFC 4287) feed builder for Effect web applications: the feed and entry renderer with escaped authored text, canonical absolute URLs, and the served HttpServerResponse.",
   "keywords": [
     "atom",

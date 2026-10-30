@@ -1,7 +1,7 @@
 {
   "$schema": "https://www.schemastore.org/package",
   "name": "@thomasfosterau/effect-mime",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "MIME types, MIME sniffing and data: URLs for Effect, after the WHATWG MIME Sniffing and Fetch standards: parse and serialise type/subtype;parameters, identify a resource from its leading bytes, map file extensions, and decode data: URLs.",
   "keywords": [
     "content-type",
