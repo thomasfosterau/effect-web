@@ -149,7 +149,7 @@ class UserActivation {
  * @since 0.2.0
  * @category constructors
  */
-export const make = (options?: Options | undefined): Fixture => {
+export const make = (options?: Options): Fixture => {
   const state: State = {
     permission: options?.permission ?? "default",
     answer: options?.answer ?? "granted",
@@ -221,7 +221,7 @@ export const make = (options?: Options | undefined): Fixture => {
  * @since 0.2.0
  * @category layers
  */
-export const layer = (options?: Options | undefined): Layer.Layer<Notifications | Control> =>
+export const layer = (options?: Options): Layer.Layer<Notifications | Control> =>
   Layer.syncContext(() => {
     const { notifications, control } = make(options);
     return Context.make(Notifications, notifications).pipe(Context.add(Control, control));

@@ -87,7 +87,7 @@ interface State {
  * @since 0.2.0
  * @category constructors
  */
-export const make = (options?: Options | undefined): Fixture => {
+export const make = (options?: Options): Fixture => {
   const sentinels: Array<Sentinel> = [];
   const state: State = { denied: options?.deny ?? false, requests: 0 };
   const release = (sentinel: Sentinel): void => {
@@ -146,7 +146,7 @@ export const make = (options?: Options | undefined): Fixture => {
  * @since 0.2.0
  * @category layers
  */
-export const layer = (options?: Options | undefined): Layer.Layer<WakeLock | Control> =>
+export const layer = (options?: Options): Layer.Layer<WakeLock | Control> =>
   Layer.syncContext(() => {
     const { wakeLock, control } = make(options);
     return Context.make(WakeLock, wakeLock).pipe(Context.add(Control, control));

@@ -1,0 +1,6 @@
+{
+  // tsgolint (type-aware `vp check`) reads the nearest `tsconfig.json` and
+  // never `tsconfig.test.json`; this hands the tests the same options and
+  // `paths` the type gate checks them under.
+  "extends": "../tsconfig.test.json"
+}

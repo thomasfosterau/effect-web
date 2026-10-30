@@ -34,7 +34,7 @@ export type VisibilityState = "visible" | "hidden";
  * @since 0.2.0
  * @category models
  */
-export interface DocumentLike extends Stream.EventListener<unknown> {
+export interface DocumentLike extends Stream.EventListener {
   readonly visibilityState: DocumentVisibilityState;
 }
 
@@ -57,10 +57,10 @@ export class PageVisibility extends Context.Service<
   }
 >()("@thomasfosterau/effect-web/browser/PageVisibility") {}
 
-// `prerender` (a pre-2021 value) and any future value read as hidden: the
-// safe side for "may I do visible-only work".
-const normalise = (state: DocumentVisibilityState | string): VisibilityState =>
-  state === "visible" ? "visible" : "hidden";
+// Takes any string, not just `DocumentVisibilityState`: `prerender` (a
+// pre-2021 value) and any future value read as hidden, the safe side for
+// "may I do visible-only work".
+const normalise = (state: string): VisibilityState => (state === "visible" ? "visible" : "hidden");
 
 /**
  * Builds the {@link PageVisibility} service over a document; `undefined`

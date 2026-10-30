@@ -139,7 +139,7 @@ export interface Fixture {
  * @since 0.2.0
  * @category constructors
  */
-export const make = (initial?: Fix | undefined): Effect.Effect<Fixture> =>
+export const make = (initial?: Fix): Effect.Effect<Fixture> =>
   Effect.gen(function* () {
     const updates = yield* PubSub.unbounded<Update>();
     const now = yield* Clock.currentTimeMillis;
@@ -211,7 +211,7 @@ export const make = (initial?: Fix | undefined): Effect.Effect<Fixture> =>
  * @since 0.2.0
  * @category layers
  */
-export const layer = (initial?: Fix | undefined): Layer.Layer<Geolocation.Geolocation | Control> =>
+export const layer = (initial?: Fix): Layer.Layer<Geolocation.Geolocation | Control> =>
   Layer.effectContext(
     Effect.map(make(initial), ({ geolocation, control }) =>
       Context.make(Geolocation.Geolocation, geolocation).pipe(Context.add(Control, control)),

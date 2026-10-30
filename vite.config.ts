@@ -18,9 +18,16 @@ import { recommended } from "@effect/tsgo/oxlint-presets";
 import effect from "@enfect/oxlint";
 
 export default defineConfig({
-  // Staged-file checks run by `vp staged` (pre-commit).
+  // Staged-file checks run by `vp staged` (pre-commit): format with fixes,
+  // then lint WITHOUT fixes. With type-aware lint on, `vp check --fix` would
+  // silently apply type-aware autofixes (even of rules at `warn`) at commit
+  // time, so the commit would differ from the tree that was verified. The
+  // lint step skips cleanly when only non-lintable files are staged.
   staged: {
-    "*.{js,ts,css,json,md}": "vp check --fix",
+    "*.{js,ts,css,json,md}": [
+      "vp check --fix --no-lint",
+      "vp check --no-fmt --no-error-on-unmatched-pattern",
+    ],
   },
   fmt: {
     ignorePatterns: ["**/dist/**", "**/docs/**", "**/coverage/**"],
@@ -133,6 +140,18 @@ export default defineConfig({
       "unicorn/consistent-function-scoping": "warn", // 41 sites
       "unicorn/prefer-set-has": "warn", // 19 sites
       "oxc/no-accumulating-spread": "warn", // 3 sites
+      // Type-aware (tsgolint) allowances. Every assertion here already
+      // carries a `// SAFETY:` comment (effect/require-safety-comment-for-
+      // type-assertion); each is a structural read of a value the type system
+      // cannot narrow (a JSON body, a logger's message tuple, a fixture).
+      "typescript/no-unsafe-type-assertion": "warn", // 9 sites (3 src, 6 tests)
+      // `describeError`'s documented last resort stringifies an arbitrary
+      // object on purpose (a custom `toString`, else `[object Object]`).
+      "typescript/no-base-to-string": "warn", // 1 site
+      // Off: misreads an exhaustive `switch` over a union (every case returns)
+      // as a missing return; TypeScript's own return-type check already
+      // rejects a real fall-through. Its 3 sites were all exhaustive switches.
+      "typescript/consistent-return": "off",
     },
     overrides: [
       // Build/test configs are evaluated by Vite and Vitest in bare Node,
@@ -170,6 +189,9 @@ export default defineConfig({
         rules: {
           "eslint/no-unused-vars": "off",
           "effect/avoid-ts-ignore": "off",
+          // The `Equals<A, B>` helper's `<X>() => X extends A ? 1 : 2` is the
+          // standard exact-type-equality idiom: `X` is used once by design.
+          "typescript/no-unnecessary-type-parameters": "off",
         },
       },
       // The web-platform-tests `mimesniff/` resources are binary files (MP3,
@@ -184,6 +206,25 @@ export default defineConfig({
           "effect/avoid-sync-fs": "off",
         },
       },
+      // `logStructured` is called from plain (non-Effect) code and runs its
+      // effect with `Effect.runSync`: it IS the entry point, where scoping the
+      // JSON logger with `Effect.provide` belongs.
+      {
+        files: ["packages/web/src/observability/index.ts"],
+        rules: {
+          "effecttsgo/strict-effect-provide": "off",
+        },
+      },
+      // `fetchListener`'s route table is a heterogeneous tuple of
+      // `Route<unknown, any>`: a matched route's handler carries `unknown`
+      // errors (a rejection is what `respondWith` turns into a network error)
+      // and the listener's own signature restates the services it needs.
+      {
+        files: ["packages/web/src/service-worker/index.ts"],
+        rules: {
+          "effecttsgo/any-unknown-in-error-context": "off",
+        },
+      },
       // Test fixtures are the seams under test, not domain code: a
       // wall-clock `Date` standing in for a publication stamp, a `CI`
       // variable toggled to drive a reporter. Each stays visible as a
@@ -194,6 +235,9 @@ export default defineConfig({
           // A test IS the boundary the rule sends execution to: each case
           // runs its program with `Effect.runPromise` / `runSync`.
           "effect/effect-run-in-body": "off",
+          // Same reason: each case is an entry point, so providing its
+          // layers there is exactly where `Effect.provide` belongs.
+          "effecttsgo/strict-effect-provide": "off",
           "effect/require-safety-comment-for-type-assertion": "warn",
           "effect/use-clock-service": "warn",
           "effect/avoid-process-env": "warn",
@@ -201,11 +245,15 @@ export default defineConfig({
         },
       },
     ],
-    // Type-aware linting is intentionally disabled: type checking stays the
-    // `check` tasks' job (native tsc, Effect-patched).
+    // Type-aware linting through oxlint-tsgolint (bundled with Vite+, patched
+    // by `effect-tsgo patch --oxlint`). tsgolint reads each file's nearest
+    // `tsconfig.json`, so every `packages/*/tests/` carries one extending its
+    // `tsconfig.test.json` (the name-to-`src/` `paths`). `typeCheck` also
+    // reports compiler diagnostics; `vp run check` (native tsc) stays the
+    // type gate of record.
     options: {
-      typeAware: false,
-      typeCheck: false,
+      typeAware: true,
+      typeCheck: true,
     },
     jsPlugins: [
       {

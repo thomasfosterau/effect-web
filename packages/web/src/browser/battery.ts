@@ -29,7 +29,7 @@ import { ambientGetBattery } from "../internal/globals.ts";
  * @since 0.2.0
  * @category models
  */
-export interface BatteryManagerLike extends Stream.EventListener<unknown> {
+export interface BatteryManagerLike extends Stream.EventListener {
   readonly charging: boolean;
   readonly level: number;
   readonly chargingTime: number;

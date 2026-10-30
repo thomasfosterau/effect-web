@@ -30,7 +30,7 @@ import { PageVisibility, whileVisible } from "./page-visibility.ts";
  * @since 0.2.0
  * @category models
  */
-export interface WakeLockSentinelLike extends Stream.EventListener<unknown> {
+export interface WakeLockSentinelLike extends Stream.EventListener {
   readonly released: boolean;
   release(): Promise<void>;
 }

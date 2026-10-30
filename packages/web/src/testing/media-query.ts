@@ -73,7 +73,7 @@ class TestMediaQueryList extends EventTarget {
  * @since 0.2.0
  * @category constructors
  */
-export const make = (initial?: Readonly<Record<string, boolean>> | undefined): Fixture => {
+export const make = (initial?: Readonly<Record<string, boolean>>): Fixture => {
   const matching = MutableHashMap.fromIterable(Record.toEntries(initial ?? {}));
   const matchesNow = (query: string) =>
     Option.getOrElse(MutableHashMap.get(matching, query), () => false);
@@ -118,7 +118,7 @@ export const make = (initial?: Readonly<Record<string, boolean>> | undefined): F
  * @category layers
  */
 export const layer = (
-  initial?: Readonly<Record<string, boolean>> | undefined,
+  initial?: Readonly<Record<string, boolean>>,
 ): Layer.Layer<MediaQuery | Control> =>
   Layer.syncContext(() => {
     const { mediaQuery, control } = make(initial);

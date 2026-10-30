@@ -244,7 +244,7 @@ const installBeacon = (
  * @since 0.2.0
  * @category constructors
  */
-export const make = (options?: Options | undefined): Fixture => {
+export const make = (options?: Options): Fixture => {
   const init: Options = options ?? {};
   const events = new EventTarget();
   const shares: Array<ShareData> = [];
@@ -342,7 +342,7 @@ export const make = (options?: Options | undefined): Fixture => {
  * @since 0.2.0
  * @category layers
  */
-export const layer = (options?: Options | undefined): Layer.Layer<Navigator | Control> =>
+export const layer = (options?: Options): Layer.Layer<Navigator | Control> =>
   Layer.syncContext(() => {
     const { navigator, control } = make(options);
     return Context.make(Navigator, navigator).pipe(Context.add(Control, control));

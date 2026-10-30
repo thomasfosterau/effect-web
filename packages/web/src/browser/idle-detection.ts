@@ -29,7 +29,7 @@ import { ambientIdleDetector } from "../internal/globals.ts";
  * @since 0.2.0
  * @category models
  */
-export interface IdleDetectorInstanceLike extends Stream.EventListener<unknown> {
+export interface IdleDetectorInstanceLike extends Stream.EventListener {
   readonly userState: "active" | "idle" | null;
   readonly screenState: "locked" | "unlocked" | null;
   start(options: { readonly threshold: number; readonly signal: AbortSignal }): Promise<void>;

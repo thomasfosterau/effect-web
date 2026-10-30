@@ -208,10 +208,7 @@ const canonicalLangtag = (parts: Subtags, options: CanonicalizeOptions | undefin
  * @since 0.1.0
  * @category canonicalization
  */
-export const canonicalize = (
-  tag: LanguageTag,
-  options?: CanonicalizeOptions | undefined,
-): LanguageTag => {
+export const canonicalize = (tag: LanguageTag, options?: CanonicalizeOptions): LanguageTag => {
   const whole = Option.flatMap(mapped(PREFERRED_TAGS, tag), parse);
   const start = Option.getOrElse(whole, () => tag);
   const parts = subtags(start);

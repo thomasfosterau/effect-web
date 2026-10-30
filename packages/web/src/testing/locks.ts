@@ -111,9 +111,9 @@ const refusal = (
  * @since 0.2.0
  * @category constructors
  */
-export const makeLockManager = (
-  options?: { readonly clientId?: string | undefined } | undefined,
-): TestLockManager => {
+export const makeLockManager = (options?: {
+  readonly clientId?: string | undefined;
+}): TestLockManager => {
   const held: Array<Request> = [];
   const queues = MutableHashMap.empty<string, Array<Request>>();
 
@@ -262,5 +262,5 @@ export const makeLockManager = (
  * @since 0.2.0
  * @category layers
  */
-export const layer = (manager?: LockManagerLike | undefined): Layer.Layer<Locks> =>
+export const layer = (manager?: LockManagerLike): Layer.Layer<Locks> =>
   Layer.sync(Locks, () => make(manager ?? makeLockManager()));

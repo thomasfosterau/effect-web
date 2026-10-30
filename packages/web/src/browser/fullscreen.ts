@@ -45,7 +45,7 @@ export interface FullscreenElementLike {
  * @since 0.2.0
  * @category models
  */
-export interface DocumentFullscreenLike extends Stream.EventListener<unknown> {
+export interface DocumentFullscreenLike extends Stream.EventListener {
   readonly fullscreenElement: FullscreenElementLike | null;
   readonly fullscreenEnabled?: boolean | undefined;
   exitFullscreen?(): Promise<void>;
@@ -111,7 +111,7 @@ export class Fullscreen extends Context.Service<
     readonly changes: Stream.Stream<Option.Option<FullscreenElementLike>>;
     readonly enter: (
       element: FullscreenElementLike,
-      options?: FullscreenOptions | undefined,
+      options?: FullscreenOptions,
     ) => Effect.Effect<void, FullscreenError, Scope.Scope>;
   }
 >()("@thomasfosterau/effect-web/browser/Fullscreen") {}
@@ -143,7 +143,7 @@ const unsupported = (): Fullscreen["Service"] =>
  * @category constructors
  */
 export const make = (document: DocumentFullscreenLike | undefined): Fullscreen["Service"] => {
-  const exitFullscreen = document?.exitFullscreen;
+  const exitFullscreen = document?.exitFullscreen?.bind(document);
   if (
     document === undefined ||
     document.fullscreenEnabled !== true ||
@@ -165,9 +165,7 @@ export const make = (document: DocumentFullscreenLike | undefined): Fullscreen["
         // Only leave fullscreen this request entered: the user may have left
         // already, or a later request may have put another element up.
         () =>
-          document.fullscreenElement === element
-            ? settled(() => exitFullscreen.call(document))
-            : Effect.void,
+          document.fullscreenElement === element ? settled(() => exitFullscreen()) : Effect.void,
       ),
   });
 };
@@ -267,21 +265,21 @@ export const changes: Stream.Stream<
 export const withFullscreen: {
   (
     element: FullscreenElementLike,
-    options?: FullscreenOptions | undefined,
+    options?: FullscreenOptions,
   ): <A, E, R>(
     self: Effect.Effect<A, E, R>,
   ) => Effect.Effect<A, E | FullscreenError, R | Fullscreen>;
   <A, E, R>(
     self: Effect.Effect<A, E, R>,
     element: FullscreenElementLike,
-    options?: FullscreenOptions | undefined,
+    options?: FullscreenOptions,
   ): Effect.Effect<A, E | FullscreenError, R | Fullscreen>;
 } = dual(
   (args) => Effect.isEffect(args[0]),
   <A, E, R>(
     self: Effect.Effect<A, E, R>,
     element: FullscreenElementLike,
-    options?: FullscreenOptions | undefined,
+    options?: FullscreenOptions,
   ): Effect.Effect<A, E | FullscreenError, R | Fullscreen> =>
     Effect.flatMap(Fullscreen, (fullscreen) =>
       Effect.scopedWith((scope) =>

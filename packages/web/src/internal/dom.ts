@@ -35,7 +35,7 @@ export const reasonOf = <Reason extends string>(
  * of stale ones.
  */
 export const watch = <A>(
-  target: Stream.EventListener<unknown>,
+  target: Stream.EventListener,
   types: ReadonlyArray<string>,
   read: () => A,
   isEquivalent: (self: A, that: A) => boolean = Object.is,

@@ -121,7 +121,7 @@ const FIELDS = ["charging", "level", "chargingTime", "dischargingTime"] as const
  * @since 0.2.0
  * @category constructors
  */
-export const make = (options?: Options | undefined): Fixture => {
+export const make = (options?: Options): Fixture => {
   const state = {
     charging: options?.charging ?? true,
     level: options?.level ?? 1,
@@ -174,7 +174,7 @@ export const make = (options?: Options | undefined): Fixture => {
  * @since 0.2.0
  * @category layers
  */
-export const layer = (options?: Options | undefined): Layer.Layer<Battery | Control> =>
+export const layer = (options?: Options): Layer.Layer<Battery | Control> =>
   Layer.syncContext(() => {
     const { battery, control } = make(options);
     return Context.make(Battery, battery).pipe(Context.add(Control, control));

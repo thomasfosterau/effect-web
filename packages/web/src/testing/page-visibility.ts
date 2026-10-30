@@ -105,9 +105,7 @@ export const make = (initial: VisibilityState = "visible"): Fixture => {
  * @since 0.2.0
  * @category layers
  */
-export const layer = (
-  initial?: VisibilityState | undefined,
-): Layer.Layer<PageVisibility | Control> =>
+export const layer = (initial?: VisibilityState): Layer.Layer<PageVisibility | Control> =>
   Layer.syncContext(() => {
     const { visibility, control } = make(initial);
     return Context.make(PageVisibility, visibility).pipe(Context.add(Control, control));
